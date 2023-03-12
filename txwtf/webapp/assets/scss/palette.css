@@ -1,0 +1,37 @@
+/* All colors palette still need to be added */
+/* Registration colors palette */
+:root {
+  --backgorund-color: #00030F;
+  --secondary-color: #3C3C4B;
+  --light-green: #C6E9D8;
+  --light-purple: #C8C6EF;
+  --textbox-outline: #3C3C4A;
+  --border-color: #00000029;
+  --buttun-color: #2B2935;
+  --primary-color: #FFF5F5;
+}
+
+/* Login colors palette */
+:root {
+  --backgorund-color: #00030F;
+  --secondary-color: #3C3C4B;
+  --light-green: #C6E9D8;
+  --light-purple: #C8C6EF;
+  --light-pink: #E9C6C6;
+  --mid-blue: #3C3C4A;
+  --almost-dark: #00000029;
+  --nightshade: #2B2935;
+  --almost-white: #FFF5F5;
+}
+
+:root {
+  --backgorund-color: #00030F;
+  --secondary-color: #3C3C4B;
+  --light-green: #C6E9D8;
+  --light-purple: #C8C6EF;
+  --light-pink: #E9C6C6;
+  --textbox-outline: #3C3C4A;
+  --border-color: #00000029;
+  --buttun-color: #2B2935;
+  --primary-color: #FFF5F5;
+}/*# sourceMappingURL=palette.css.map */

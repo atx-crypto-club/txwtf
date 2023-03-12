@@ -1,0 +1,11 @@
+/* All elemnts go here */
+.my-element {
+  /* Layout Properties */
+  top: 263px;
+  left: 59px;
+  width: 26px;
+  height: 31px;
+  /* UI Properties */
+  background: #FFFFFF 0% 0% no-repeat padding-box;
+  opacity: 1;
+}/*# sourceMappingURL=elements.css.map */
