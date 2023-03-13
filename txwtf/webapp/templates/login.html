@@ -3,7 +3,7 @@
 {% block content %}
 <div class="column is-4 is-offset-4">
     <h3 class="title">Login</h3>
-    <div class="box has-background-black">
+    <div class="box has-background-grey-lighter">
 
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -13,27 +13,27 @@
             {% endif %}
         {% endwith %}
 
-        <img src="/assets/img/logo.png">
+        <img src="/assets/img/atxcf_logo_small.jpg">
 
         <form method="POST" action="/login">
             <div class="field">
                 <div class="control">
-                    <input class="input is-large has-background-black has-text-white-bis" type="email" name="email" placeholder="Your Email" autofocus="">
+                    <input class="input is-large has-background-white has-text-white-bis" type="email" name="email" placeholder="Your Email" autofocus="">
                 </div>
             </div>
 
             <div class="field">
                 <div class="control">
-                    <input class="input is-large has-background-black has-text-white-bis" type="password" name="password" placeholder="Your Password">
+                    <input class="input is-large has-background-white has-text-white-bis" type="password" name="password" placeholder="Your Password">
                 </div>
             </div>
             <div class="field">
                 <label class="checkbox">
-                    <input type="checkbox" name="remember">
+                    <input type="checkbox" name="remember" class="has-text-white-bis">
                     Remember me
                 </label>
             </div>
-            <button class="button is-block is-info is-large is-fullwidth has-background-grey-dark">Login</button>
+            <button class="button is-block is-info is-large is-fullwidth has-background-white has-text-black">Login</button>
         </form>
     </div>
 </div>
