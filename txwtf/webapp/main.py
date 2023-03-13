@@ -24,6 +24,7 @@ def profile():
 def send_report(path):
     return send_from_directory('assets', path)
 
+
 @main.route('/favicon.ico')
 def favicon():
     return send_from_directory(

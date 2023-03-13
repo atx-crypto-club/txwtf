@@ -139,7 +139,7 @@ def migrate(obj):
     # db revision.
     subprocess.check_call(
         edm_run_cmd + [
-        "flask", "--app", "txwtf.webapp", "db", "upgrade"])
+            "flask", "--app", "txwtf.webapp", "db", "upgrade"])
 
 
 @root.command()
