@@ -63,17 +63,26 @@ def root(context, edm_root, edm_env, edm_py_version, edm_bin):
 
 
 @root.command()
+@click.option(
+    "--replace/--no-replace", default=False,
+    help="Force replace environment?"
+)
 @click.pass_obj
-def bootstrap(obj):
+def bootstrap(obj, replace):
     """
-    create EDM environment for running txwtf
+    create EDM environment for running sscore
     """
     if not os.path.isdir(obj.edm_root):
         os.mkdir(obj.edm_root)
-    subprocess.check_call(
-        [obj.edm_bin, "-r", obj.edm_root, "envs",
-         "create", obj.edm_env, "--version=%s" % obj.edm_py_version,
-         "--force"])
+    args = []
+    if replace:
+        args = ["--force"]
+    try:
+        subprocess.check_call(
+            [obj.edm_bin, "-r", obj.edm_root, "envs",
+             "create", obj.edm_env, "--version=%s" % obj.edm_py_version] + args)
+    except subprocess.CalledProcessError:
+        pass
 
 
 source_dir_option = click.option(
@@ -100,6 +109,8 @@ def install_dev(obj, source_dir):
     req = join(source_dir, "requirements.txt")
     subprocess.check_call(
         edm_run_cmd + ["pip", "install", "-r", req])
+
+    # install the application
     subprocess.check_call(
         edm_run_cmd + ["pip", "install", "-e", source_dir])
 
@@ -122,6 +133,8 @@ def install(obj, source_dir):
     req = join(source_dir, "requirements.txt")
     subprocess.check_call(
         edm_run_cmd + ["pip", "install", "-r", req])
+
+    # install the application
     subprocess.check_call(
         edm_run_cmd + ["pip", "install", source_dir])
 

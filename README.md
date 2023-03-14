@@ -1,8 +1,8 @@
 # txwtf
 This project is the atx crypto club web application **txwtf**. It provides the web interface and backend biz logic for members interacting with the system.
 
-Use the `init.sh` script to download and install [EDM](https://www.enthought.com/edm/) for the python runtime and drop you into an initialization environment. For example:
-> $ bash init.sh
+Use the `init.sh` script to download and install [EDM](https://www.enthought.com/edm/) for the python runtime and drop you into an initialization environment shell. For example:
+> $ bash init.sh -s
 
 If you want to skip the rest of this README and just launch the app from nothing, you can perform the entire init, install and execution of the webapp using the `-r` flag:
 > $ bash init.sh -r

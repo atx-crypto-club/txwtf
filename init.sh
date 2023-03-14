@@ -8,25 +8,35 @@ python_version="3.8"
 
 # parse cmd line
 do_run=0
-while getopts ':rh' opt; do
+while getopts ':rsih' opt; do
   case "$opt" in
     r)
       echo "Running launcher.py after initialization"
       do_run=1
       ;;
 
+    s)
+      echo "Running launcher.py shell after initialization"
+      do_run=2
+      ;;
+
+    i)
+      echo "Running init shell"
+      do_run=3
+      ;;
+
     h)
-      echo "Usage: $(basename $0) [-r]"
+      echo "Usage: $(basename $0) [-r] [-s] [-i]"
       exit 0
       ;;
 
     :)
-      echo -e "option requires an argument.\nUsage: $(basename $0) [-r]"
+      echo -e "option requires an argument.\nUsage: $(basename $0) [-r] [-s] [-i]"
       exit 1
       ;;
 
     ?)
-      echo -e "Invalid command option.\nUsage: $(basename $0) [-r]"
+      echo -e "Invalid command option.\nUsage: $(basename $0) [-r] [-s] [-i]"
       exit 1
       ;;
   esac
@@ -70,10 +80,29 @@ fi
 # setup edm environment
 $edm_bin -r $edm_root environments create $env_name --version $python_version
 $edm_bin -r $edm_root install -e $env_name click pyyaml --yes
+$edm_bin -r $edm_root run -e $env_name -- python launcher.py bootstrap install-dev migrate test
 
 # run shell for launcher environment, or actually run the launcher
-if [ "$do_run" = "1" ]; then
-    $edm_bin -r $edm_root run -e $env_name -- python launcher.py
-else
-    $edm_bin -r $edm_root shell -e $env_name
-fi
+case "$do_run" in
+    0)
+        echo "Done."
+        exit 0
+        ;;
+    1)
+        echo "Launching txwtf webapp..."
+        $edm_bin -r $edm_root run -e $env_name -- python launcher.py txwtf webapp
+        exit 0
+        ;;
+
+    2)
+        echo "Launching txwtf edm environment shell..."
+        $edm_bin -r $edm_root run -e $env_name -- python launcher.py shell
+        exit 0
+        ;;
+
+    3)
+        echo "Launching init edm shell..."
+        $edm_bin -r $edm_root shell -e $env_name
+        exit 0
+        ;;
+esac
