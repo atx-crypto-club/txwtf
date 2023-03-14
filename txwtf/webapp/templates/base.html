@@ -66,8 +66,8 @@
                             <a href="{{ url_for('auth.login') }}" class="navbar-item">
                                 Login
                             </a>
-                            <a href="{{ url_for('auth.signup') }}" class="navbar-item">
-                                Sign Up
+                            <a href="{{ url_for('auth.register') }}" class="navbar-item">
+                                Register
                             </a>
                             {% endif %}
                             {% if current_user.is_authenticated %}

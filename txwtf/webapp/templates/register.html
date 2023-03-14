@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="column is-4 is-offset-4">
-    <h3 class="title">Sign Up</h3>
+    <h3 class="title">Registration</h3>
     <div class="box has-background-grey-lighter">
 
         {% with messages = get_flashed_messages() %}
@@ -15,7 +15,7 @@
 
         <img src="/assets/img/atxcf_logo_small.jpg">
 
-        <form method="POST" action="/signup">
+        <form method="POST" action="/register">
             <div class="field">
                 <div class="control">
                     <input class="input is-large has-background-white has-text-white-bis" type="email" name="email" placeholder="Email" autofocus="">
@@ -34,7 +34,7 @@
                 </div>
             </div>
 
-            <button class="button is-block is-info is-large is-fullwidth has-background-white has-text-black">Sign Up</button>
+            <button class="button is-block is-info is-large is-fullwidth has-background-white has-text-black">Register</button>
         </form>
     </div>
 </div>

@@ -37,13 +37,13 @@ def login_post():
     return redirect(url_for('main.profile'))
 
 
-@auth.route('/signup')
-def signup():
-    return render_template('signup.html')
+@auth.route('/register')
+def register():
+    return render_template('register.html')
 
 
-@auth.route('/signup', methods=['POST'])
-def signup_post():
+@auth.route('/register', methods=['POST'])
+def register_post():
     # code to validate and add user to database goes here
     email = request.form.get('email')
     name = request.form.get('name')
@@ -52,11 +52,11 @@ def signup_post():
     # if this returns a user, then the email already exists in database
     user = User.query.filter_by(email=email).first()
 
-    # if a user is found, we want to redirect back to signup page so
+    # if a user is found, we want to redirect back to register page so
     # user can try again
     if user:
         flash('Email address already exists')
-        return redirect(url_for('auth.signup'))
+        return redirect(url_for('auth.register'))
 
     # create a new user with the form data. Hash the password so the
     # plaintext version isn't saved.
