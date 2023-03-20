@@ -91,18 +91,14 @@ source_dir_option = click.option(
 )
 
 
-@root.command()
-@source_dir_option
-@click.pass_obj
-def install_dev(obj, source_dir):
-    """
-    Install txwtf in the target environment in dev mode (editable)
-    """
-    TXWTF_ENV_DEPS = ["pyyaml"]
+def install_deps(obj, source_dir):
+    ENV_DEPS = ["pyyaml"]
     cmd_base = [obj.edm_bin, "-r", obj.edm_root]
 
-    cmd_base + [   # install runtime deps
-        "install", "-e", obj.edm_env, "-y"] + TXWTF_ENV_DEPS,
+    # install edm runtime deps
+    subprocess.check_call(
+        cmd_base + [
+            "install", "-e", obj.edm_env, "-y"] + ENV_DEPS)
 
     # install other requirements via pip
     edm_run_cmd = cmd_base + ["run", "-e", obj.edm_env, "--"]
@@ -110,9 +106,26 @@ def install_dev(obj, source_dir):
     subprocess.check_call(
         edm_run_cmd + ["pip", "install", "-r", req])
 
-    # install the application
+
+def install_application(obj, source_dir, editable=False):
+    cmd_base = [obj.edm_bin, "-r", obj.edm_root]
+    edm_run_cmd = cmd_base + ["run", "-e", obj.edm_env, "--"]
+    editable_arg = []
+    if editable:
+        editable_arg = ["-e"]
     subprocess.check_call(
-        edm_run_cmd + ["pip", "install", "-e", source_dir])
+        edm_run_cmd + ["pip", "install"] + editable_arg + [source_dir])
+
+
+@root.command()
+@source_dir_option
+@click.pass_obj
+def install_dev(obj, source_dir):
+    """
+    Install txwtf in the target environment in dev mode (editable)
+    """
+    install_deps(obj, source_dir)
+    install_application(obj, source_dir, True)
 
 
 @root.command()
@@ -122,21 +135,8 @@ def install(obj, source_dir):
     """
     Install txwtf in the target environment
     """
-    TXWTF_ENV_DEPS = ["pyyaml"]
-    cmd_base = [obj.edm_bin, "-r", obj.edm_root]
-
-    cmd_base + [   # install runtime deps
-        "install", "-e", obj.edm_env, "-y"] + TXWTF_ENV_DEPS,
-
-    # install other requirements via pip
-    edm_run_cmd = cmd_base + ["run", "-e", obj.edm_env, "--"]
-    req = join(source_dir, "requirements.txt")
-    subprocess.check_call(
-        edm_run_cmd + ["pip", "install", "-r", req])
-
-    # install the application
-    subprocess.check_call(
-        edm_run_cmd + ["pip", "install", source_dir])
+    install_deps(obj, source_dir)
+    install_application(obj, source_dir, False)
 
 
 @root.command()
