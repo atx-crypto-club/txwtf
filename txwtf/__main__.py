@@ -91,14 +91,17 @@ def version(obj):
 @click.option(
     '--threaded/--no-threaded', default=True,
     help="Whether to thread request handling or not")
+@click.option(
+    '--debug/--no-debug', default=False,
+    help="Toggle flask debugging")
 @click.pass_obj
-def webapp(obj, host, port, threaded):
+def webapp(obj, host, port, threaded, debug):
     """
     Run the flask app
     """
     import txwtf.webapp
     app = txwtf.webapp.create_app()
-    app.run(host=host, port=port, threaded=threaded)
+    app.run(host=host, port=port, threaded=threaded, debug=debug)
 
 
 if __name__ == '__main__':
