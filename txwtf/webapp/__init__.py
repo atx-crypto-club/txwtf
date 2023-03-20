@@ -6,6 +6,8 @@ from flask_cors import CORS
 
 from flask_login import LoginManager
 
+from flask_matomo import Matomo
+
 from flask_migrate import Migrate
 
 from flask_sqlalchemy import SQLAlchemy
@@ -34,6 +36,16 @@ def create_app(config_filename=None):
     configure_uploads(app, avatars)
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # set up matomo stats if available in config
+    if "MATOMO_URL" in app.config and \
+        "MATOMO_SITE_ID" in app.config and \
+        "MATOMO_TOKEN_AUTH" in app.config:
+        Matomo(
+            app,
+            matomo_url=app.config['MATOMO_URL'],
+            id_site=app.config['MATOMO_SITE_ID'],
+            token_auth=app.config['MATOMO_TOKEN_AUTH'])
 
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint

@@ -92,7 +92,7 @@ source_dir_option = click.option(
 
 
 def install_deps(obj, source_dir):
-    ENV_DEPS = ["pyyaml"]
+    ENV_DEPS = ["pyyaml", "requests"]
     cmd_base = [obj.edm_bin, "-r", obj.edm_root]
 
     # install edm runtime deps
