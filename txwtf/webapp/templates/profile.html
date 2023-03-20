@@ -4,4 +4,19 @@
 <h1 class="title">
   Welcome, {{ name }}
 </h1>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul class="flashes">
+{% for message in messages %}
+    <li>{{ message }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
+<form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
+<p>upload avatar image</p><input type="file" name="avatar">
+<button type="submit">Submit</button>
+</form>
 {% endblock %}

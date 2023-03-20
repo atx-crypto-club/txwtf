@@ -94,13 +94,16 @@ def version(obj):
 @click.option(
     '--debug/--no-debug', default=False,
     help="Toggle flask debugging")
+@click.option(
+    '--config', '-c', default=None,
+    help="Flask configuration file")
 @click.pass_obj
-def webapp(obj, host, port, threaded, debug):
+def webapp(obj, host, port, threaded, debug, config):
     """
     Run the flask app
     """
     import txwtf.webapp
-    app = txwtf.webapp.create_app()
+    app = txwtf.webapp.create_app(config_filename=config)
     app.run(host=host, port=port, threaded=threaded, debug=debug)
 
 

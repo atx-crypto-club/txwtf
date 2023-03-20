@@ -1,3 +1,5 @@
+import secrets
+
 from flask import Flask
 
 from flask_cors import CORS
@@ -8,19 +10,28 @@ from flask_migrate import Migrate
 
 from flask_sqlalchemy import SQLAlchemy
 
+from flask_uploads import IMAGES, UploadSet, configure_uploads
+
 
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 migrate = Migrate()
+avatars = UploadSet("avatars", IMAGES)
 
 
-def create_app():
+def create_app(config_filename=None):
     app = Flask(__name__)
     CORS(app)
 
-    app.config['SECRET_KEY'] = 'clownbollocks'
+    app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    app.config["UPLOADED_AVATARS_DEST"] = "uploads/avatars"
 
+    if config_filename is not None:
+        app.config.from_pyfile(config_filename)
+    app.config.from_prefixed_env(prefix="TXWTF")
+
+    configure_uploads(app, avatars)
     db.init_app(app)
     migrate.init_app(app, db)
 

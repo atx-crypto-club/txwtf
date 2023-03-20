@@ -1,10 +1,11 @@
 import os
 
-from flask import Blueprint, render_template, send_from_directory
+from flask import (
+    Blueprint, render_template, send_from_directory, request, flash, redirect, url_for)
 
 from flask_login import current_user, login_required
 
-# from . import db
+from . import avatars
 
 main = Blueprint('main', __name__)
 
@@ -30,3 +31,12 @@ def favicon():
     return send_from_directory(
         os.path.join(main.root_path, 'assets', 'img'),
         'cropped-atxcf_logo_small-32x32.jpg')
+
+
+@main.route("/upload-avatar", methods=['POST'])
+@login_required
+def upload_avatar():
+    if "avatar" in request.files:
+        saved_name = avatars.save(request.files["avatar"], folder=str(current_user.id))
+        flash("Avatar saved successfully as {}.".format(saved_name))
+        return redirect(url_for("main.profile"))
