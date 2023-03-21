@@ -18,7 +18,7 @@ from flask_uploads import IMAGES, UploadSet, configure_uploads
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 migrate = Migrate()
-image_archive = UploadSet("images", IMAGES)
+upload_archive = UploadSet("archive", IMAGES)
 
 
 def create_app(config_filename=None):
@@ -27,13 +27,13 @@ def create_app(config_filename=None):
 
     app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
-    app.config["UPLOADED_IMAGES_DEST"] = "/tmp/txwtf/uploads/images"
+    app.config["UPLOADED_ARCHIVE_DEST"] = "/tmp/txwtf/uploads"
 
     if config_filename is not None:
         app.config.from_pyfile(config_filename)
     app.config.from_prefixed_env(prefix="TXWTF")
 
-    configure_uploads(app, image_archive)
+    configure_uploads(app, upload_archive)
     db.init_app(app)
     migrate.init_app(app, db)
 

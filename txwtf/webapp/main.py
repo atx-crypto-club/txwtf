@@ -10,7 +10,7 @@ from flask_login import current_user, login_required
 
 from markdown import markdown
 
-from . import db, image_archive
+from . import db, upload_archive
 
 main = Blueprint('main', __name__)
 
@@ -66,9 +66,9 @@ def favicon():
 @login_required
 def upload_avatar():
     if "avatar" in request.files:
-        saved_name = image_archive.save(
+        saved_name = upload_archive.save(
             request.files["avatar"], folder=str(current_user.email))
-        current_user.avatar_url = "/uploads/images/{}".format(saved_name)
+        current_user.avatar_url = "/uploads/{}".format(saved_name)
         current_user.modified_time = datetime.now()
         db.session.commit()
         flash("Avatar saved successfully as {}.".format(saved_name))
@@ -79,9 +79,9 @@ def upload_avatar():
 @login_required
 def upload_header_image():
     if "header_image" in request.files:
-        saved_name = image_archive.save(
+        saved_name = upload_archive.save(
             request.files["header_image"], folder=str(current_user.email))
-        current_user.header_image_url = "/uploads/images/{}".format(saved_name)
+        current_user.header_image_url = "/uploads/{}".format(saved_name)
         current_user.modified_time = datetime.now()
         db.session.commit()
         flash("Header image saved successfully as {}.".format(saved_name))
@@ -98,7 +98,7 @@ def update_user_description():
     return redirect(url_for("main.profile"))
 
 
-@main.route('/uploads/images/<path:path>')
+@main.route('/uploads/<path:path>')
 def uploads(path):
     return send_from_directory(
-        current_app.config["UPLOADED_IMAGES_DEST"], path)
+        current_app.config["UPLOADED_ARCHIVE_DEST"], path)
