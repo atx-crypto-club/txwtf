@@ -1,8 +1,10 @@
 from datetime import datetime
 import os
+import pathlib
 
 from flask import (
-    Blueprint, render_template, send_from_directory, request, flash, redirect, url_for)
+    Blueprint, render_template, send_from_directory, request,
+    flash, redirect, url_for, current_app)
 
 from flask_login import current_user, login_required
 
@@ -49,7 +51,7 @@ def profile():
 
 
 @main.route('/assets/<path:path>')
-def send_report(path):
+def assets(path):
     return send_from_directory('assets', path)
 
 
@@ -64,7 +66,11 @@ def favicon():
 @login_required
 def upload_avatar():
     if "avatar" in request.files:
-        saved_name = image_archive.save(request.files["avatar"], folder=str(current_user.id))
+        saved_name = image_archive.save(
+            request.files["avatar"], folder=str(current_user.email))
+        current_user.avatar_url = "/uploads/images/{}".format(saved_name)
+        current_user.modified_time = datetime.now()
+        db.session.commit()
         flash("Avatar saved successfully as {}.".format(saved_name))
         return redirect(url_for("main.profile"))
 
@@ -73,7 +79,11 @@ def upload_avatar():
 @login_required
 def upload_header_image():
     if "header_image" in request.files:
-        saved_name = image_archive.save(request.files["header_image"], folder=str(current_user.id))
+        saved_name = image_archive.save(
+            request.files["header_image"], folder=str(current_user.email))
+        current_user.header_image_url = "/uploads/images/{}".format(saved_name)
+        current_user.modified_time = datetime.now()
+        db.session.commit()
         flash("Header image saved successfully as {}.".format(saved_name))
         return redirect(url_for("main.profile"))
 
@@ -86,3 +96,9 @@ def update_user_description():
     current_user.modified_time = datetime.now()
     db.session.commit()
     return redirect(url_for("main.profile"))
+
+
+@main.route('/uploads/images/<path:path>')
+def uploads(path):
+    return send_from_directory(
+        current_app.config["UPLOADED_IMAGES_DEST"], path)

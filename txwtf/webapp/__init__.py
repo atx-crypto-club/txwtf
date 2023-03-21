@@ -1,6 +1,6 @@
 import secrets
 
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 
 from flask_cors import CORS
 
@@ -27,7 +27,7 @@ def create_app(config_filename=None):
 
     app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
-    app.config["UPLOADED_IMAGES_DEST"] = "uploads/images"
+    app.config["UPLOADED_IMAGES_DEST"] = "/tmp/txwtf/uploads/images"
 
     if config_filename is not None:
         app.config.from_pyfile(config_filename)
