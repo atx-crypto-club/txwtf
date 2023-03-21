@@ -6,6 +6,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>tx.wtf</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" />
     <link rel="stylesheet" href="/assets/fonts/fonts.css">
     <style>
@@ -85,6 +87,12 @@
             <div class="container has-text-centered">
                {% block content %}
                {% endblock %}
+            </div>
+        </div>
+
+        <div class="hero-foot is-fullwidth">
+            <div class="container has-text-centered is-small">
+                <p>an <a href="https://atxcf.club">atx crypto club</a> production circa 2023</p>
             </div>
         </div>
     </section>

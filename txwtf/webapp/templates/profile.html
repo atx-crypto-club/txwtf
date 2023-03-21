@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 
+<div class="box">
+  <h1 class="title">
+    Welcome, {{ name }}
+  </h1>
+  <p class="is-small">created {{ created_time }}</p>
+</div>
+
 <div class="columns">
   <div class="column is-one-quarter">
     <div class="card">
@@ -22,10 +29,10 @@
           </div>
         </div>
     
-        <div class="content">
-          {{ description }}
+        <div class="content has-text-left">
+          {{ description|safe }}
           <br>
-          <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
+          <time class="is-italic" datetime="{{ modified_time }}">{{ modified_time }}</time>
         </div>
       </div>
     </div>    
@@ -43,30 +50,63 @@
     </div>
     {% endif %}
     {% endwith %}
-    
-    <div class="box">
-    <h1 class="title">
-      Welcome, {{ name }}
-    </h1>
+
+    <div class="columns">
+      <div class="column">
+        <form class="box" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
+          <div class="field has-text-left">
+            <label class="label">Upload avatar image</label>
+            <div class="file">
+              <label class="file-label">
+                <input class="file-input" type="file" name="avatar">
+                <span class="file-cta">
+                  <span class="file-icon">
+                    <i class="fas fa-upload"></i>
+                  </span>
+                  <span class="file-label">
+                    Choose a file…
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <button class="button" type="submit">Submit</button>
+        </form>
+      </div>
+      <div class="column">
+        <form class="box" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_header_image') }}">
+          <div class="field has-text-left">
+            <label class="label">Upload header image</label>
+            <div class="file">
+              <label class="file-label">
+                <input class="file-input" type="file" name="header_image">
+                <span class="file-cta">
+                  <span class="file-icon">
+                    <i class="fas fa-upload"></i>
+                  </span>
+                  <span class="file-label">
+                    Choose a file…
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <button class="button" type="submit">Submit</button>
+        </form>
+      </div>
     </div>
-    <form class="box" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
-    <p>upload avatar image</p>
-    <div class="file">
-      <label class="file-label">
-        <input class="file-input" type="file" name="avatar">
-        <span class="file-cta">
-          <span class="file-icon">
-            <i class="fas fa-upload"></i>
-          </span>
-          <span class="file-label">
-            Choose a file…
-          </span>
-        </span>
-      </label>
-    </div>
-    <button class="button" type="submit">Submit</button>
+
+    <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_description') }}">
+      <label class="label">Update user description</label>
+      <textarea class="textarea" id="user_description" name="user_description" placeholder="e.g. Hello world"></textarea>
+      <button class="button" type="submit">Submit</button>
     </form>
+
   </div>
 </div>
+
+<script>
+  var simplemde = new SimpleMDE({ element: document.getElementById("user_description") });
+</script>
 
 {% endblock %}
