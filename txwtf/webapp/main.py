@@ -18,7 +18,21 @@ def index():
 @main.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html', name=current_user.name)
+
+    if current_user.header_image_url == "":
+        header_image_url = "https://bulma.io/images/placeholders/1280x960.png"
+    else:
+        header_image_url = current_user.header_image_url
+
+    if current_user.avatar_url == "":
+        avatar_url = "https://bulma.io/images/placeholders/96x96.png"
+    else:
+        avatar_url = current_user.avatar_url
+
+    return render_template(
+        'profile.html', name=current_user.name,
+        header_image_url=header_image_url, avatar_url=avatar_url,
+        email=current_user.email, description=current_user.description)
 
 
 @main.route('/assets/<path:path>')

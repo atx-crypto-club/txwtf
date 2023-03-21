@@ -14,3 +14,5 @@ class User(UserMixin, db.Model):
     email_verified = db.Column(db.Boolean)
     alternate_email_verified = db.Column(db.Boolean)
     description = db.Column(db.String(10000))
+    created_time = db.Column(db.DateTime)
+    modified_time = db.Column(db.DateTime)
