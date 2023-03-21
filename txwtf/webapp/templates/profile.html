@@ -53,54 +53,37 @@
 
     <div class="columns">
       <div class="column">
-        <form class="box" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
-          <div class="field has-text-left">
-            <label class="label">Upload avatar image</label>
-            <div class="file">
-              <label class="file-label">
-                <input class="file-input" type="file" name="avatar">
-                <span class="file-cta">
-                  <span class="file-icon">
-                    <i class="fas fa-upload"></i>
-                  </span>
-                  <span class="file-label">
-                    Choose a file…
-                  </span>
-                </span>
-              </label>
-            </div>
-          </div>
+        <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
+          <label class="label">Upload avatar image</label>
+          <input type="file" name="avatar">
           <button class="button" type="submit">Submit</button>
         </form>
       </div>
       <div class="column">
-        <form class="box" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_header_image') }}">
-          <div class="field has-text-left">
-            <label class="label">Upload header image</label>
-            <div class="file">
-              <label class="file-label">
-                <input class="file-input" type="file" name="header_image">
-                <span class="file-cta">
-                  <span class="file-icon">
-                    <i class="fas fa-upload"></i>
-                  </span>
-                  <span class="file-label">
-                    Choose a file…
-                  </span>
-                </span>
-              </label>
-            </div>
-          </div>
+        <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_header_image') }}">
+          <label class="label">Upload header image</label>
+          <input type="file" name="header_image">
           <button class="button" type="submit">Submit</button>
         </form>
       </div>
     </div>
 
-    <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_description') }}">
-      <label class="label">Update user description</label>
-      <textarea class="textarea" id="user_description" name="user_description" placeholder="e.g. Hello world"></textarea>
-      <button class="button" type="submit">Submit</button>
-    </form>
+    <div class="columns">
+      <div class="column">
+        <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
+          <label class="label">Update name</label>
+          <input class="input is-large has-background-white has-text-black" type="text" name="name" autofocus="" />
+          <button class="button" type="submit">Submit</button>
+        </form>
+      </div>
+      <div class="column">
+        <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_description') }}">
+          <label class="label">Update user description</label>
+          <textarea class="textarea" id="user_description" name="user_description" placeholder="e.g. Hello world"></textarea>
+          <button class="button" type="submit">Submit</button>
+        </form>
+      </div>
+    </div>
 
   </div>
 </div>

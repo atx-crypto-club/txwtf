@@ -98,6 +98,16 @@ def update_user_description():
     return redirect(url_for("main.profile"))
 
 
+@main.route("/update-user-name", methods=['POST'])
+@login_required
+def update_user_name():
+    name = request.form.get('name')
+    current_user.name = name
+    current_user.modified_time = datetime.now()
+    db.session.commit()
+    return redirect(url_for("main.profile"))
+
+
 @main.route('/uploads/<path:path>')
 def uploads(path):
     return send_from_directory(

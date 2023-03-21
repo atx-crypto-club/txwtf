@@ -14,13 +14,13 @@ from flask_migrate import Migrate
 
 from flask_sqlalchemy import SQLAlchemy
 
-from flask_uploads import IMAGES, UploadSet, configure_uploads
+from flask_uploads import ALL, UploadSet, configure_uploads
 
 
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 migrate = Migrate()
-upload_archive = UploadSet("archive", IMAGES)
+upload_archive = UploadSet("archive", ALL)
 
 
 def create_app(config_filename=None):
