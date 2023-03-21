@@ -1,4 +1,6 @@
+from os.path import join
 import secrets
+import tempfile
 
 from flask import Flask, render_template, send_from_directory
 
@@ -27,7 +29,9 @@ def create_app(config_filename=None):
 
     app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
-    app.config["UPLOADED_ARCHIVE_DEST"] = "/tmp/txwtf/uploads"
+    app.config["UPLOADED_ARCHIVE_DEST"] = join(
+        tempfile.gettempdir(), "txwtf", "uploads")
+    app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024  # 128MB max upload size
 
     if config_filename is not None:
         app.config.from_pyfile(config_filename)
