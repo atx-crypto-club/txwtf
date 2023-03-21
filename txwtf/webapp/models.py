@@ -13,3 +13,4 @@ class User(UserMixin, db.Model):
     alternate_email = db.Column(db.String(100))
     email_verified = db.Column(db.Boolean)
     alternate_email_verified = db.Column(db.Boolean)
+    description = db.Column(db.String(10000))
