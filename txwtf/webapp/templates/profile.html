@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block content %}
 
 <div class="columns">
@@ -32,10 +31,6 @@
     </div>    
   </div>
   <div class="column">
-    <h1 class="title">
-      Welcome, {{ name }}
-    </h1>
-    
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     <div class="notification">
@@ -49,9 +44,27 @@
     {% endif %}
     {% endwith %}
     
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
-    <p>upload avatar image</p><input type="file" name="avatar">
-    <button type="submit">Submit</button>
+    <div class="box">
+    <h1 class="title">
+      Welcome, {{ name }}
+    </h1>
+    </div>
+    <form class="box" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
+    <p>upload avatar image</p>
+    <div class="file">
+      <label class="file-label">
+        <input class="file-input" type="file" name="avatar">
+        <span class="file-cta">
+          <span class="file-icon">
+            <i class="fas fa-upload"></i>
+          </span>
+          <span class="file-label">
+            Choose a file…
+          </span>
+        </span>
+      </label>
+    </div>
+    <button class="button" type="submit">Submit</button>
     </form>
   </div>
 </div>

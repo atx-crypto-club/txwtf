@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from flask_login import login_required, login_user, logout_user
@@ -62,7 +64,9 @@ def register_post():
     # plaintext version isn't saved.
     new_user = User(
         email=email, name=name,
-        password=generate_password_hash(password, method='sha256'))
+        password=generate_password_hash(password, method='sha256'),
+        created_time=datetime.now(),
+        modified_time=datetime.now())
 
     # add the new user to the database
     db.session.add(new_user)

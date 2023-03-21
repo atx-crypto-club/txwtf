@@ -19,12 +19,12 @@ def index():
 @login_required
 def profile():
 
-    if current_user.header_image_url == "":
-        header_image_url = "https://bulma.io/images/placeholders/1280x960.png"
+    if current_user.header_image_url is None:
+        header_image_url = "/assets/img/20200126_atxcf_bg_sq-1.png"
     else:
         header_image_url = current_user.header_image_url
 
-    if current_user.avatar_url == "":
+    if current_user.avatar_url is None:
         avatar_url = "https://bulma.io/images/placeholders/96x96.png"
     else:
         avatar_url = current_user.avatar_url
