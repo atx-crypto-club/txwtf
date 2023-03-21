@@ -1,6 +1,6 @@
 import secrets
 
-from flask import Flask
+from flask import Flask, render_template
 
 from flask_cors import CORS
 
@@ -66,5 +66,9 @@ def create_app(config_filename=None):
         # since the user_id is just the primary key of our user table,
         # use it in the query for the user
         return User.query.get(int(user_id))
+
+    @login_manager.unauthorized_handler
+    def unauthorized_handler():
+        return render_template('unauthorized.html'), 401
 
     return app
