@@ -74,5 +74,12 @@ def create_app(config_filename=None):
     @login_manager.unauthorized_handler
     def unauthorized_handler():
         return render_template('unauthorized.html'), 401
+    
+    def handle_bad_request(e):
+        return render_template('error.html', error_msg="Bad request!!"), 400
+    app.register_error_handler(400, handle_bad_request)
+    def handle_404(e):
+        return render_template('error.html', error_msg="Not found!"), 404
+    app.register_error_handler(404, handle_404)
 
     return app
