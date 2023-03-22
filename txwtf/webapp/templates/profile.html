@@ -3,7 +3,9 @@
 
 <div class="box">
   <h1 class="title">
-    {{ header_text }}
+    <div class="content has-text-left">
+      {{ header_text|safe }}
+    </div>
   </h1>
 </div>
 
@@ -78,7 +80,7 @@
           </form>
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_header_text') }}">
             <label class="label">Update header text</label>
-            <input class="input is-large has-background-white has-text-black" type="text" name="user_header_text" autofocus="" />
+            <textarea class="textarea" id="user_header_text" name="user_header_text" placeholder="e.g. Hello world"></textarea>
             <button class="button" type="submit">Submit</button>
           </form>
         </div>
@@ -96,6 +98,7 @@
 
 <script>
   var simplemde = new SimpleMDE({ element: document.getElementById("user_description") });
+  var simplemde = new SimpleMDE({ element: document.getElementById("user_header_text") });
 </script>
 
 {% endblock %}
