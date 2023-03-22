@@ -14,7 +14,7 @@ from markdownify import markdownify
 
 from . import db, upload_archive
 
-from .models import UserChange, SystemLog
+from .models import UserChange, SystemLog, PostedMessage
 
 
 main = Blueprint('main', __name__)
@@ -75,6 +75,10 @@ def profile():
     else:
         email_verification = "unverified"
 
+    # get post messages for this user
+    posts = db.session.query(PostedMessage).filter(
+        PostedMessage.user_id == current_user.id).order_by(PostedMessage.post_time.desc())
+
     return render_template(
         'profile.html', name=current_user.name,
         header_image_url=header_image_url, avatar_url=avatar_url,
@@ -84,7 +88,7 @@ def profile():
         is_admin=is_admin, header_text=header_text,
         header_text_markdown=markdownify(header_text),
         email_verification=email_verification, 
-        card_image_url=card_image_url)
+        card_image_url=card_image_url, posts=posts)
 
 
 @main.route('/edit-profile')
@@ -146,6 +150,21 @@ def editprofile():
         header_text_markdown=markdownify(header_text),
         email_verification=email_verification, 
         card_image_url=card_image_url)
+
+
+@main.route('/post-message', methods=['POST'])
+@login_required
+def post_message():
+    redirect_url = request.form.get('redirect')
+    post_content = markdown(request.form.get('post_content'))
+    msg = PostedMessage(
+        user_id=current_user.id,
+        post_time=datetime.now(),
+        post_content=post_content)
+    db.session.add(msg)
+    db.session.commit()
+    flash("Message posted!")
+    return redirect(redirect_url)
 
 
 @main.route('/assets/<path:path>')

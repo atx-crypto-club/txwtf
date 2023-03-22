@@ -50,20 +50,62 @@
   </div>
   <div class="column">
 
+    <div class="box">
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+          <div class="notification is-info">
+              {{ messages[0] }}
+          </div>
+      {% endif %}
+      {% endwith %}
+      <label class="label has-text-left">Post message</label>
+      <form method="POST" action="/post-message">
+        <input type="hidden" name="redirect" value="/profile">
+        <article class="media">
+          <figure class="media-left">
+            <p class="image is-64x64">
+              <img src="{{ avatar_url }}">
+            </p>
+          </figure>
+          <div class="media-content">
+            <div class="field">
+              <p class="control">
+                <textarea class="textarea" id="post_content" name="post_content" placeholder="Add a comment..."></textarea>
+              </p>
+            </div>
+            <nav class="level">
+              <div class="level-left">
+                <div class="level-item">
+                  <button class="button is-block is-info has-background-white has-text-black">Submit</button>
+                </div>
+              </div>
+              <div class="level-right">
+                <div class="level-item">
+                  <label class="checkbox">
+                    <input type="checkbox"> Press enter to submit
+                  </label>
+                </div>
+              </div>
+            </nav>
+          </div>
+        </article>
+      </form>
+    </div>
 
+    {% for post in posts %}
     <div class="box">
       <article class="media">
         <figure class="media-left">
           <p class="image is-64x64">
-            <img src="https://bulma.io/images/placeholders/128x128.png">
+            <img src="{{ avatar_url }}">
           </p>
         </figure>
         <div class="media-content">
           <div class="content">
             <p>
-              <strong>John Smith</strong> <small>@johnsmith</small> <small>31m</small>
+              <strong>{{ name }}</strong> <small>{{ email }}</small> <small>{{ post.post_time.ctime() }}</small>
               <br>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.
+              {{ post.post_content|safe }}
             </p>
           </div>
           <nav class="level is-mobile">
@@ -85,14 +127,14 @@
         </div>
       </article>
     </div>
+    {% endfor %}
 
 
   </div>
 </div>
 
 <script>
-  var simplemde = new SimpleMDE({ element: document.getElementById("user_description") });
-  var simplemde = new SimpleMDE({ element: document.getElementById("user_header_text") });
+  var simplemde = new SimpleMDE({ element: document.getElementById("post_content") });
 </script>
 
 {% endblock %}

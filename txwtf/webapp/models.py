@@ -33,3 +33,11 @@ class SystemLog(db.Model):
     event_code = db.Column(db.Integer)
     event_time = db.Column(db.DateTime)
     event_desc = db.Column(db.String(256))
+
+
+class PostedMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
+    post_time = db.Column(db.DateTime)
+    post_content = db.Column(db.String(1024))
+    reply_to = db.Column(db.Integer)  # id of a parent posted message in a thread
