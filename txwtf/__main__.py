@@ -97,13 +97,17 @@ def version(obj):
 @click.option(
     '--config', '-c', default=None,
     help="Flask configuration file")
+@click.option(
+    '--admin', '-a', default=["t@tx.wtf"],
+    multiple=True, help="Admin users")
 @click.pass_obj
-def webapp(obj, host, port, threaded, debug, config):
+def webapp(obj, host, port, threaded, debug, config, admin):
     """
     Run the flask app
     """
     import txwtf.webapp
     app = txwtf.webapp.create_app(config_filename=config)
+    app.config['ADMINISTRATORS'] = admin
     app.run(host=host, port=port, threaded=threaded, debug=debug)
 
 

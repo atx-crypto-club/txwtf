@@ -43,11 +43,17 @@ def profile():
     else:
         modified_time = current_user.modified_time.ctime()
 
+    admins = current_app.config['ADMINISTRATORS']
+    if current_user.email in admins:
+        is_admin = True
+    else:
+        is_admin = False
+
     return render_template(
         'profile.html', name=current_user.name,
         header_image_url=header_image_url, avatar_url=avatar_url,
         email=current_user.email, description=current_user.description,
-        created_time=created_time, modified_time=modified_time)
+        created_time=created_time, modified_time=modified_time, is_admin=is_admin)
 
 
 @main.route('/assets/<path:path>')
@@ -67,11 +73,14 @@ def favicon():
 def upload_avatar():
     if "avatar" in request.files:
         saved_name = upload_archive.save(
-            request.files["avatar"], folder=str(current_user.email))
-        current_user.avatar_url = "/uploads/{}".format(saved_name)
+            request.files["avatar"],
+            folder=str(current_user.email))
+        current_user.avatar_url = "/uploads/{}".format(
+            saved_name)
         current_user.modified_time = datetime.now()
         db.session.commit()
-        flash("Avatar saved successfully as {}.".format(saved_name))
+        flash("Avatar saved successfully as {}.".format(
+            saved_name))
         return redirect(url_for("main.profile"))
 
 
@@ -80,11 +89,14 @@ def upload_avatar():
 def upload_header_image():
     if "header_image" in request.files:
         saved_name = upload_archive.save(
-            request.files["header_image"], folder=str(current_user.email))
-        current_user.header_image_url = "/uploads/{}".format(saved_name)
+            request.files["header_image"],
+            folder=str(current_user.email))
+        current_user.header_image_url = "/uploads/{}".format(
+            saved_name)
         current_user.modified_time = datetime.now()
         db.session.commit()
-        flash("Header image saved successfully as {}.".format(saved_name))
+        flash("Header image saved successfully as {}.".format(
+            saved_name))
         return redirect(url_for("main.profile"))
 
 

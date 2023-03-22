@@ -26,6 +26,11 @@
           <div class="media-content">
             <p class="title is-4">{{ name }}</p>
             <p class="subtitle is-6">{{ email }}</p>
+            {% if is_admin %}
+            <div class="notification is-danger">
+              <p class="subtitle is-4 is-italic has-text-black">Administrator</p>
+            </div>
+            {% endif %}
           </div>
         </div>
     
@@ -38,53 +43,55 @@
     </div>    
   </div>
   <div class="column">
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <div class="notification">
-      <button class="delete"></button>
-      <ul class="flashes">
-      {% for message in messages %}
-        <li>{{ message }}</li>
-      {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-    {% endwith %}
+    <div class="box">
+      <label class="label has-text-left">Edit User Profile</label>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="notification">
+        <button class="delete"></button>
+        <ul class="flashes">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% endwith %}
 
-    <div class="columns">
-      <div class="column">
-        <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
-          <label class="label">Upload avatar image</label>
-          <input type="file" name="avatar">
-          <button class="button" type="submit">Submit</button>
-        </form>
+      <div class="columns">
+        <div class="column">
+          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
+            <label class="label">Upload avatar image</label>
+            <input type="file" name="avatar">
+            <button class="button" type="submit">Submit</button>
+          </form>
+        </div>
+        <div class="column">
+          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_header_image') }}">
+            <label class="label">Upload header image</label>
+            <input type="file" name="header_image">
+            <button class="button" type="submit">Submit</button>
+          </form>
+        </div>
       </div>
-      <div class="column">
-        <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_header_image') }}">
-          <label class="label">Upload header image</label>
-          <input type="file" name="header_image">
-          <button class="button" type="submit">Submit</button>
-        </form>
+    
+      <div class="columns">
+        <div class="column">
+          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
+            <label class="label">Update name</label>
+            <input class="input is-large has-background-white has-text-black" type="text" name="name" autofocus="" />
+            <button class="button" type="submit">Submit</button>
+          </form>
+        </div>
+        <div class="column">
+          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_description') }}">
+            <label class="label">Update user description</label>
+            <textarea class="textarea" id="user_description" name="user_description" placeholder="e.g. Hello world"></textarea>
+            <button class="button" type="submit">Submit</button>
+          </form>
+        </div>
       </div>
     </div>
-
-    <div class="columns">
-      <div class="column">
-        <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
-          <label class="label">Update name</label>
-          <input class="input is-large has-background-white has-text-black" type="text" name="name" autofocus="" />
-          <button class="button" type="submit">Submit</button>
-        </form>
-      </div>
-      <div class="column">
-        <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_description') }}">
-          <label class="label">Update user description</label>
-          <textarea class="textarea" id="user_description" name="user_description" placeholder="e.g. Hello world"></textarea>
-          <button class="button" type="submit">Submit</button>
-        </form>
-      </div>
-    </div>
-
   </div>
 </div>
 
