@@ -10,6 +10,8 @@ from flask_login import current_user, login_required
 
 from markdown import markdown
 
+from markdownify import markdownify
+
 from . import db, upload_archive
 
 from .models import UserChange, SystemLog
@@ -32,6 +34,11 @@ def profile():
     else:
         header_image_url = current_user.header_image_url
 
+    if current_user.card_image_url is None:
+        card_image_url = "/assets/img/20200126_atxcf_bg_sq-1.png"
+    else:
+        card_image_url = current_user.card_image_url
+
     if current_user.avatar_url is None:
         avatar_url = "/assets/img/atxcf_logo_small.jpg"
     else:
@@ -53,17 +60,26 @@ def profile():
     else:
         is_admin = False
 
-    if current_user.header_text == "":
+    if current_user.header_text is None:
         header_text = "Welcome, {}".format(current_user.name)
     else:
         header_text = current_user.header_text
+
+    if current_user.email_verified:
+        email_verification = "verified"
+    else:
+        email_verification = "unverified"
 
     return render_template(
         'profile.html', name=current_user.name,
         header_image_url=header_image_url, avatar_url=avatar_url,
         email=current_user.email, description=current_user.description,
+        description_markdown=markdownify(current_user.description),
         created_time=created_time, modified_time=modified_time,
-        is_admin=is_admin, header_text=header_text)
+        is_admin=is_admin, header_text=header_text,
+        header_text_markdown=markdownify(header_text),
+        email_verification=email_verification, 
+        card_image_url=card_image_url)
 
 
 @main.route('/assets/<path:path>')
@@ -147,6 +163,41 @@ def upload_header_image():
         flash("Invalid request")
         return redirect(url_for("main.profile"))
 
+
+@main.route("/upload-card-image", methods=['POST'])
+@login_required
+def upload_card_image():
+    if "card_image" in request.files:
+        if request.files["card_image"].filename == "":
+            flash("Null upload!!1")
+            return redirect(url_for("main.profile"))
+        saved_name = upload_archive.save(
+            request.files["card_image"],
+            folder=str(current_user.email))
+        current_user.card_image_url = "/uploads/{}".format(
+            saved_name)
+        current_user.modified_time = datetime.now()
+        new_change = UserChange(
+            user_id=current_user.id,
+            change_code=31337, # default for now
+            change_time=datetime.now(),
+            change_desc="Changing card image to: {}".format(saved_name))
+        db.session.add(new_change)
+        new_log = SystemLog(
+            event_code=31337, # default for now
+            event_time=datetime.now(),
+            event_desc="Uploaded {}".format(saved_name))
+        db.session.add(new_log)
+        db.session.commit()
+        flash("Card image saved successfully as {}.".format(
+            saved_name))
+        logger.info("Changing user {} card image to: {}".format(
+            current_user.email, saved_name))
+        return redirect(url_for("main.profile"))
+    else:
+        flash("Invalid request")
+        return redirect(url_for("main.profile"))
+    
 
 @main.route("/update-user-description", methods=['POST'])
 @login_required

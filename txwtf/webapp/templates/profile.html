@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="box">
+<div class="box header-bg-img">
   <h1 class="title">
-    <div class="content has-text-left">
+    <div class="content has-text-left has-text-white">
       {{ header_text|safe }}
     </div>
   </h1>
@@ -14,7 +14,7 @@
     <div class="card">
       <div class="card-image">
         <figure class="image is-4by3">
-          <img src="{{ header_image_url }}" alt="Header image">
+          <img src="{{ card_image_url }}" alt="Card image">
         </figure>
       </div>
       <div class="card-content">
@@ -26,7 +26,7 @@
           </div>
           <div class="media-content">
             <p class="title is-4">{{ name }}</p>
-            <p class="subtitle is-6">{{ email }}</p>
+            <p class="subtitle is-6">{{ email }} <span class="is-7 is-italic">({{ email_verification }})</span></p>
             {% if is_admin %}
             <div class="notification is-danger">
               <p class="subtitle is-4 is-italic has-text-black">Administrator</p>
@@ -38,9 +38,11 @@
         <div class="content has-text-left">
           {{ description|safe }}
           <br>
-          <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ created_time }}">{{ created_time }}</time></span>
-          <br>
-          <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ modified_time }}">{{ modified_time }}</time></span>
+          <div class="has-text-centered">
+            <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ created_time }}">{{ created_time }}</time></span>
+            <br>
+            <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ modified_time }}">{{ modified_time }}</time></span>
+          </div>
         </div>
       </div>
     </div>    
@@ -73,21 +75,26 @@
             <input type="file" name="header_image">
             <button class="button" type="submit">Submit</button>
           </form>
-          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
-            <label class="label">Update name</label>
-            <input class="input is-large has-background-white has-text-black" type="text" name="name" autofocus="" />
-            <button class="button" type="submit">Submit</button>
-          </form>
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_header_text') }}">
             <label class="label">Update header text</label>
-            <textarea class="textarea" id="user_header_text" name="user_header_text" placeholder="e.g. Hello world"></textarea>
+            <textarea class="textarea" id="user_header_text" name="user_header_text" >{{ header_text_markdown }}</textarea>
             <button class="button" type="submit">Submit</button>
           </form>
         </div>
         <div class="column">
+          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_card_image') }}">
+            <label class="label">Upload card image (4x3)</label>
+            <input type="file" name="card_image">
+            <button class="button" type="submit">Submit</button>
+          </form>
+          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
+            <label class="label">Update name</label>
+            <input class="input is-large has-background-white has-text-black" type="text" name="name" placeholder="{{ name }}" autofocus="" />
+            <button class="button" type="submit">Submit</button>
+          </form>
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_description') }}">
             <label class="label">Update user description</label>
-            <textarea class="textarea" id="user_description" name="user_description" placeholder="e.g. Hello world"></textarea>
+            <textarea class="textarea" id="user_description" name="user_description">{{ description_markdown }}</textarea>
             <button class="button" type="submit">Submit</button>
           </form>
         </div>
