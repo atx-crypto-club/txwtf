@@ -14,7 +14,7 @@
     <div class="card">
       <div class="card-image">
         <figure class="image is-4by3">
-          <img src="{{ card_image_url }}" alt="Card image">
+          <img style="object-fit: cover;" src="{{ card_image_url }}" alt="Card image">
         </figure>
       </div>
       <div class="card-content">
@@ -45,61 +45,48 @@
           </div>
         </div>
       </div>
-    </div>    
+    </div>
+    <a class="button" href="/edit-profile">Edit</a>
   </div>
   <div class="column">
-    <div class="box">
-      {% with messages = get_flashed_messages() %}
-      {% if messages %}
-      <div class="notification">
-        <button class="delete"></button>
-        <ul class="flashes">
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-      {% endwith %}
 
-      <label class="label has-text-left">Edit User Profile</label>
-      <div class="columns">
-        <div class="column">
-          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
-            <label class="label">Upload avatar image</label>
-            <input type="file" name="avatar">
-            <button class="button" type="submit">Submit</button>
-          </form>
-          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_header_image') }}">
-            <label class="label">Upload header image</label>
-            <input type="file" name="header_image">
-            <button class="button" type="submit">Submit</button>
-          </form>
-          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_header_text') }}">
-            <label class="label">Update header text</label>
-            <textarea class="textarea" id="user_header_text" name="user_header_text" >{{ header_text_markdown }}</textarea>
-            <button class="button" type="submit">Submit</button>
-          </form>
+
+    <div class="box">
+      <article class="media">
+        <figure class="media-left">
+          <p class="image is-64x64">
+            <img src="https://bulma.io/images/placeholders/128x128.png">
+          </p>
+        </figure>
+        <div class="media-content">
+          <div class="content">
+            <p>
+              <strong>John Smith</strong> <small>@johnsmith</small> <small>31m</small>
+              <br>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.
+            </p>
+          </div>
+          <nav class="level is-mobile">
+            <div class="level-left">
+              <a class="level-item">
+                <span class="icon is-small"><i class="fas fa-reply"></i></span>
+              </a>
+              <a class="level-item">
+                <span class="icon is-small"><i class="fas fa-retweet"></i></span>
+              </a>
+              <a class="level-item">
+                <span class="icon is-small"><i class="fas fa-heart"></i></span>
+              </a>
+            </div>
+          </nav>
         </div>
-        <div class="column">
-          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_card_image') }}">
-            <label class="label">Upload card image (4x3)</label>
-            <input type="file" name="card_image">
-            <button class="button" type="submit">Submit</button>
-          </form>
-          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
-            <label class="label">Update name</label>
-            <input class="input is-large has-background-white has-text-black" type="text" name="name" placeholder="{{ name }}" autofocus="" />
-            <button class="button" type="submit">Submit</button>
-          </form>
-          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_description') }}">
-            <label class="label">Update user description</label>
-            <textarea class="textarea" id="user_description" name="user_description">{{ description_markdown }}</textarea>
-            <button class="button" type="submit">Submit</button>
-          </form>
+        <div class="media-right">
+          <button class="delete"></button>
         </div>
-      </div>
+      </article>
     </div>
+
+
   </div>
 </div>
 
