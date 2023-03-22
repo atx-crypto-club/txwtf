@@ -3,7 +3,7 @@
 
 <div class="box">
   <h1 class="title">
-    Welcome, {{ name }}
+    {{ header_text }}
   </h1>
 </div>
 
@@ -45,7 +45,6 @@
   </div>
   <div class="column">
     <div class="box">
-      <label class="label has-text-left">Edit User Profile</label>
       {% with messages = get_flashed_messages() %}
       {% if messages %}
       <div class="notification">
@@ -59,6 +58,7 @@
       {% endif %}
       {% endwith %}
 
+      <label class="label has-text-left">Edit User Profile</label>
       <div class="columns">
         <div class="column">
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_avatar') }}">
@@ -74,6 +74,11 @@
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
             <label class="label">Update name</label>
             <input class="input is-large has-background-white has-text-black" type="text" name="name" autofocus="" />
+            <button class="button" type="submit">Submit</button>
+          </form>
+          <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_header_text') }}">
+            <label class="label">Update header text</label>
+            <input class="input is-large has-background-white has-text-black" type="text" name="user_header_text" autofocus="" />
             <button class="button" type="submit">Submit</button>
           </form>
         </div>

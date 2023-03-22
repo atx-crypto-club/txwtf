@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 import os
 
 from flask import (
@@ -15,6 +16,7 @@ from .models import UserChange, SystemLog
 
 
 main = Blueprint('main', __name__)
+logger = logging.getLogger(__name__)
 
 
 @main.route('/')
@@ -51,11 +53,17 @@ def profile():
     else:
         is_admin = False
 
+    if current_user.header_text == "":
+        header_text = "Welcome, {}".format(current_user.name)
+    else:
+        header_text = current_user.header_text
+
     return render_template(
         'profile.html', name=current_user.name,
         header_image_url=header_image_url, avatar_url=avatar_url,
         email=current_user.email, description=current_user.description,
-        created_time=created_time, modified_time=modified_time, is_admin=is_admin)
+        created_time=created_time, modified_time=modified_time,
+        is_admin=is_admin, header_text=header_text)
 
 
 @main.route('/assets/<path:path>')
@@ -74,6 +82,9 @@ def favicon():
 @login_required
 def upload_avatar():
     if "avatar" in request.files:
+        if request.files["avatar"].filename == "":
+            flash("Null upload!!1")
+            return redirect(url_for("main.profile"))
         saved_name = upload_archive.save(
             request.files["avatar"],
             folder=str(current_user.email))
@@ -94,6 +105,11 @@ def upload_avatar():
         db.session.commit()
         flash("Avatar saved successfully as {}.".format(
             saved_name))
+        logger.info("Changing user {} avatar image to: {}".format(
+            current_user.email, saved_name))
+        return redirect(url_for("main.profile"))
+    else:
+        flash("Invalid request")
         return redirect(url_for("main.profile"))
 
 
@@ -101,6 +117,9 @@ def upload_avatar():
 @login_required
 def upload_header_image():
     if "header_image" in request.files:
+        if request.files["header_image"].filename == "":
+            flash("Null upload!!1")
+            return redirect(url_for("main.profile"))
         saved_name = upload_archive.save(
             request.files["header_image"],
             folder=str(current_user.email))
@@ -121,6 +140,11 @@ def upload_header_image():
         db.session.commit()
         flash("Header image saved successfully as {}.".format(
             saved_name))
+        logger.info("Changing user {} header image to: {}".format(
+            current_user.email, saved_name))
+        return redirect(url_for("main.profile"))
+    else:
+        flash("Invalid request")
         return redirect(url_for("main.profile"))
 
 
@@ -137,6 +161,8 @@ def update_user_description():
         change_desc="Changing description to: {}".format(desc))
     db.session.add(new_change)
     db.session.commit()
+    logger.info("Changing user {} description to: {}".format(
+        current_user.email, desc))
     return redirect(url_for("main.profile"))
 
 
@@ -153,6 +179,26 @@ def update_user_name():
         change_desc="Changing name to: {}".format(name))
     db.session.add(new_change)
     db.session.commit()
+    logger.info("Changing user {} name to: {}".format(
+        current_user.email, name))
+    return redirect(url_for("main.profile"))
+
+
+@main.route("/update-user-header-text", methods=['POST'])
+@login_required
+def update_user_header_text():
+    header_text = request.form.get('user_header_text')
+    current_user.header_text = markdown(header_text)
+    current_user.modified_time = datetime.now()
+    new_change = UserChange(
+        user_id=current_user.id,
+        change_code=31337, # default for now
+        change_time=datetime.now(),
+        change_desc="Changing header text to: {}".format(header_text))
+    db.session.add(new_change)
+    db.session.commit()
+    logger.info("Changing user {} header text to: {}".format(
+        current_user.email, header_text))
     return redirect(url_for("main.profile"))
 
 
