@@ -155,7 +155,6 @@ def editprofile():
 @main.route('/u/<email>')
 @login_required
 def user_view(email):
-
     user = db.session.query(User).filter(User.email == email).first()
     if user is None:
         return render_template('error.html', error_msg='Unknown user!')
@@ -221,6 +220,17 @@ def user_view(email):
         avatar_url=avatar_url, created_time=created_time,
         modified_time=modified_time, header_text=header_text,
         description_markdown=description_markdown, email_verification=email_verification)
+
+
+@main.route('/system-log')
+@login_required
+def system_log():
+    admins = current_app.config['ADMINISTRATORS']
+    if current_user.email not in admins:
+        return render_template('unauthorized.html'), 401
+    
+    logs = db.session.query(SystemLog).order_by(SystemLog.event_time.desc())
+    return render_template('systemlog.html', logs=logs)
 
 
 @main.route('/post-message', methods=['POST'])

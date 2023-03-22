@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">
+  System Log
+</h1>
+<h2 class="subtitle">
+  many crypto, wow
+</h2>
+<img src="/assets/img/atxcf_logo_small.jpg">
+
+<table class="table" style="font-family:'Courier New', Courier, monospace">
+    <thead>
+      <tr>
+        <th>Event Code</th>
+        <th>Time</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.event_code }}</td>
+            <td>{{ log.event_time.ctime() }}</td>
+            <td>{{ log.event_desc }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
