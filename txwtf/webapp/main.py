@@ -1,6 +1,5 @@
 from datetime import datetime
 import os
-import pathlib
 
 from flask import (
     Blueprint, render_template, send_from_directory, request,
@@ -11,6 +10,9 @@ from flask_login import current_user, login_required
 from markdown import markdown
 
 from . import db, upload_archive
+
+from .models import UserChange, SystemLog
+
 
 main = Blueprint('main', __name__)
 
@@ -78,6 +80,17 @@ def upload_avatar():
         current_user.avatar_url = "/uploads/{}".format(
             saved_name)
         current_user.modified_time = datetime.now()
+        new_change = UserChange(
+            user_id=current_user.id,
+            change_code=31337, # default for now
+            change_time=datetime.now(),
+            change_desc="Changing avatar to: {}".format(saved_name))
+        db.session.add(new_change)
+        new_log = SystemLog(
+            event_code=31337, # default for now
+            event_time=datetime.now(),
+            event_desc="Uploaded {}".format(saved_name))
+        db.session.add(new_log)
         db.session.commit()
         flash("Avatar saved successfully as {}.".format(
             saved_name))
@@ -94,6 +107,17 @@ def upload_header_image():
         current_user.header_image_url = "/uploads/{}".format(
             saved_name)
         current_user.modified_time = datetime.now()
+        new_change = UserChange(
+            user_id=current_user.id,
+            change_code=31337, # default for now
+            change_time=datetime.now(),
+            change_desc="Changing header to: {}".format(saved_name))
+        db.session.add(new_change)
+        new_log = SystemLog(
+            event_code=31337, # default for now
+            event_time=datetime.now(),
+            event_desc="Uploaded {}".format(saved_name))
+        db.session.add(new_log)
         db.session.commit()
         flash("Header image saved successfully as {}.".format(
             saved_name))
@@ -106,6 +130,12 @@ def update_user_description():
     desc = request.form.get('user_description')
     current_user.description = markdown(desc)
     current_user.modified_time = datetime.now()
+    new_change = UserChange(
+        user_id=current_user.id,
+        change_code=31337, # default for now
+        change_time=datetime.now(),
+        change_desc="Changing description to: {}".format(desc))
+    db.session.add(new_change)
     db.session.commit()
     return redirect(url_for("main.profile"))
 
@@ -116,6 +146,12 @@ def update_user_name():
     name = request.form.get('name')
     current_user.name = name
     current_user.modified_time = datetime.now()
+    new_change = UserChange(
+        user_id=current_user.id,
+        change_code=31337, # default for now
+        change_time=datetime.now(),
+        change_desc="Changing name to: {}".format(name))
+    db.session.add(new_change)
     db.session.commit()
     return redirect(url_for("main.profile"))
 
