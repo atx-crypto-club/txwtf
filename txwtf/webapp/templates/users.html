@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="box header-bg-img">
+  <h1 class="title">
+    <div class="content has-text-left has-text-white">
+      {{ user.header_text|safe }}
+    </div>
+  </h1>
+</div>
+
+<div class="columns">
+  <div class="column is-one-quarter">
+    <div class="card">
+      <div class="card-image">
+        <figure class="image is-4by3">
+          <img style="object-fit: cover;" src="{{ card_image_url }}" alt="Card image">
+        </figure>
+      </div>
+      <div class="card-content">
+        <div class="media">
+          <div class="media-left">
+            <figure class="image is-48x48">
+              <img src="{{ avatar_url }}" alt="Avatar image">
+            </figure>
+          </div>
+          <div class="media-content">
+            <p class="title is-4">{{ user.name }}</p>
+            <p class="subtitle is-6">{{ user.email }} <span class="is-7 is-italic">({{ email_verification }})</span></p>
+            {% if is_admin %}
+            <div class="notification is-danger">
+              <p class="subtitle is-4 is-italic has-text-black">Administrator</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+    
+        <div class="content has-text-left">
+          {{ user.description|safe }}
+          <br>
+          <div class="has-text-centered">
+            <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ created_time }}">{{ user.created_time }}</time></span>
+            <br>
+            <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ modified_time }}">{{ user.modified_time }}</time></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% if current_user.id == user.id %}
+    <a class="button" href="/edit-profile">Edit</a>
+    {% endif %}
+  </div>
+  <div class="column">
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="box">
+        <div class="notification is-info">
+            {{ messages[0] }}
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% for post in posts %}
+    <div class="box">
+      <article class="media">
+        <figure class="media-left">
+          <p class="image is-64x64">
+            <img src="{{ avatar_url }}">
+          </p>
+        </figure>
+        <div class="media-content">
+          <div class="content">
+            <p>
+              <strong>{{ user.name }}</strong> <small>{{ user.email }}</small> <small>{{ post.post_time.ctime() }}</small>
+              <br>
+              {{ post.post_content|safe }}
+            </p>
+          </div>
+          <nav class="level is-mobile">
+            <div class="level-left">
+              <a class="level-item">
+                <span class="icon is-small"><i class="fas fa-reply"></i></span>
+              </a>
+              <a class="level-item">
+                <span class="icon is-small"><i class="fas fa-retweet"></i></span>
+              </a>
+              <a class="level-item">
+                <span class="icon is-small"><i class="fas fa-heart"></i></span>
+              </a>
+            </div>
+          </nav>
+        </div>
+        <div class="media-right">
+          <button class="delete"></button>
+        </div>
+      </article>
+    </div>
+    {% endfor %}
+
+
+  </div>
+</div>
+
+<script>
+  var simplemde = new SimpleMDE({ element: document.getElementById("post_content") });
+</script>
+
+{% endblock %}
