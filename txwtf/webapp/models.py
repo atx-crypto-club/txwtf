@@ -10,6 +10,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(1000))
     avatar_url = db.Column(db.String(1000))
     header_image_url = db.Column(db.String(1000))
+    header_text = db.Column(db.String(256))
     card_image_url = db.Column(db.String(1000))
     alternate_email = db.Column(db.String(100))
     email_verified = db.Column(db.Boolean)

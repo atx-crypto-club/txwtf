@@ -5,7 +5,6 @@
   <h1 class="title">
     Welcome, {{ name }}
   </h1>
-  <p class="is-small">account created <span class="is-italic">{{ created_time }}</span></p>
 </div>
 
 <div class="columns">
@@ -37,7 +36,9 @@
         <div class="content has-text-left">
           {{ description|safe }}
           <br>
-          <time class="is-italic" datetime="{{ modified_time }}">{{ modified_time }}</time>
+          <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ created_time }}">{{ created_time }}</time></span>
+          <br>
+          <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ modified_time }}">{{ modified_time }}</time></span>
         </div>
       </div>
     </div>    
@@ -65,18 +66,11 @@
             <input type="file" name="avatar">
             <button class="button" type="submit">Submit</button>
           </form>
-        </div>
-        <div class="column">
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.upload_header_image') }}">
             <label class="label">Upload header image</label>
             <input type="file" name="header_image">
             <button class="button" type="submit">Submit</button>
           </form>
-        </div>
-      </div>
-    
-      <div class="columns">
-        <div class="column">
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
             <label class="label">Update name</label>
             <input class="input is-large has-background-white has-text-black" type="text" name="name" autofocus="" />
