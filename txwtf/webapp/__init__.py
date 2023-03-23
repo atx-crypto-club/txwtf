@@ -16,6 +16,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 from flask_uploads import ALL, UploadSet, configure_uploads
 
+from markdownify import markdownify
+
 
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
@@ -81,5 +83,8 @@ def create_app(config_filename=None):
     def handle_404(e):
         return render_template('error.html', error_msg="Not found!"), 404
     app.register_error_handler(404, handle_404)
+
+    # add useful functions to jinja2 rendering
+    app.jinja_env.globals.update(markdownify=markdownify)
 
     return app
