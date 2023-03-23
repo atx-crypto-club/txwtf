@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="columns">
+    <div class="column is-one-quarter">
+        <div class="box">
+            <h1 class="title">
+              tx.wtf
+            </h1>
+            <h2 class="subtitle">
+              many crypto, wow
+            </h2>
+            <img src="/assets/img/atxcf_logo_small.jpg">
+        </div>
+        <div class="box post-box-img"></div>
+    </div>
+    <div class="column has-text-left">
+        <div class="box has-text-centered post-box-img is-bold">
+            <h1>Users</h1>
+        </div>
+        <div class="box">
+            <table class="table" style="font-size: smaller; font-family:'Courier New', Courier, monospace">
+                <thead>
+                  <tr>
+                    <th>Avatar</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>LastMod</th>
+                  </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <a href="/u/{{ user.email }}">
+                                <figure class="image is-32x32">
+                                    <img src="{{ user.avatar_url }}">
+                                </figure>
+                            </a>
+                        </td>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.modified_time.ctime() }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

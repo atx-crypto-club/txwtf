@@ -138,6 +138,15 @@ def user_view(email):
     return render_template('users.html', **args)
 
 
+@main.route('/user-list')
+@login_required
+def user_list():
+    return render_template(
+        'userlist.html',
+        users=db.session.query(User).order_by(
+            User.modified_time.desc()).all())
+
+
 @main.route('/system-log')
 @login_required
 def system_log():

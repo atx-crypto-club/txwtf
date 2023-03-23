@@ -43,7 +43,7 @@ def login_post():
             user.email, user.id))
     db.session.add(new_log)
     db.session.commit()
-    return redirect(url_for('main.profile'))
+    return redirect(url_for('main.user_view', email=user.email))
 
 
 @auth.route('/register')

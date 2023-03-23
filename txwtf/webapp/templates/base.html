@@ -76,8 +76,8 @@
                     <div id="navbarMenuHeroA" class="navbar-menu">
                         <div class="navbar-start">
                             {% if current_user.is_authenticated %}
-                            <a href="{{ url_for('main.profile') }}" class="navbar-item">
-                                Profile
+                            <a href="{{ url_for('main.user_list') }}" class="navbar-item">
+                                User List
                             </a>
                             {% endif %}
                             <a href="{{ url_for('main.posts') }}" class="navbar-item">
