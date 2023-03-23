@@ -263,6 +263,7 @@ def system_log():
 def posts():
     dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
     posts = []
+    logged_in = hasattr(current_user, 'email_verified')
     for dbpost in dbposts:
         class PostInfo(object):
             pass
@@ -272,12 +273,15 @@ def posts():
         if post.avatar_url is None:
             post.avatar_url = "/assets/img/atxcf_logo_small.jpg"
         post.name = user.name
-        post.email = user.email
+        if not logged_in:
+            post.email = ""
+        else:
+            post.email = user.email
         post.post_time = dbpost.post_time
         post.post_content = dbpost.post_content
         posts.append(post)
 
-    if hasattr(current_user, 'email_verified') and current_user.email_verified:
+    if logged_in and current_user.email_verified:
         email_verification = "verified"
     else:
         email_verification = "unverified"
