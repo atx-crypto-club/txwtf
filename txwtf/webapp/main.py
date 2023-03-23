@@ -170,13 +170,8 @@ def posts():
         post.post_time = dbpost.post_time
         post.post_content = dbpost.post_content
         posts.append(post)
-
-    if logged_in and current_user.email_verified:
-        email_verification = "verified"
-    else:
-        email_verification = "unverified"
     
-    return render_template('posts.html', posts=posts, email_verification=email_verification)
+    return render_template('posts.html', posts=posts)
 
 
 @main.route('/post-message', methods=['POST'])

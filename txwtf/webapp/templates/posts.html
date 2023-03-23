@@ -18,7 +18,25 @@
             </div>
             <div class="media-content">
               <p class="title is-4">{{ current_user.name }}</p>
-              <p class="subtitle is-6">{{ current_user.email }} <span class="is-7 is-italic">({{ email_verification }})</span></p>
+              <p class="subtitle is-6">{{ current_user.email }}
+                <span class="is-7 is-italic">
+                  {% if current_user.email_verified %}
+                  <span class="icon-text">
+                    <span class="icon has-text-success">
+                      <i class="fas fa-check-square"></i>
+                    </span>
+                    <span>verified</span>
+                  </span>
+                  {% else %}
+                  <span class="icon-text">
+                    <span class="icon has-text-warning">
+                      <i class="fas fa-exclamation-triangle"></i>
+                    </span>
+                    <span>unverified</span>
+                  </span>
+                  {% endif %}
+                </span>
+              </p>
               {% if is_admin %}
               <div class="notification is-danger">
                 <p class="subtitle is-4 is-italic has-text-black">Administrator</p>

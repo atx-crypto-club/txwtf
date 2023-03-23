@@ -107,7 +107,7 @@
           </form>
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_name') }}">
             <label class="label">Update name</label>
-            <input class="input is-large has-background-white has-text-black" type="text" name="name" placeholder="{{ name }}" autofocus="" value="{{ name }}" />
+            <input class="input is-large has-background-white has-text-black" type="text" name="name" placeholder="{{ current_user.name }}" autofocus="" value="{{ current_user.name }}" />
             <button class="button" type="submit">Submit</button>
           </form>
           <form class="box has-text-left" method="POST" enctype="multipart/form-data" action="{{ url_for('main.update_user_description') }}">
