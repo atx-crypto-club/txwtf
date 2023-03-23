@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="box header-bg-img">
+<div class="box header-bg-img" style="background-image: url('{{ user.header_image_url }}') ;">
   <h1 class="title">
     <div class="content has-text-left has-text-white">
       {{ user.header_text|safe }}
@@ -14,19 +14,37 @@
     <div class="card">
       <div class="card-image">
         <figure class="image is-4by3">
-          <img style="object-fit: cover;" src="{{ card_image_url }}" alt="Card image">
+          <img style="object-fit: cover;" src="{{ user.card_image_url }}" alt="Card image">
         </figure>
       </div>
       <div class="card-content">
         <div class="media">
           <div class="media-left">
             <figure class="image is-48x48">
-              <img src="{{ avatar_url }}" alt="Avatar image">
+              <img src="{{ user.avatar_url }}" alt="Avatar image">
             </figure>
           </div>
           <div class="media-content">
             <p class="title is-4">{{ user.name }}</p>
-            <p class="subtitle is-6">{{ user.email }} <span class="is-7 is-italic">({{ email_verification }})</span></p>
+            <p class="subtitle is-6">{{ user.email }} 
+              <span class="is-7 is-italic">
+                {% if user.email_verified %}
+                <span class="icon-text">
+                  <span class="icon has-text-success">
+                    <i class="fas fa-check-square"></i>
+                  </span>
+                  <span>verified</span>
+                </span>
+                {% else %}
+                <span class="icon-text">
+                    <span class="icon has-text-warning">
+                      <i class="fas fa-exclamation-triangle"></i>
+                    </span>
+                    <span>unverified</span>
+                </span>
+                {% endif %}
+              </span>
+            </p>
             {% if is_admin %}
             <div class="notification is-danger">
               <p class="subtitle is-4 is-italic has-text-black">Administrator</p>

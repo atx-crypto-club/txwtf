@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="box header-bg-img">
+<div class="box header-bg-img" style="background-image: url('{{ current_user.header_image_url }}') ;">
   <h1 class="title">
     <div class="content has-text-left has-text-white">
       {{ header_text|safe }}
