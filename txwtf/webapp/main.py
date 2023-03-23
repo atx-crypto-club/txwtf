@@ -220,7 +220,7 @@ def user_view(email):
 
     # get post messages for this user
     posts = db.session.query(PostedMessage).filter(
-        PostedMessage.user_id == user.id).order_by(PostedMessage.post_time.desc())
+        PostedMessage.user_id == user.id).order_by(PostedMessage.post_time.desc()).all()
     admins = current_app.config['ADMINISTRATORS']
     if user.email in admins:
         is_admin = True

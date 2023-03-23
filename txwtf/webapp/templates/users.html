@@ -67,6 +67,12 @@
     </button>
     {% endif %}
 
+    {% if posts|length == 0 %}
+    <div class="box">
+      <p>No posts yet.</p>
+    </div>
+    {% endif %}
+
     {% for post in posts %}
     <div class="box">
       <article class="media">
