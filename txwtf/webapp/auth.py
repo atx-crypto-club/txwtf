@@ -2,12 +2,12 @@ from datetime import datetime
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
-from flask_login import login_required, login_user, logout_user
+from flask_login import current_user, login_required, login_user, logout_user
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import db
-from .models import User
+from .models import User, UserChange, SystemLog
 
 
 auth = Blueprint('auth', __name__)
@@ -36,6 +36,13 @@ def login_post():
         return redirect(url_for('auth.login'))
 
     login_user(user, remember=remember)
+    new_log = SystemLog(
+        event_code=31337, # default for now
+        event_time=datetime.now(),
+        event_desc="user {} [{}] logged in".format(
+            user.email, user.id))
+    db.session.add(new_log)
+    db.session.commit()
     return redirect(url_for('main.profile'))
 
 
@@ -70,6 +77,21 @@ def register_post():
 
     # add the new user to the database
     db.session.add(new_user)
+
+    new_change = UserChange(
+        user_id=new_user.id,
+        change_code=31337, # default for now
+        change_time=datetime.now(),
+        change_desc="creating new user {} [{}]".format(
+        new_user.email, new_user.id))
+    db.session.add(new_change)
+    new_log = SystemLog(
+        event_code=31337, # default for now
+        event_time=datetime.now(),
+        event_desc="creating new user {} [{}]".format(
+        new_user.email, new_user.id))
+    db.session.add(new_log)
+
     db.session.commit()
 
     return redirect(url_for('auth.login'))
@@ -78,5 +100,12 @@ def register_post():
 @auth.route('/logout')
 @login_required
 def logout():
+    new_log = SystemLog(
+        event_code=31337, # default for now
+        event_time=datetime.now(),
+        event_desc="user {} [{}] logging out".format(
+            current_user.email, current_user.id))
+    db.session.add(new_log)
+    db.session.commit()
     logout_user()
     return redirect(url_for('main.index'))
