@@ -140,16 +140,29 @@ def editprofile():
     else:
         email_verification = "unverified"
 
-    return render_template(
-        'editprofile.html', name=current_user.name,
-        header_image_url=header_image_url, avatar_url=avatar_url,
-        email=current_user.email, description=current_user.description,
-        description_markdown=description_markdown,
-        created_time=created_time, modified_time=modified_time,
-        is_admin=is_admin, header_text=header_text,
-        header_text_markdown=markdownify(header_text),
-        email_verification=email_verification, 
-        card_image_url=card_image_url)
+    # get changes for this user
+    changes = db.session.query(UserChange).filter(
+        UserChange.user_id == current_user.id).order_by(
+            UserChange.change_time.desc())
+
+    args = {
+        "name": current_user.name,
+        "header_image_url": header_image_url,
+        "avatar_url": avatar_url,
+        "email": current_user.email,
+        "description": current_user.description,
+        "description_markdown": description_markdown,
+        "created_time": created_time,
+        "modified_time": modified_time,
+        "is_admin": is_admin,
+        "header_text": header_text,
+        "header_text_markdown": markdownify(header_text),
+        "email_verification": email_verification,
+        "card_image_url": card_image_url,
+        "changes": changes
+    }
+
+    return render_template('editprofile.html', **args)
 
 
 @main.route('/u/<email>')
