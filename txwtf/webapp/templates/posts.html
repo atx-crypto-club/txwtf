@@ -103,15 +103,17 @@
         <div class="box">
             <article class="media">
                 <figure class="media-left">
-                <p class="image is-64x64">
                     {% if current_user.is_authenticated %}
                     <a href="/u/{{ post.email }}">
-                      <img src="{{ post.avatar_url }}">
+                      <figure class="image is-64x64">
+                          <img src="{{ post.avatar_url }}">
+                      </figure>
                     </a>
                     {% else %}
-                    <img src="{{ post.avatar_url }}">
+                    <figure class="image is-64x64">
+                      <img src="{{ post.avatar_url }}">
+                    </figure>
                     {% endif %}
-                </p>
                 </figure>
                 <div class="media-content">
                   <div class="content">
