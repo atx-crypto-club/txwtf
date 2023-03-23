@@ -61,6 +61,12 @@
     {% endif %}
     {% endwith %}
 
+    {% if current_user.id == user.id %}
+    <button class="js-modal-trigger" data-target="modal-post">
+      Post message
+    </button>
+    {% endif %}
+
     {% for post in posts %}
     <div class="box">
       <article class="media">
@@ -98,9 +104,102 @@
       </article>
     </div>
     {% endfor %}
-
-
   </div>
 </div>
+
+{% if current_user.id == user.id %}
+<div id="modal-post" class="modal">
+  <div class="modal-background"></div>
+
+  <div class="modal-content">
+    <div class="box">
+      <label class="label has-text-left">Post message</label>
+      <form method="POST" action="/post-message">
+        <input type="hidden" name="redirect" value="/u/{{ user.email }}">
+        <article class="media">
+          <figure class="media-left">
+            <p class="image is-64x64">
+              <img src="{{ current_user.avatar_url }}">
+            </p>
+          </figure>
+          <div class="media-content">
+            <div class="field">
+              <p class="control">
+                <textarea class="textarea" id="post_content" name="post_content" placeholder="Add a comment..."></textarea>
+              </p>
+            </div>
+            <nav class="level">
+              <div class="level-left">
+                <div class="level-item">
+                  <button class="button is-block is-info has-background-white has-text-black">Submit</button>
+                </div>
+              </div>
+              <div class="level-right">
+                <div class="level-item">
+                  <label class="checkbox">
+                    <input type="checkbox"> Hidden (doesn't work yet)
+                  </label>
+                </div>
+              </div>
+            </nav>
+          </div>
+        </article>
+      </form>
+    </div>
+  </div>
+  <button class="modal-close is-large" aria-label="close"></button>
+</div>
+{% endif %}
+
+{% if current_user.id == user.id %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    var simplemde = new SimpleMDE({ element: document.getElementById("post_content") });
+
+  // Functions to open and close a modal
+  function openModal($el) {
+    $el.classList.add('is-active');
+  }
+
+  function closeModal($el) {
+    $el.classList.remove('is-active');
+  }
+
+  function closeAllModals() {
+    (document.querySelectorAll('.modal') || []).forEach(($modal) => {
+      closeModal($modal);
+    });
+  }
+
+  // Add a click event on buttons to open a specific modal
+  (document.querySelectorAll('.js-modal-trigger') || []).forEach(($trigger) => {
+    const modal = $trigger.dataset.target;
+    const $target = document.getElementById(modal);
+
+    $trigger.addEventListener('click', () => {
+      openModal($target);
+    });
+  });
+
+  // Add a click event on various child elements to close the parent modal
+  (document.querySelectorAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button') || []).forEach(($close) => {
+    const $target = $close.closest('.modal');
+
+    $close.addEventListener('click', () => {
+      closeModal($target);
+    });
+  });
+
+  // Add a keyboard event to close all modals
+  document.addEventListener('keydown', (event) => {
+    const e = event || window.event;
+
+    if (e.keyCode === 27) { // Escape key
+      closeAllModals();
+    }
+  });
+});
+</script>
+{% endif %}
 
 {% endblock %}
