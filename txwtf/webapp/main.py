@@ -288,6 +288,7 @@ def posts():
     
     return render_template('posts.html', posts=posts, email_verification=email_verification)
 
+
 @main.route('/post-message', methods=['POST'])
 @login_required
 def post_message():

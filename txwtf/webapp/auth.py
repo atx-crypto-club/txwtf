@@ -73,7 +73,12 @@ def register_post():
         email=email, name=name,
         password=generate_password_hash(password, method='sha256'),
         created_time=datetime.now(),
-        modified_time=datetime.now())
+        modified_time=datetime.now(),
+        avatar_url="/assets/img/atxcf_logo_small.jpg",
+        card_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
+        header_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
+        header_text=name,
+        description="{} is on the scene".format(name))
 
     # add the new user to the database
     db.session.add(new_user)
