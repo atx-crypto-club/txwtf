@@ -44,6 +44,15 @@
             background-size:  cover;
             background-color: #999;
         }
+
+        .post-box-img { 
+            background-image: url('/assets/img/20200126_atxcf_bg_sq-1.png') ;
+            background-position: center center;
+            background-repeat:  no-repeat;
+            background-attachment: scroll;
+            background-size:  cover;
+            background-color: #999;
+        }
     </style>
 </head>
 
@@ -72,6 +81,9 @@
                                 Profile
                             </a>
                             {% endif %}
+                            <a href="{{ url_for('main.posts') }}" class="navbar-item">
+                                Posts
+                            </a>
                         </div>
                         <div class="navbar-end">
                             {% if not current_user.is_authenticated %}

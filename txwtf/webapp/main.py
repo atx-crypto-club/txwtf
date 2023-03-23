@@ -227,12 +227,25 @@ def user_view(email):
     else:
         is_admin = False
 
-    return render_template(
-        'users.html', user=user, posts=posts, is_admin=is_admin,
-        header_image_url=header_image_url, card_image_url=card_image_url,
-        avatar_url=avatar_url, created_time=created_time,
-        modified_time=modified_time, header_text=header_text,
-        description_markdown=description_markdown, email_verification=email_verification)
+    args = {
+        "user": user,
+        "posts": posts,
+        "is_admin": is_admin,
+        "name": current_user.name,
+        "header_image_url": header_image_url,
+        "avatar_url": avatar_url,
+        "email": current_user.email,
+        "description": current_user.description,
+        "description_markdown": description_markdown,
+        "created_time": created_time,
+        "modified_time": modified_time,
+        "header_text": header_text,
+        "header_text_markdown": markdownify(header_text),
+        "email_verification": email_verification,
+        "card_image_url": card_image_url
+    }
+
+    return render_template('users.html', **args)
 
 
 @main.route('/system-log')
@@ -245,6 +258,31 @@ def system_log():
     logs = db.session.query(SystemLog).order_by(SystemLog.event_time.desc())
     return render_template('systemlog.html', logs=logs)
 
+
+@main.route('/posts')
+def posts():
+    dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
+    posts = []
+    for dbpost in dbposts:
+        class PostInfo(object):
+            pass
+        post = PostInfo()
+        user = db.session.query(User).filter(User.id == dbpost.user_id).first()
+        post.avatar_url = user.avatar_url
+        if post.avatar_url is None:
+            post.avatar_url = "/assets/img/atxcf_logo_small.jpg"
+        post.name = user.name
+        post.email = user.email
+        post.post_time = dbpost.post_time
+        post.post_content = dbpost.post_content
+        posts.append(post)
+
+    if hasattr(current_user, 'email_verified') and current_user.email_verified:
+        email_verification = "verified"
+    else:
+        email_verification = "unverified"
+    
+    return render_template('posts.html', posts=posts, email_verification=email_verification)
 
 @main.route('/post-message', methods=['POST'])
 @login_required

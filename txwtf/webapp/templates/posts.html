@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="columns">
+    <div class="column is-one-quarter">
+      {% if current_user.is_authenticated %}
+      <div class="card">
+        <div class="card-image">
+          <figure class="image is-4by3">
+            <img style="object-fit: cover;" src="{{ current_user.card_image_url }}" alt="Card image">
+          </figure>
+        </div>
+        <div class="card-content">
+          <div class="media">
+            <div class="media-left">
+              <figure class="image is-48x48">
+                <img src="{{ current_user.avatar_url }}" alt="Avatar image">
+              </figure>
+            </div>
+            <div class="media-content">
+              <p class="title is-4">{{ current_user.name }}</p>
+              <p class="subtitle is-6">{{ current_user.email }} <span class="is-7 is-italic">({{ email_verification }})</span></p>
+              {% if is_admin %}
+              <div class="notification is-danger">
+                <p class="subtitle is-4 is-italic has-text-black">Administrator</p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+      
+          <div class="content has-text-left">
+            {{ current_user.description|safe }}
+            <br>
+            <div class="has-text-centered">
+              <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ created_time }}">{{ current_user.created_time }}</time></span>
+              <br>
+              <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ modified_time }}">{{ current_user.modified_time }}</time></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="box">
+      <h1 class="title">
+        tx.wtf
+      </h1>
+      <h2 class="subtitle">
+        many crypto, wow
+      </h2>
+      <img src="/assets/img/atxcf_logo_small.jpg">
+      <p>Log in to post!</p>
+      {% endif %}
+      </div>
+
+      <div class="box post-box-img">
+      </div>
+    </div>
+    <div class="column">
+        {% if current_user.is_authenticated %}
+        <div class="box">
+          {% with messages = get_flashed_messages() %}
+          {% if messages %}
+              <div class="notification is-info">
+                  {{ messages[0] }}
+              </div>
+          {% endif %}
+          {% endwith %}
+          <label class="label has-text-left">Post message</label>
+          <form method="POST" action="/post-message">
+            <input type="hidden" name="redirect" value="/posts">
+            <article class="media">
+              <figure class="media-left">
+                <p class="image is-64x64">
+                  <img src="{{ current_user.avatar_url }}">
+                </p>
+              </figure>
+              <div class="media-content">
+                <div class="field">
+                  <p class="control">
+                    <textarea class="textarea" id="post_content" name="post_content" placeholder="Add a comment..."></textarea>
+                  </p>
+                </div>
+                <nav class="level">
+                  <div class="level-left">
+                    <div class="level-item">
+                      <button class="button is-block is-info has-background-white has-text-black">Submit</button>
+                    </div>
+                  </div>
+                  <div class="level-right">
+                    <div class="level-item">
+                      <label class="checkbox">
+                        <input type="checkbox"> Hidden (doesn't work yet)
+                      </label>
+                    </div>
+                  </div>
+                </nav>
+              </div>
+            </article>
+          </form>
+        </div>
+        {% endif %}
+
+        {% for post in posts %}
+        <div class="box">
+            <article class="media">
+                <figure class="media-left">
+                <p class="image is-64x64">
+                    <img src="{{ post.avatar_url }}">
+                </p>
+                </figure>
+                <div class="media-content">
+                <div class="content">
+                    <p>
+                    <strong>{{ post.name }}</strong> <small>{{ post.email }}</small> <small>{{ post.post_time.ctime() }}</small>
+                    <br>
+                    {{ post.post_content|safe }}
+                    </p>
+                </div>
+                <nav class="level is-mobile">
+                    <div class="level-left">
+                    <a class="level-item">
+                        <span class="icon is-small"><i class="fas fa-reply"></i></span>
+                    </a>
+                    <a class="level-item">
+                        <span class="icon is-small"><i class="fas fa-retweet"></i></span>
+                    </a>
+                    <a class="level-item">
+                        <span class="icon is-small"><i class="fas fa-heart"></i></span>
+                    </a>
+                    </div>
+                </nav>
+                </div>
+                <div class="media-right">
+                    <button class="delete"></button>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+  var simplemde = new SimpleMDE({ element: document.getElementById("post_content") });
+</script>
+
+{% endblock %}
