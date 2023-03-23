@@ -4,7 +4,7 @@
 <div class="box header-bg-img" style="background-image: url('{{ current_user.header_image_url }}') ;">
   <h1 class="title">
     <div class="content has-text-left has-text-white">
-      {{ header_text|safe }}
+      {{ current_user.header_text|safe }}
     </div>
   </h1>
 </div>
@@ -14,19 +14,37 @@
     <div class="card">
       <div class="card-image">
         <figure class="image is-4by3">
-          <img style="object-fit: cover;" src="{{ card_image_url }}" alt="Card image">
+          <img style="object-fit: cover;" src="{{ current_user.card_image_url }}" alt="Card image">
         </figure>
       </div>
       <div class="card-content">
         <div class="media">
           <div class="media-left">
             <figure class="image is-48x48">
-              <img src="{{ avatar_url }}" alt="Avatar image">
+              <img src="{{ current_user.avatar_url }}" alt="Avatar image">
             </figure>
           </div>
           <div class="media-content">
-            <p class="title is-4">{{ name }}</p>
-            <p class="subtitle is-6">{{ email }} <span class="is-7 is-italic">({{ email_verification }})</span></p>
+            <p class="title is-4">{{ current_user.name }}</p>
+            <p class="subtitle is-6">{{ current_user.email }}
+              <span class="is-7 is-italic">
+                {% if current_user.email_verified %}
+                <span class="icon-text">
+                  <span class="icon has-text-success">
+                    <i class="fas fa-check-square"></i>
+                  </span>
+                  <span>verified</span>
+                </span>
+                {% else %}
+                <span class="icon-text">
+                  <span class="icon has-text-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                  </span>
+                  <span>unverified</span>
+                </span>
+                {% endif %}
+              </span>
+            </p>
             {% if is_admin %}
             <div class="notification is-danger">
               <p class="subtitle is-4 is-italic has-text-black">Administrator</p>
@@ -36,12 +54,12 @@
         </div>
     
         <div class="content has-text-left">
-          {{ description|safe }}
+          {{ current_user.description|safe }}
           <br>
           <div class="has-text-centered">
-            <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ created_time }}">{{ created_time }}</time></span>
+            <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ current_user.created_time.ctime() }}">{{ current_user.created_time.ctime() }}</time></span>
             <br>
-            <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ modified_time }}">{{ modified_time }}</time></span>
+            <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ current_user.modified_time.ctime() }}">{{ current_user.modified_time.ctime() }}</time></span>
           </div>
         </div>
       </div>

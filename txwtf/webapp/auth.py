@@ -82,6 +82,7 @@ def register_post():
 
     # add the new user to the database
     db.session.add(new_user)
+    db.session.commit()  # commit now to create new user id
 
     new_change = UserChange(
         user_id=new_user.id,

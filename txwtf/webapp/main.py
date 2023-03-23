@@ -171,31 +171,6 @@ def user_view(email):
     user = db.session.query(User).filter(User.email == email).first()
     if user is None:
         return render_template('error.html', error_msg='Unknown user!')
-    
-    if user.header_image_url is None:
-        header_image_url = "/assets/img/20200126_atxcf_bg_sq-1.png"
-    else:
-        header_image_url = user.header_image_url
-
-    if user.card_image_url is None:
-        card_image_url = "/assets/img/20200126_atxcf_bg_sq-1.png"
-    else:
-        card_image_url = user.card_image_url
-
-    if user.avatar_url is None:
-        avatar_url = "/assets/img/atxcf_logo_small.jpg"
-    else:
-        avatar_url = user.avatar_url
-
-    if user.created_time is None:
-        created_time = str(datetime.now().ctime())
-    else:
-        created_time = user.created_time.ctime()
-
-    if user.modified_time is None:
-        modified_time = str(datetime.now().ctime())
-    else:
-        modified_time = user.modified_time.ctime()
 
     admins = current_app.config['ADMINISTRATORS']
     if current_user.email in admins:
@@ -203,20 +178,10 @@ def user_view(email):
     else:
         is_admin = False
 
-    if user.header_text is None:
-        header_text = user.name
-    else:
-        header_text = user.header_text
-
     if user.description is None:
         description_markdown = "None"
     else:
         description_markdown = markdownify(user.description)
-
-    if user.email_verified:
-        email_verification = "verified"
-    else:
-        email_verification = "unverified"
 
     # get post messages for this user
     posts = db.session.query(PostedMessage).filter(
@@ -232,17 +197,9 @@ def user_view(email):
         "posts": posts,
         "is_admin": is_admin,
         "name": current_user.name,
-        "header_image_url": header_image_url,
-        "avatar_url": avatar_url,
         "email": current_user.email,
         "description": current_user.description,
         "description_markdown": description_markdown,
-        "created_time": created_time,
-        "modified_time": modified_time,
-        "header_text": header_text,
-        "header_text_markdown": markdownify(header_text),
-        "email_verification": email_verification,
-        "card_image_url": card_image_url
     }
 
     return render_template('users.html', **args)
@@ -338,7 +295,7 @@ def upload_avatar():
         new_log = SystemLog(
             event_code=31337, # default for now
             event_time=datetime.now(),
-            event_desc="Uploaded {}".format(saved_name))
+            event_desc="User {} Uploaded {}".format(current_user.email, saved_name))
         db.session.add(new_log)
         db.session.commit()
         flash("Avatar saved successfully as {}.".format(
