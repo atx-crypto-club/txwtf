@@ -88,6 +88,9 @@
                                 System Log
                             </a>
                             {% endif %}
+                            <a href="{{ url_for('main.about') }}" class="navbar-item">
+                                About
+                            </a>
                         </div>
                         <div class="navbar-end">
                             {% if not current_user.is_authenticated %}

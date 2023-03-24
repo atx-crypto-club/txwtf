@@ -69,6 +69,11 @@ def system_log():
     return render_template('systemlog.html', logs=logs)
 
 
+@main.route('/about')
+def about():
+    return render_template('about.html')
+
+
 @main.route('/posts')
 def posts():
     dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
