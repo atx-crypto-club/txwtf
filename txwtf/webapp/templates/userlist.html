@@ -26,6 +26,7 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>LastMod</th>
+                    <th>Is Admin</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -41,6 +42,7 @@
                         <td>{{ user.name }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.modified_time.ctime() }}</td>
+                        <td>{{ user.is_admin }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

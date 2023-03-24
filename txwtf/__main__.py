@@ -107,5 +107,79 @@ def webapp(obj, host, port, threaded, debug, config):
     app.run(host=host, port=port, threaded=threaded, debug=debug)
 
 
+@root.command()
+@click.option(
+    '--config', '-c', default=None,
+    help="Flask configuration file")
+@click.option(
+    '--admin/--no-admin', default=False,
+    help="admin flag setting")
+@click.option(
+    '--user', '-u',
+    help="User to apply flag setting to")
+@click.pass_obj
+def set_admin(obj, config, admin, user):
+    """
+    Toggle admin for specified user.
+    """
+    from datetime import datetime
+    import txwtf.webapp
+    from txwtf.webapp import db
+    from txwtf.webapp.models import User, SystemLog
+    app = txwtf.webapp.create_app(config_filename=config)
+    with app.app_context():
+        user_obj = db.session.query(User).filter(
+            User.email == user).first()
+        if user_obj is None:
+            logger.error("Unknown user {}".format(user))
+            return
+        if user_obj.is_admin == admin:
+            logger.warning(
+                "User {} is_admin flag already set to {}".format(
+                    user, admin))
+            return
+        user_obj.is_admin = admin
+        log_desc = "setting user {} is_admin flag to {}".format(
+            user, admin)
+        new_log = SystemLog(
+            event_code=31337, # default for now
+            event_time=datetime.now(),
+            event_desc=log_desc)
+        db.session.add(new_log)
+        db.session.commit()
+        logger.info(log_desc)
+
+
+@root.command()
+@click.option(
+    '--config', '-c', default=None,
+    help="Flask configuration file")
+@click.pass_obj
+def list_users(obj, config):
+    """
+    Print a list of users in the system.
+    """
+    from tabulate import tabulate
+    import txwtf.webapp
+    from txwtf.webapp import db
+    from txwtf.webapp.models import User
+    app = txwtf.webapp.create_app(config_filename=config)
+    table = []
+    with app.app_context():
+        users = db.session.query(User).order_by(
+            User.modified_time.desc()).all()
+        for user in users:
+            row = [
+                user.id, user.name, user.email,
+                str(user.is_admin),
+                user.created_time.ctime(),
+                user.modified_time.ctime()]
+            table.append(row)
+    print("{} users".format(len(table)))
+    print(tabulate(table, headers=[
+        'ID', 'Name', 'Email', 'is_admin', 'Created',
+        'Last Modified']))
+
+
 if __name__ == '__main__':
     root(prog_name="txwtf")
