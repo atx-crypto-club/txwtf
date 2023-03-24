@@ -136,7 +136,7 @@
             <tr>
                 <td>{{ change.change_code }}</td>
                 <td>{{ change.change_time.ctime() }}</td>
-                <td>{{ change.change_desc }}</td>
+                <td>{{ change.change_desc[0:100] }}</td>
             </tr>
             {% endfor %}
         </tbody>

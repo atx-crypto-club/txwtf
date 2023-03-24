@@ -22,7 +22,7 @@
         <tr>
             <td>{{ log.event_code }}</td>
             <td>{{ log.event_time.ctime() }}</td>
-            <td>{{ log.event_desc }}</td>
+            <td>{{ log.event_desc[0:100] }}</td>
         </tr>
         {% endfor %}
     </tbody>

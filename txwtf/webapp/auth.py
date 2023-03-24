@@ -79,6 +79,7 @@ def register_post():
         header_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
         header_text=name,
         description="{} is on the scene".format(name),
+        email_verified=False,
         is_admin=False)
 
     # add the new user to the database

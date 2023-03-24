@@ -171,14 +171,58 @@ def list_users(obj, config):
         for user in users:
             row = [
                 user.id, user.name, user.email,
+                str(user.email_verified),
                 str(user.is_admin),
                 user.created_time.ctime(),
                 user.modified_time.ctime()]
             table.append(row)
     print("{} users".format(len(table)))
     print(tabulate(table, headers=[
-        'ID', 'Name', 'Email', 'is_admin', 'Created',
+        'ID', 'Name', 'Email', 'email_verified', 'is_admin', 'Created',
         'Last Modified']))
+
+
+@root.command()
+@click.option(
+    '--config', '-c', default=None,
+    help="Flask configuration file")
+@click.option(
+    '--verify/--no-verify', default=False,
+    help="email verification flag setting")
+@click.option(
+    '--user', '-u',
+    help="User to apply flag setting to")
+@click.pass_obj
+def verify_email(obj, config, verify, user):
+    """
+    Toggle email verification for the specified user.
+    """
+    from datetime import datetime
+    import txwtf.webapp
+    from txwtf.webapp import db
+    from txwtf.webapp.models import User, SystemLog
+    app = txwtf.webapp.create_app(config_filename=config)
+    with app.app_context():
+        user_obj = db.session.query(User).filter(
+            User.email == user).first()
+        if user_obj is None:
+            logger.error("Unknown user {}".format(user))
+            return
+        if user_obj.email_verified == verify:
+            logger.warning(
+                "User {} email_verified flag already set to {}".format(
+                    user, verify))
+            return
+        user_obj.email_verified = verify
+        log_desc = "setting user {} email_verified flag to {}".format(
+            user, verify)
+        new_log = SystemLog(
+            event_code=31337, # default for now
+            event_time=datetime.now(),
+            event_desc=log_desc)
+        db.session.add(new_log)
+        db.session.commit()
+        logger.info(log_desc)
 
 
 if __name__ == '__main__':
