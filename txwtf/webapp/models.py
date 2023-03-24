@@ -41,4 +41,41 @@ class PostedMessage(db.Model):
     user_id = db.Column(db.Integer)
     post_time = db.Column(db.DateTime)
     post_content = db.Column(db.String(1024))
-    reply_to = db.Column(db.Integer)  # id of a parent posted message in a thread
+    reply_to = db.Column(db.Integer)  # id of message replied to if any
+    repost_id = db.Column(db.Integer)  # id of message being reposted if any
+    deleted = db.Column(db.Boolean)
+
+
+# strings between colons like :<string>: are emoji strings
+class Emoji(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    added_time = db.Column(db.DateTime)
+    user_id = db.Column(db.Integer)  # user that added the emoji
+    name = db.Column(db.String(32))
+    emoji_url = db.Column(db.String(1000))
+    emoji_description = db.Column(db.String(1000))
+    modified_time = db.Column(db.DateTime)
+
+
+class Reaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
+    post_id = db.Column(db.Integer)
+    reaction_time = db.Column(db.DateTime)
+    emoji_id = db.Column(db.Integer)
+
+
+class Tag(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True)
+    created_time = db.Column(db.DateTime)
+    user_id = db.Column(db.Integer)  # user that first used the tag
+    tag_description = db.Column(db.String(1000))
+    modified_time = db.Column(db.DateTime)
+    last_used_time = db.Column(db.DateTime)
+
+
+class HashTag(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer)
+    tag_id = db.Column(db.Integer)
