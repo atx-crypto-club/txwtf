@@ -29,23 +29,11 @@ def index():
 @main.route('/edit-profile')
 @login_required
 def editprofile():
-    admins = current_app.config['ADMINISTRATORS']
-    if current_user.email in admins:
-        is_admin = True
-    else:
-        is_admin = False
-
-    # get changes for this user
     changes = db.session.query(UserChange).filter(
         UserChange.user_id == current_user.id).order_by(
             UserChange.change_time.desc())
-
-    args = {
-        "is_admin": is_admin,
-        "changes": changes
-    }
-
-    return render_template('editprofile.html', **args)
+    return render_template(
+        'editprofile.html', changes=changes)
 
 
 @main.route('/u/<email>')
@@ -57,20 +45,10 @@ def user_view(email):
 
     # get post messages for this user
     posts = db.session.query(PostedMessage).filter(
-        PostedMessage.user_id == user.id).order_by(PostedMessage.post_time.desc()).all()
-    admins = current_app.config['ADMINISTRATORS']
-    if user.email in admins:
-        is_admin = True
-    else:
-        is_admin = False
+        PostedMessage.user_id == user.id).order_by(
+            PostedMessage.post_time.desc()).all()
 
-    args = {
-        "user": user,
-        "posts": posts,
-        "is_admin": is_admin,
-    }
-
-    return render_template('users.html', **args)
+    return render_template('users.html', user=user, posts=posts)
 
 
 @main.route('/user-list')
@@ -85,10 +63,8 @@ def user_list():
 @main.route('/system-log')
 @login_required
 def system_log():
-    admins = current_app.config['ADMINISTRATORS']
-    if current_user.email not in admins:
+    if not current_user.is_admin:
         return render_template('unauthorized.html'), 401
-    
     logs = db.session.query(SystemLog).order_by(SystemLog.event_time.desc())
     return render_template('systemlog.html', logs=logs)
 

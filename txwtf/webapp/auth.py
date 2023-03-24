@@ -78,7 +78,8 @@ def register_post():
         card_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
         header_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
         header_text=name,
-        description="{} is on the scene".format(name))
+        description="{} is on the scene".format(name),
+        is_admin=False)
 
     # add the new user to the database
     db.session.add(new_user)

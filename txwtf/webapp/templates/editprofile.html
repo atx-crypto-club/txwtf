@@ -45,7 +45,7 @@
                 {% endif %}
               </span>
             </p>
-            {% if is_admin %}
+            {% if current_user.is_admin %}
             <div class="notification is-danger">
               <p class="subtitle is-4 is-italic has-text-black">Administrator</p>
             </div>

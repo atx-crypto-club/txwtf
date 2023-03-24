@@ -18,6 +18,7 @@ class User(UserMixin, db.Model):
     description = db.Column(db.String(10000))
     created_time = db.Column(db.DateTime)
     modified_time = db.Column(db.DateTime)
+    is_admin = db.Column(db.Boolean)
 
 
 class UserChange(db.Model):
