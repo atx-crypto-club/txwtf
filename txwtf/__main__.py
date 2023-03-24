@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
     "--log", envvar="TXWTF_LOG", default="-",
     help="Log file. Use '-' for stdout.")
 @click.option(
-    "--log-level", default="WARNING",
+    "--log-level", default="INFO",
     help="Log output level.")
 @click.option(
     '--profiling/--no-profiling', default=False,
