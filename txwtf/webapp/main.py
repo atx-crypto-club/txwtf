@@ -85,8 +85,6 @@ def posts():
         post = PostInfo()
         user = db.session.query(User).filter(User.id == dbpost.user_id).first()
         post.avatar_url = user.avatar_url
-        if post.avatar_url is None:
-            post.avatar_url = "/assets/img/atxcf_logo_small.jpg"
         post.name = user.name
         if not logged_in:
             post.email = ""
@@ -94,6 +92,7 @@ def posts():
             post.email = user.email
         post.post_time = dbpost.post_time
         post.post_content = dbpost.post_content
+        post.id = dbpost.id
         posts.append(post)
     
     return render_template('posts.html', posts=posts)
@@ -103,11 +102,32 @@ def posts():
 @login_required
 def post_message():
     redirect_url = request.form.get('redirect')
+    reply_to = request.form.get('reply_to')
+    repost_id = request.form.get('repost_id')
+    if reply_to == "":
+        reply_to = None
+    if repost_id == "":
+        repost_id = None
+
+    # TODO: extract all hash tags and add them to the tables
+    
     post_content = markdown(request.form.get('post_content'))
+
+    # TODO: extract all emoji strings and replace them with inline
+    # images in the post_content after generating html from markdown
+
+    # TODO: we should do validation on the reply_to and repost_ids
+    # to make sure that this user has access to the post when we
+    # introduce the concept of follows and friends and the post is
+    # flagged private
+
     msg = PostedMessage(
         user_id=current_user.id,
         post_time=datetime.now(),
-        post_content=post_content)
+        post_content=post_content,
+        reply_to=reply_to,
+        repost_id=repost_id,
+        deleted=False)
     db.session.add(msg)
     db.session.commit()
     flash("Message posted!")

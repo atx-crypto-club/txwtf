@@ -225,5 +225,34 @@ def verify_email(obj, config, verify, user):
         logger.info(log_desc)
 
 
+@root.command()
+@click.option(
+    '--config', '-c', default=None,
+    help="Flask configuration file")
+@click.pass_obj
+def list_posts(obj, config):
+    """
+    Print a list of posts in the system.
+    """
+    from tabulate import tabulate
+    import txwtf.webapp
+    from txwtf.webapp import db
+    from txwtf.webapp.models import PostedMessage
+    app = txwtf.webapp.create_app(config_filename=config)
+    table = []
+    with app.app_context():
+        posts = db.session.query(PostedMessage).order_by(
+            PostedMessage.post_time.desc()).all()
+        for post in posts:
+            row = [
+                post.id, str(post.reply_to), str(post.repost_id),
+                str(post.deleted), post.post_time.ctime(),
+                post.post_content]
+            table.append(row)
+    print("{} posts".format(len(posts)))
+    print(tabulate(table, headers=[
+        'ID', 'reply_to', 'repost_id', 'deleted', 'post_time', 'content']))
+
+
 if __name__ == '__main__':
     root(prog_name="txwtf")

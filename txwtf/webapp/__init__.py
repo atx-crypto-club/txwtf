@@ -31,6 +31,8 @@ def create_app(config_filename=None):
 
     app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    # TODO: by default, lets store the upload archive under the instance dir
+    # next to where the db.sqlite file ends up. 
     app.config["UPLOADED_ARCHIVE_DEST"] = join(
         tempfile.gettempdir(), "txwtf", "uploads")
     app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024  # 128MB max upload size

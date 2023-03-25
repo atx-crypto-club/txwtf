@@ -125,15 +125,17 @@
                   </div>
                   <nav class="level is-mobile">
                       <div class="level-left">
-                      <a class="level-item">
+                      {% if current_user.is_authenticated %}
+                      <a class="level-item js-modal-trigger-reply" data-target="modal-post" id="reply_{{ post.id }}">
                           <span class="icon is-small"><i class="fas fa-reply"></i></span>
                       </a>
-                      <a class="level-item">
+                      <a class="level-item js-modal-trigger-repost" data-target="modal-post" id="repost_id_{{ post.id }}">
                           <span class="icon is-small"><i class="fas fa-retweet"></i></span>
                       </a>
                       <a class="level-item">
                           <span class="icon is-small"><i class="fas fa-heart"></i></span>
                       </a>
+                      {% endif %}
                       <small class="level-item">{{ post.post_time.ctime() }}</small>
                       </div>
                   </nav>
@@ -153,9 +155,11 @@
 
   <div class="modal-content">
     <div class="box">
-      <label class="label has-text-left">Post message</label>
+      <label class="label has-text-left" id="modal_title">Post message</label>
       <form method="POST" action="/post-message">
         <input type="hidden" name="redirect" value="/posts">
+        <input type="hidden" id="modal_reply_to" name="reply_to" value="">
+        <input type="hidden" id="modal_repost_id" name="repost_id" value="">
         <article class="media">
           <figure class="media-left">
             <p class="image is-64x64">
@@ -177,8 +181,11 @@
               <div class="level-right">
                 <div class="level-item">
                   <label class="checkbox">
-                    <input type="checkbox"> Hidden (doesn't work yet)
+                    <input type="checkbox">
                   </label>
+                  <span class="icon">
+                    <i class="fas fa-lock"></i>
+                  </span>
                 </div>
               </div>
             </nav>
@@ -211,6 +218,14 @@
     });
   }
 
+  function resetHidden() {
+      // make sure hidden vars are reset
+      var reply_to_input = document.getElementById('modal_reply_to');
+      reply_to_input.value = "";
+      var repost_id_input = document.getElementById('modal_repost_id');
+      repost_id_input.value = "";
+  }
+
   // Add a click event on buttons to open a specific modal
   (document.querySelectorAll('.js-modal-trigger') || []).forEach(($trigger) => {
     const modal = $trigger.dataset.target;
@@ -218,6 +233,52 @@
 
     $trigger.addEventListener('click', () => {
       openModal($target);
+
+      resetHidden();
+
+      var modal_title = document.getElementById('modal_title');
+      modal_title.textContent = "Post message";
+    });
+  });
+
+  // Add a click event for reply and repost icons
+  (document.querySelectorAll('.js-modal-trigger-reply') || []).forEach(($trigger) => {
+    const modal = $trigger.dataset.target;
+    const $target = document.getElementById(modal);
+
+    $trigger.addEventListener('click', () => {
+      openModal($target);
+
+      resetHidden();
+
+      // set hidden value in modal form to pass reply_to id
+      var vals = $trigger.id.split("_");
+      var reply_to = vals[vals.length - 1];
+      var reply_to_input = document.getElementById('modal_reply_to');
+      reply_to_input.value = reply_to;
+
+      var modal_title = document.getElementById('modal_title');
+      modal_title.textContent = "Reply to message";
+    });
+  });
+
+  (document.querySelectorAll('.js-modal-trigger-repost') || []).forEach(($trigger) => {
+    const modal = $trigger.dataset.target;
+    const $target = document.getElementById(modal);
+
+    $trigger.addEventListener('click', () => {
+      openModal($target);
+
+      resetHidden();
+
+      // set hidden value in modal form to pass repost_id
+      var vals = $trigger.id.split("_");
+      var repost_id = vals[vals.length - 1];
+      var repost_id_input = document.getElementById('modal_repost_id');
+      repost_id_input.value = repost_id;
+
+      var modal_title = document.getElementById('modal_title');
+      modal_title.textContent = "Repost message";
     });
   });
 
