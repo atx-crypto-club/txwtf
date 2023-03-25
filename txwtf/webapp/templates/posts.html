@@ -160,37 +160,45 @@
         <input type="hidden" name="redirect" value="/posts">
         <input type="hidden" id="modal_reply_to" name="reply_to" value="">
         <input type="hidden" id="modal_repost_id" name="repost_id" value="">
-        <article class="media">
-          <figure class="media-left">
-            <p class="image is-64x64">
-              <img src="{{ current_user.avatar_url }}">
-            </p>
-          </figure>
-          <div class="media-content">
-            <div class="field">
-              <p class="control">
-                <textarea class="textarea" id="post_content" name="post_content" placeholder="Add a comment..."></textarea>
+        <div class="box is-hidden" id="modal_reply_to_post_box">
+          <p>Fill Me</p>
+        </div>
+        <div class="box">
+          <article class="media">
+            <figure class="media-left">
+              <p class="image is-64x64">
+                <img src="{{ current_user.avatar_url }}">
               </p>
+            </figure>
+            <div class="media-content">
+              <div class="field">
+                <p class="control">
+                  <textarea class="textarea" id="post_content" name="post_content" placeholder="Add a comment..."></textarea>
+                </p>
+              </div>
+              <nav class="level">
+                <div class="level-left">
+                  <div class="level-item">
+                    <button class="button is-block is-info has-background-white has-text-black">Submit</button>
+                  </div>
+                </div>
+                <div class="level-right">
+                  <div class="level-item">
+                    <label class="checkbox">
+                      <input type="checkbox" id="post_private">
+                    </label>
+                    <span class="icon">
+                      <i class="fas fa-lock"></i>
+                    </span>
+                  </div>
+                </div>
+              </nav>
             </div>
-            <nav class="level">
-              <div class="level-left">
-                <div class="level-item">
-                  <button class="button is-block is-info has-background-white has-text-black">Submit</button>
-                </div>
-              </div>
-              <div class="level-right">
-                <div class="level-item">
-                  <label class="checkbox">
-                    <input type="checkbox">
-                  </label>
-                  <span class="icon">
-                    <i class="fas fa-lock"></i>
-                  </span>
-                </div>
-              </div>
-            </nav>
-          </div>
-        </article>
+          </article>
+        </div>
+        <div class="box is-hidden" id="modal_repost_box">
+          <p>Fill Me</p>
+        </div>
       </form>
     </div>
   </div>
@@ -224,6 +232,11 @@
       reply_to_input.value = "";
       var repost_id_input = document.getElementById('modal_repost_id');
       repost_id_input.value = "";
+
+      var modal_repost_box = document.getElementById('modal_reply_to_post_box');
+      modal_repost_box.classList.add('is-hidden');
+      var modal_repost_box = document.getElementById('modal_repost_box');
+      modal_repost_box.classList.add('is-hidden');
   }
 
   // Add a click event on buttons to open a specific modal
@@ -259,6 +272,10 @@
 
       var modal_title = document.getElementById('modal_title');
       modal_title.textContent = "Reply to message";
+
+      // show the parent box on the modal form
+      var modal_repost_box = document.getElementById('modal_reply_to_post_box');
+      modal_repost_box.classList.remove('is-hidden');
     });
   });
 
@@ -279,6 +296,10 @@
 
       var modal_title = document.getElementById('modal_title');
       modal_title.textContent = "Repost message";
+
+      // show the parent box on the modal form
+      var modal_repost_box = document.getElementById('modal_repost_box');
+      modal_repost_box.classList.remove('is-hidden');
     });
   });
 
