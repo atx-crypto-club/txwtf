@@ -54,6 +54,7 @@ def user_view(email):
             pass
         post = PostInfo()
         user = db.session.query(User).filter(User.id == dbpost.user_id).first()
+        post.user_id = user.id
         post.avatar_url = user.avatar_url
         post.name = user.name
         post.email = user.email
@@ -121,6 +122,7 @@ def posts():
             pass
         post = PostInfo()
         user = db.session.query(User).filter(User.id == dbpost.user_id).first()
+        post.user_id = user.id
         post.avatar_url = user.avatar_url
         post.name = user.name
         # hide email addresses of users if not logged in.

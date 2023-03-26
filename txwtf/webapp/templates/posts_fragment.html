@@ -51,7 +51,9 @@
         </nav>
         </div>
         <div class="media-right">
+            {% if current_user.id == post.user_id %}
             <button class="delete"></button>
+            {% endif %}
         </div>
     </article>
 </div>
