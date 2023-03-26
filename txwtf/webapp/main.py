@@ -76,7 +76,8 @@ def about():
 
 # TODO: paginate post rendering by limiting
 # range of posts to render by min/max time
-def render_posts():
+# TODO: use a join to speed this query up
+def render_posts(show_level_menu=True):
     dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
     posts = []
     logged_in = hasattr(current_user, 'email_verified')  # janky but whatev
@@ -87,6 +88,7 @@ def render_posts():
         user = db.session.query(User).filter(User.id == dbpost.user_id).first()
         post.avatar_url = user.avatar_url
         post.name = user.name
+        # hide email addresses of users if not logged in.
         if not logged_in:
             post.email = ""
         else:
@@ -95,8 +97,13 @@ def render_posts():
         post.post_content = dbpost.post_content
         post.id = dbpost.id
         posts.append(post)
-    return render_template('posts_fragment.html', posts=posts)
-    
+    return render_template(
+        'posts_fragment.html', posts=posts, show_level_menu=show_level_menu)
+
+
+def render_post_message():
+    return render_template('post_message_fragment.html')
+
 
 @main.route('/posts')
 def posts():    

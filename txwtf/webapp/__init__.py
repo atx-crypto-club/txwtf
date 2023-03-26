@@ -88,7 +88,9 @@ def create_app(config_filename=None):
 
     # add useful functions to jinja2 rendering
     app.jinja_env.globals.update(markdownify=markdownify)
-    from .main import render_posts
-    app.jinja_env.globals.update(render_posts=render_posts)
+    from .main import render_posts, render_post_message
+    app.jinja_env.globals.update(
+        render_posts=render_posts,
+        render_post_message=render_post_message)
 
     return app

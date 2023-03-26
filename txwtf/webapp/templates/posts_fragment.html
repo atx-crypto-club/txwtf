@@ -1,3 +1,9 @@
+{% if current_user.is_authenticated %}
+<button class="button js-modal-trigger" data-target="modal-post">
+  Post message
+</button>
+{% endif %}
+
 {% if posts|length == 0 %}
 <div class="box">
     <p>No posts yet.</p>
@@ -29,7 +35,7 @@
         </div>
         <nav class="level is-mobile">
             <div class="level-left">
-            {% if current_user.is_authenticated %}
+            {% if current_user.is_authenticated and show_level_menu %}
             <a class="level-item js-modal-trigger-reply" data-target="modal-post" id="reply_{{ post.id }}">
                 <span class="icon is-small"><i class="fas fa-reply"></i></span>
             </a>
