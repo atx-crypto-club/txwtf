@@ -105,6 +105,10 @@ def render_post_message():
     return render_template('post_message_fragment.html')
 
 
+def render_user_card(user):
+    return render_template('user_card_fragment.html', user=user)
+
+
 @main.route('/posts')
 def posts():    
     return render_template('posts.html')

@@ -1,0 +1,51 @@
+<div class="card">
+    <div class="card-image">
+        <figure class="image is-4by3">
+            <img style="object-fit: cover;" src="{{ user.card_image_url }}" alt="Card image">
+        </figure>
+    </div>
+    <div class="card-content">
+        <div class="media">
+            <div class="media-left">
+                <figure class="image is-48x48">
+                    <img src="{{ user.avatar_url }}" alt="Avatar image">
+                </figure>
+            </div>
+            <div class="media-content">
+                <p class="title is-4">{{ user.name }}</p>
+                <p class="subtitle is-6">{{ user.email }} 
+                <span class="is-7">
+                    {% if user.email_verified %}
+                    <span class="icon-text">
+                        <span class="icon has-text-success">
+                            <i class="fas fa-check-square"></i>
+                        </span>
+                    </span>
+                    {% else %}
+                    <span class="icon-text">
+                        <span class="icon has-text-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </span>
+                    </span>
+                    {% endif %}
+                </span>
+                </p>
+                {% if user.is_admin %}
+                <div class="notification is-danger has-text-centered">
+                    <p class="subtitle is-4 is-italic has-text-black">admin</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="content has-text-left">
+        {{ user.description|safe }}
+        <br>
+            <div class="has-text-centered">
+                <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ user.modified_time.ctime() }}">{{ user.modified_time.ctime() }}</time></span>
+                <br>
+                <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ user.created_time.ctime() }}">{{ user.created_time.ctime() }}</time></span>
+            </div>
+        </div>
+    </div>
+</div>
