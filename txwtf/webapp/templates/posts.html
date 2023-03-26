@@ -93,59 +93,7 @@
         </button>
         {% endif %}
 
-        {% if posts|length == 0 %}
-        <div class="box">
-          <p>No posts yet.</p>
-        </div>
-        {% endif %}
-
-        {% for post in posts %}
-        <div class="box">
-            <article class="media">
-                <figure class="media-left">
-                    {% if current_user.is_authenticated %}
-                    <a href="/u/{{ post.email }}">
-                      <figure class="image is-64x64">
-                          <img src="{{ post.avatar_url }}">
-                      </figure>
-                    </a>
-                    {% else %}
-                    <figure class="image is-64x64">
-                      <img src="{{ post.avatar_url }}">
-                    </figure>
-                    {% endif %}
-                </figure>
-                <div class="media-content">
-                  <div class="content">
-                      <p>
-                      <strong>{{ post.name }}</strong> <small>{{ post.email }}</small>
-                      <br>
-                      {{ post.post_content|safe }}
-                      </p>
-                  </div>
-                  <nav class="level is-mobile">
-                      <div class="level-left">
-                      {% if current_user.is_authenticated %}
-                      <a class="level-item js-modal-trigger-reply" data-target="modal-post" id="reply_{{ post.id }}">
-                          <span class="icon is-small"><i class="fas fa-reply"></i></span>
-                      </a>
-                      <a class="level-item js-modal-trigger-repost" data-target="modal-post" id="repost_id_{{ post.id }}">
-                          <span class="icon is-small"><i class="fas fa-retweet"></i></span>
-                      </a>
-                      <a class="level-item">
-                          <span class="icon is-small"><i class="fas fa-heart"></i></span>
-                      </a>
-                      {% endif %}
-                      <small class="level-item">{{ post.post_time.ctime() }}</small>
-                      </div>
-                  </nav>
-                </div>
-                <div class="media-right">
-                    <button class="delete"></button>
-                </div>
-            </article>
-        </div>
-        {% endfor %}
+        {{ render_posts()|safe }}
     </div>
 </div>
 
@@ -161,7 +109,16 @@
         <input type="hidden" id="modal_reply_to" name="reply_to" value="">
         <input type="hidden" id="modal_repost_id" name="repost_id" value="">
         <div class="box is-hidden" id="modal_reply_to_post_box">
-          <p>Fill Me</p>
+          <article class="media">
+            <figure class="media-left" id="modal_reply_to_box_left">
+              <p>Fill Me!!!</p>
+            </figure>
+            <div class="media-content">
+              <div class="content" id="modal_reply_to_box_content">
+                <p>Fill Me!!!</p>
+              </div>
+            </div>
+          </article>
         </div>
         <div class="box">
           <article class="media">
@@ -197,7 +154,16 @@
           </article>
         </div>
         <div class="box is-hidden" id="modal_repost_box">
-          <p>Fill Me</p>
+          <article class="media">
+            <figure class="media-left" id="modal_repost_box_left">
+              <p>Fill Me!!!</p>
+            </figure>
+            <div class="media-content">
+              <div class="content" id="modal_repost_box_content">
+                <p>Fill Me!!!</p>
+              </div>
+            </div>
+          </article>
         </div>
       </form>
     </div>
@@ -274,8 +240,18 @@
       modal_title.textContent = "Reply to message";
 
       // show the parent box on the modal form
-      var modal_repost_box = document.getElementById('modal_reply_to_post_box');
-      modal_repost_box.classList.remove('is-hidden');
+      var modal_reply_to_post_box = document.getElementById('modal_reply_to_post_box');
+      modal_reply_to_post_box.classList.remove('is-hidden');
+
+      // fill the reply box content with the post content
+      // already in the DOM. This kind of sucks but at least shows
+      // the user what they are replying to.
+      var post_content_box = document.getElementById('post_content_'+reply_to);
+      var modal_reply_to_box_content = document.getElementById('modal_reply_to_box_content');
+      modal_reply_to_box_content.textContent = post_content_box.textContent;
+      var post_left_box = document.getElementById('post_left_'+reply_to);
+      var modal_reply_to_box_left_content = document.getElementById('modal_reply_to_box_left');
+      modal_reply_to_box_left_content.textContent = post_left_box.textContent;
     });
   });
 
@@ -300,6 +276,16 @@
       // show the parent box on the modal form
       var modal_repost_box = document.getElementById('modal_repost_box');
       modal_repost_box.classList.remove('is-hidden');
+
+      // fill the repost box content with the post content
+      // already in the DOM. This kind of sucks but at least shows
+      // the user what they are replying to.
+      var post_content_box = document.getElementById('post_content_'+reply_to);
+      var modal_repost_box_content = document.getElementById('modal_repost_box_content');
+      modal_repost_box_content.textContent = post_content_box.textContent;
+      var post_left_box = document.getElementById('post_left_'+reply_to);
+      var modal_repost_box_left_content = document.getElementById('modal_repost_box_left');
+      modal_repost_box_left_content.textContent = post_left_box.textContent;
     });
   });
 

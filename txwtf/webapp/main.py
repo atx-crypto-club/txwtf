@@ -74,11 +74,12 @@ def about():
     return render_template('about.html')
 
 
-@main.route('/posts')
-def posts():
+# TODO: paginate post rendering by limiting
+# range of posts to render by min/max time
+def render_posts():
     dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
     posts = []
-    logged_in = hasattr(current_user, 'email_verified')
+    logged_in = hasattr(current_user, 'email_verified')  # janky but whatev
     for dbpost in dbposts:
         class PostInfo(object):
             pass
@@ -94,8 +95,12 @@ def posts():
         post.post_content = dbpost.post_content
         post.id = dbpost.id
         posts.append(post)
+    return render_template('posts_fragment.html', posts=posts)
     
-    return render_template('posts.html', posts=posts)
+
+@main.route('/posts')
+def posts():    
+    return render_template('posts.html')
 
 
 @main.route('/post-message', methods=['POST'])
@@ -112,6 +117,9 @@ def post_message():
     # TODO: extract all hash tags and add them to the tables
     
     post_content = markdown(request.form.get('post_content'))
+    if len(post_content) == 0:
+        flash('Error: Empty post!')
+        return redirect(redirect_url)
 
     # TODO: extract all emoji strings and replace them with inline
     # images in the post_content after generating html from markdown
