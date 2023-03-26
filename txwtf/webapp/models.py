@@ -80,3 +80,6 @@ class HashTag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer)
     tag_id = db.Column(db.Integer)
+
+
+# TODO: record mentions

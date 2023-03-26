@@ -1,4 +1,4 @@
-{% if current_user.is_authenticated %}
+{% if current_user.is_authenticated and show_post_message_button %}
 <button class="button js-modal-trigger" data-target="modal-post">
   Post message
 </button>

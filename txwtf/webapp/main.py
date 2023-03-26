@@ -36,6 +36,7 @@ def editprofile():
         'editprofile.html', changes=changes)
 
 
+# TODO: add post message dialog with a mention auto fill
 @main.route('/u/<email>')
 @login_required
 def user_view(email):
@@ -44,9 +45,22 @@ def user_view(email):
         return render_template('error.html', error_msg='Unknown user!')
 
     # get post messages for this user
-    posts = db.session.query(PostedMessage).filter(
+    dbposts = db.session.query(PostedMessage).filter(
         PostedMessage.user_id == user.id).order_by(
             PostedMessage.post_time.desc()).all()
+    posts = []
+    for dbpost in dbposts:
+        class PostInfo(object):
+            pass
+        post = PostInfo()
+        user = db.session.query(User).filter(User.id == dbpost.user_id).first()
+        post.avatar_url = user.avatar_url
+        post.name = user.name
+        post.email = user.email
+        post.post_time = dbpost.post_time
+        post.post_content = dbpost.post_content
+        post.id = dbpost.id
+        posts.append(post)
 
     return render_template('users.html', user=user, posts=posts)
 
@@ -74,10 +88,26 @@ def about():
     return render_template('about.html')
 
 
-# TODO: paginate post rendering by limiting
-# range of posts to render by min/max time
-# TODO: use a join to speed this query up
-def render_posts(show_level_menu=True):
+def render_posts(posts, show_post_message_button=True, show_level_menu=True):
+    return render_template(
+        'posts_fragment.html', posts=posts,
+        show_level_menu=show_level_menu,
+        show_post_message_button=show_post_message_button)
+
+
+def render_post_message():
+    return render_template('post_message_fragment.html')
+
+
+def render_user_card(user):
+    return render_template('user_card_fragment.html', user=user)
+
+
+@main.route('/posts')
+def posts():
+    # TODO: paginate post rendering by limiting
+    # range of posts to render by min/max time
+    # TODO: use a join to speed this query up
     dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
     posts = []
     logged_in = hasattr(current_user, 'email_verified')  # janky but whatev
@@ -97,21 +127,7 @@ def render_posts(show_level_menu=True):
         post.post_content = dbpost.post_content
         post.id = dbpost.id
         posts.append(post)
-    return render_template(
-        'posts_fragment.html', posts=posts, show_level_menu=show_level_menu)
-
-
-def render_post_message():
-    return render_template('post_message_fragment.html')
-
-
-def render_user_card(user):
-    return render_template('user_card_fragment.html', user=user)
-
-
-@main.route('/posts')
-def posts():    
-    return render_template('posts.html')
+    return render_template('posts.html', posts=posts)
 
 
 @main.route('/post-message', methods=['POST'])
