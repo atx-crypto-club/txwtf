@@ -95,19 +95,24 @@ def render_posts(posts, show_post_message_button=True, show_level_menu=True):
         show_post_message_button=show_post_message_button)
 
 
-def render_post_message():
-    return render_template('post_message_fragment.html')
+def render_post_message(post_content=""):
+    return render_template(
+        'post_message_fragment.html', post_content=post_content)
 
 
 def render_user_card(user):
     return render_template('user_card_fragment.html', user=user)
 
 
+# TODO: add thread route to view a post with it's reply_to posts
+
 @main.route('/posts')
 def posts():
     # TODO: paginate post rendering by limiting
     # range of posts to render by min/max time
     # TODO: use a join to speed this query up
+    # TODO: hide reply_to posts
+    # TODO: if you click on a post, go to the thread route
     dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
     posts = []
     logged_in = hasattr(current_user, 'email_verified')  # janky but whatev

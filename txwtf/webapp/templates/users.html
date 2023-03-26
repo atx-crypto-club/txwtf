@@ -29,16 +29,14 @@
     {% endif %}
     {% endwith %}
 
-    {% if current_user.id != user.id %}
-    {{ render_posts(posts, False)|safe }}
-    {% else %}
     {{ render_posts(posts)|safe }}
-    {% endif %}
   </div>
 </div>
 
 {% if current_user.id == user.id %}
 {{ render_post_message()|safe }}
+{% else %}
+{{ render_post_message(user.email)|safe }}
 {% endif %}
 
 {% endblock %}
