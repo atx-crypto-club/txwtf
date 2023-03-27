@@ -36,6 +36,42 @@ def editprofile():
         'editprofile.html', changes=changes)
 
 
+def generate_render_post_data(dbposts):
+    posts = []
+    logged_in = hasattr(current_user, 'email_verified')  # janky but whatev
+    for dbpost in dbposts:
+        class PostInfo(object):
+            pass
+        post = PostInfo()
+        user = db.session.query(User).filter(User.id == dbpost.user_id).first()
+        post.user_id = user.id
+        post.avatar_url = user.avatar_url
+        post.name = user.name
+        # hide email addresses of users if not logged in.
+        if not logged_in:
+            post.email = ""
+        else:
+            post.email = user.email
+        post.post_time = dbpost.post_time
+        post.post_content = dbpost.post_content
+        post.id = dbpost.id
+        post.deleted = dbpost.deleted
+        post.num_reposts = len(db.session.query(PostedMessage).filter(
+            PostedMessage.repost_id == dbpost.id).all())
+        post.replies = generate_render_post_data(
+            db.session.query(PostedMessage).filter(
+                PostedMessage.reply_to == dbpost.id).all())
+        post.num_replies = len(post.replies)
+
+        if dbpost.repost_id:
+            dbrepost = db.session.query(PostedMessage).filter(
+                PostedMessage.id == dbpost.repost_id)
+            post.repost = generate_render_post_data(dbrepost)[0]
+
+        posts.append(post)
+    return posts
+
+
 @main.route('/u/<email>')
 @login_required
 def user_view(email):
@@ -47,39 +83,8 @@ def user_view(email):
     dbposts = db.session.query(PostedMessage).filter(
         PostedMessage.user_id == user.id).order_by(
             PostedMessage.post_time.desc()).all()
-    posts = []
-    for dbpost in dbposts:
-        class PostInfo(object):
-            pass
-        post = PostInfo()
-        user = db.session.query(User).filter(User.id == dbpost.user_id).first()
-        post.user_id = user.id
-        post.avatar_url = user.avatar_url
-        post.name = user.name
-        post.email = user.email
-        post.post_time = dbpost.post_time
-        post.post_content = dbpost.post_content
-        post.id = dbpost.id
-        post.deleted = dbpost.deleted
-        post.num_reposts = len(db.session.query(PostedMessage).filter(PostedMessage.repost_id == dbpost.id).all())
-        post.num_replies = len(db.session.query(PostedMessage).filter(PostedMessage.reply_to == dbpost.id).all())
-
-        if dbpost.repost_id:
-            dbrepost = db.session.query(PostedMessage).filter(PostedMessage.id == dbpost.repost_id).first()
-            repost_user = db.session.query(User).filter(User.id == dbrepost.user_id).first()
-            repost = PostInfo()
-            repost.user_id = repost_user.id
-            repost.avatar_url = repost_user.avatar_url
-            repost.name = repost_user.name
-            repost.email = repost_user.email
-            repost.post_time = dbrepost.post_time
-            repost.post_content = dbrepost.post_content
-            repost.id = dbrepost.id
-            repost.deleted = dbrepost.deleted
-            post.repost = repost
-
-        posts.append(post)
-
+    
+    posts = generate_render_post_data(dbposts)
     return render_template('users.html', user=user, posts=posts)
 
 
@@ -108,22 +113,25 @@ def about():
 
 def render_post(
         post, show_level_menu=True, show_delete_button=True,
-        show_repost=True):
+        show_repost=True, show_replies=True, show_deleted_replies=False):
     return render_template(
         'post_fragment.html', post=post,
         show_level_menu=show_level_menu,
         show_delete_button=show_delete_button,
-        show_repost=show_repost)
+        show_repost=show_repost, show_replies=show_replies,
+        show_deleted_replies=show_deleted_replies)
 
 
 def render_posts(
         posts, show_post_message_button=True,
-        show_level_menu=True, show_deleted=False):
+        show_level_menu=True, show_deleted=False,
+        show_replies=True, show_deleted_replies=False):
     return render_template(
         'posts_fragment.html', posts=posts,
         show_level_menu=show_level_menu,
         show_post_message_button=show_post_message_button,
-        show_deleted=show_deleted)
+        show_deleted=show_deleted, show_replies=show_replies,
+        show_deleted_replies=show_deleted_replies)
 
 
 def render_post_message(post_content=""):
@@ -137,6 +145,7 @@ def render_user_card(user):
 
 # TODO: add thread route to view a post with it's reply_to posts
 
+
 @main.route('/posts')
 def posts():
     # TODO: paginate post rendering by limiting
@@ -145,46 +154,7 @@ def posts():
     # TODO: hide reply_to posts
     # TODO: if you click on a post, go to the thread route
     dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
-    posts = []
-    logged_in = hasattr(current_user, 'email_verified')  # janky but whatev
-    for dbpost in dbposts:
-        class PostInfo(object):
-            pass
-        post = PostInfo()
-        user = db.session.query(User).filter(User.id == dbpost.user_id).first()
-        post.user_id = user.id
-        post.avatar_url = user.avatar_url
-        post.name = user.name
-        # hide email addresses of users if not logged in.
-        if not logged_in:
-            post.email = ""
-        else:
-            post.email = user.email
-        post.post_time = dbpost.post_time
-        post.post_content = dbpost.post_content
-        post.id = dbpost.id
-        post.deleted = dbpost.deleted
-        post.num_reposts = len(db.session.query(PostedMessage).filter(PostedMessage.repost_id == dbpost.id).all())
-        post.num_replies = len(db.session.query(PostedMessage).filter(PostedMessage.reply_to == dbpost.id).all())
-
-        if dbpost.repost_id:
-            dbrepost = db.session.query(PostedMessage).filter(PostedMessage.id == dbpost.repost_id).first()
-            repost_user = db.session.query(User).filter(User.id == dbrepost.user_id).first()
-            repost = PostInfo()
-            repost.user_id = repost_user.id
-            repost.avatar_url = repost_user.avatar_url
-            repost.name = repost_user.name
-            if not logged_in:
-                repost.email = ""
-            else:
-                repost.email = repost_user.email
-            repost.post_time = dbrepost.post_time
-            repost.post_content = dbrepost.post_content
-            repost.id = dbrepost.id
-            repost.deleted = dbrepost.deleted
-            post.repost = repost
-
-        posts.append(post)
+    posts = generate_render_post_data(dbposts)
     return render_template('posts.html', posts=posts)
 
 

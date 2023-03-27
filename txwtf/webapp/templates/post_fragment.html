@@ -28,6 +28,17 @@
             </div>
             {% endif %}
         {% endif %}
+
+        {% if show_replies %}
+        {% for reply in post.replies %}
+            {% if not reply.deleted %}
+                {{ render_post(reply, True, True, True, True, show_deleted_replies)|safe }}
+            {% endif %}
+            {% if reply.deleted and show_deleted_replies %}
+            <div class="box post-box-img"></div>
+            {% endif %}
+        {% endfor %}
+        {% endif %}
     </div>
     <nav class="level is-mobile">
         <div class="level-left">
