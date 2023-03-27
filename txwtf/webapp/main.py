@@ -89,11 +89,14 @@ def about():
     return render_template('about.html')
 
 
-def render_posts(posts, show_post_message_button=True, show_level_menu=True):
+def render_posts(
+        posts, show_post_message_button=True,
+        show_level_menu=True, show_deleted=False):
     return render_template(
         'posts_fragment.html', posts=posts,
         show_level_menu=show_level_menu,
-        show_post_message_button=show_post_message_button)
+        show_post_message_button=show_post_message_button,
+        show_deleted=show_deleted)
 
 
 def render_post_message(post_content=""):

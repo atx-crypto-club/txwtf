@@ -11,7 +11,9 @@
 {% else %}
 {% for post in posts %}
 {% if post.deleted %}
+{% if show_deleted %}
 <div class="box post-box-img" id="post_box_{{ post.id }}"></div>
+{% endif %}
 {% else %}
 <div class="box" id="post_box_{{ post.id }}">
     <article class="media">
