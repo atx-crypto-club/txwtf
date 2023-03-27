@@ -61,6 +61,21 @@ def user_view(email):
         post.post_content = dbpost.post_content
         post.id = dbpost.id
         post.deleted = dbpost.deleted
+
+        if dbpost.repost_id:
+            dbrepost = db.session.query(PostedMessage).filter(PostedMessage.id == dbpost.repost_id).first()
+            repost_user = db.session.query(User).filter(User.id == dbrepost.user_id).first()
+            repost = PostInfo()
+            repost.user_id = repost_user.id
+            repost.avatar_url = repost_user.avatar_url
+            repost.name = repost_user.name
+            repost.email = repost_user.email
+            repost.post_time = dbrepost.post_time
+            repost.post_content = dbrepost.post_content
+            repost.id = dbpost.id
+            repost.deleted = dbpost.deleted
+            post.repost = repost
+
         posts.append(post)
 
     return render_template('users.html', user=user, posts=posts)
@@ -162,7 +177,7 @@ def posts():
             repost.post_time = dbrepost.post_time
             repost.post_content = dbrepost.post_content
             repost.id = dbpost.id
-            repost.deleted = dbpost.deleted
+            repost.deleted = dbrepost.deleted
             post.repost = repost
 
         posts.append(post)
