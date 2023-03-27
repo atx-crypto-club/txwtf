@@ -72,8 +72,8 @@ def user_view(email):
             repost.email = repost_user.email
             repost.post_time = dbrepost.post_time
             repost.post_content = dbrepost.post_content
-            repost.id = dbpost.id
-            repost.deleted = dbpost.deleted
+            repost.id = dbrepost.id
+            repost.deleted = dbrepost.deleted
             post.repost = repost
 
         posts.append(post)
@@ -176,7 +176,7 @@ def posts():
                 repost.email = repost_user.email
             repost.post_time = dbrepost.post_time
             repost.post_content = dbrepost.post_content
-            repost.id = dbpost.id
+            repost.id = dbrepost.id
             repost.deleted = dbrepost.deleted
             post.repost = repost
 
