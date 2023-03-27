@@ -124,14 +124,15 @@ def render_post(
 
 def render_posts(
         posts, show_post_message_button=True,
-        show_level_menu=True, show_deleted=False,
+        show_repost=True, show_level_menu=True, show_deleted=False,
         show_replies=True, show_deleted_replies=False):
     return render_template(
         'posts_fragment.html', posts=posts,
         show_level_menu=show_level_menu,
         show_post_message_button=show_post_message_button,
         show_deleted=show_deleted, show_replies=show_replies,
-        show_deleted_replies=show_deleted_replies)
+        show_deleted_replies=show_deleted_replies,
+        show_repost=show_repost)
 
 
 def render_post_message(post_content=""):
