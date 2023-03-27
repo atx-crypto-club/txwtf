@@ -89,6 +89,16 @@ def about():
     return render_template('about.html')
 
 
+def render_post(
+        post, show_level_menu=True, show_delete_button=True,
+        show_repost=True):
+    return render_template(
+        'post_fragment.html', post=post,
+        show_level_menu=show_level_menu,
+        show_delete_button=show_delete_button,
+        show_repost=show_repost)
+
+
 def render_posts(
         posts, show_post_message_button=True,
         show_level_menu=True, show_deleted=False):
@@ -137,6 +147,24 @@ def posts():
         post.post_content = dbpost.post_content
         post.id = dbpost.id
         post.deleted = dbpost.deleted
+
+        if dbpost.repost_id:
+            dbrepost = db.session.query(PostedMessage).filter(PostedMessage.id == dbpost.repost_id).first()
+            repost_user = db.session.query(User).filter(User.id == dbrepost.user_id).first()
+            repost = PostInfo()
+            repost.user_id = repost_user.id
+            repost.avatar_url = repost_user.avatar_url
+            repost.name = repost_user.name
+            if not logged_in:
+                repost.email = ""
+            else:
+                repost.email = repost_user.email
+            repost.post_time = dbrepost.post_time
+            repost.post_content = dbrepost.post_content
+            repost.id = dbpost.id
+            repost.deleted = dbpost.deleted
+            post.repost = repost
+
         posts.append(post)
     return render_template('posts.html', posts=posts)
 
