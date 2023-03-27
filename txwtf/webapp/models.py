@@ -82,4 +82,11 @@ class HashTag(db.Model):
     tag_id = db.Column(db.Integer)
 
 
-# TODO: record mentions
+# TODO: mentions table to keep track of user mentions in posts.
+# Extract all emails from each post when entering it in the DB
+# and check if the email has been registered then add it to mentions
+# table. We assume that mentions before the email is registered
+# are lost.
+
+# TODO: statistics table. Start with a post count and user count
+# increment.

@@ -36,7 +36,6 @@ def editprofile():
         'editprofile.html', changes=changes)
 
 
-# TODO: add post message dialog with a mention auto fill
 @main.route('/u/<email>')
 @login_required
 def user_view(email):
@@ -61,6 +60,7 @@ def user_view(email):
         post.post_time = dbpost.post_time
         post.post_content = dbpost.post_content
         post.id = dbpost.id
+        post.deleted = dbpost.deleted
         posts.append(post)
 
     return render_template('users.html', user=user, posts=posts)
@@ -133,6 +133,7 @@ def posts():
         post.post_time = dbpost.post_time
         post.post_content = dbpost.post_content
         post.id = dbpost.id
+        post.deleted = dbpost.deleted
         posts.append(post)
     return render_template('posts.html', posts=posts)
 
@@ -174,6 +175,35 @@ def post_message():
     db.session.commit()
     flash("Message posted!")
     return redirect(redirect_url)
+
+
+@main.route('/delete-post', methods=['POST'])
+@login_required
+def delete_post():
+    post_id = request.form.get('post_id')
+    post = db.session.query(PostedMessage).filter(
+        PostedMessage.id == int(post_id)).first()
+    if post.user_id != current_user.id:
+        logger.error("Unauthorized post delete: {} {}".format(
+            post.user_id, current_user.id))
+        return render_template(
+            'error.html', error_msg="Unauthorized post delete"), 401
+    post.deleted = True
+    new_change = UserChange(
+        user_id=current_user.id,
+        change_code=31337, # default for now
+        change_time=datetime.now(),
+        change_desc="deleted post {}".format(
+            current_user.email, post.id))
+    db.session.add(new_change)
+    new_log = SystemLog(
+        event_code=31337, # default for now
+        event_time=datetime.now(),
+        event_desc="User {} deleted post {}".format(
+            current_user.email, post.id))
+    db.session.add(new_log)
+    db.session.commit()
+    return "OK"
 
 
 @main.route('/assets/<path:path>')

@@ -10,7 +10,10 @@
 </div>
 {% else %}
 {% for post in posts %}
-<div class="box">
+{% if post.deleted %}
+<div class="box post-box-img" id="post_box_{{ post.id }}"></div>
+{% else %}
+<div class="box" id="post_box_{{ post.id }}">
     <article class="media">
         <figure class="media-left" id="post_left_{{ post.id }}">
             {% if current_user.is_authenticated %}
@@ -52,10 +55,40 @@
         </div>
         <div class="media-right">
             {% if current_user.id == post.user_id %}
-            <button class="delete"></button>
+            <button class="delete delete-trigger" data-target="post_box_{{ post.id }}"></button>
             {% endif %}
         </div>
     </article>
 </div>
+{% endif %}
 {% endfor %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        function deletePost($el, post_id) {
+            $el.classList.add('post-box-img');
+            $el.textContent = '';
+
+            const url = '/delete-post';
+            const data = {
+                post_id: post_id
+            };
+            $.post(url, data, function(data, status) {
+                console.log("data: " + data + ", status: " + status);
+            });
+        }
+
+        (document.querySelectorAll('.delete-trigger') || []).forEach(($trigger) => {
+            const post_box = $trigger.dataset.target;
+            var vals = post_box.split('_');
+            var post_id = vals[vals.length - 1];
+            console.log("post_id: " + post_id);
+            const $target = document.getElementById(post_box);
+            $trigger.addEventListener('click', () => {
+                deletePost($target, post_id);
+            });
+        });
+    });
+</script>
 {% endif %}
