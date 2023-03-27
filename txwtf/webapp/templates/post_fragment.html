@@ -8,7 +8,7 @@
         </a>
         {% else %}
         <figure class="image is-64x64">
-        <img src="{{ post.avatar_url }}">
+            <img src="{{ post.avatar_url }}">
         </figure>
         {% endif %}
     </figure>
@@ -33,10 +33,10 @@
         <div class="level-left">
         {% if current_user.is_authenticated and show_level_menu %}
         <a class="level-item js-modal-trigger-reply" data-target="modal-post" id="reply_{{ post.id }}">
-            <span class="icon is-small"><i class="fas fa-reply"></i></span>
+            <span class="icon is-small"><i class="fas fa-reply"></i></span> {{ post.num_replies }}
         </a>
         <a class="level-item js-modal-trigger-repost" data-target="modal-post" id="repost_id_{{ post.id }}">
-            <span class="icon is-small"><i class="fas fa-retweet"></i></span>
+            <span class="icon is-small"><i class="fas fa-retweet"></i></span> {{ post.num_reposts }}
         </a>
         <a class="level-item">
             <span class="icon is-small"><i class="fas fa-heart"></i></span>

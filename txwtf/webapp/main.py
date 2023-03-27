@@ -61,6 +61,8 @@ def user_view(email):
         post.post_content = dbpost.post_content
         post.id = dbpost.id
         post.deleted = dbpost.deleted
+        post.num_reposts = len(db.session.query(PostedMessage).filter(PostedMessage.repost_id == dbpost.id).all())
+        post.num_replies = len(db.session.query(PostedMessage).filter(PostedMessage.reply_to == dbpost.id).all())
 
         if dbpost.repost_id:
             dbrepost = db.session.query(PostedMessage).filter(PostedMessage.id == dbpost.repost_id).first()
@@ -162,6 +164,8 @@ def posts():
         post.post_content = dbpost.post_content
         post.id = dbpost.id
         post.deleted = dbpost.deleted
+        post.num_reposts = len(db.session.query(PostedMessage).filter(PostedMessage.repost_id == dbpost.id).all())
+        post.num_replies = len(db.session.query(PostedMessage).filter(PostedMessage.reply_to == dbpost.id).all())
 
         if dbpost.repost_id:
             dbrepost = db.session.query(PostedMessage).filter(PostedMessage.id == dbpost.repost_id).first()
