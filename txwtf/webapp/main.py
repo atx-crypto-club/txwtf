@@ -125,10 +125,11 @@ def render_post(
 def render_posts(
         posts, show_post_message_button=True,
         show_repost=True, show_level_menu=True, show_deleted=False,
-        show_replies=True, show_deleted_replies=False):
+        show_replies=True, show_deleted_replies=False, show_delete_button=True):
     return render_template(
         'posts_fragment.html', posts=posts,
         show_level_menu=show_level_menu,
+        show_delete_button=show_delete_button,
         show_post_message_button=show_post_message_button,
         show_deleted=show_deleted, show_replies=show_replies,
         show_deleted_replies=show_deleted_replies,
