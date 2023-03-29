@@ -151,16 +151,10 @@ def render_user_card(user):
     return render_template('user_card_fragment.html', user=user)
 
 
-# TODO: add thread route to view a post with it's reply_to posts
-
-
 @main.route('/posts')
 def posts():
     # TODO: paginate post rendering by limiting
     # range of posts to render by min/max time
-    # TODO: use a join to speed this query up
-    # TODO: hide reply_to posts
-    # TODO: if you click on a post, go to the thread route
     dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
     posts = generate_render_post_data(dbposts)
     return render_template('posts.html', posts=posts)

@@ -61,6 +61,11 @@
         </a>
         {% endif %}
         <small class="level-item">{{ post.post_time.ctime() }}</small>
+        {% if post.reply_to %}
+        <a class="level-item" href="/p/{{ post.reply_to }}">
+            <span class="icon is-small"><i class="fas fa-arrow-up"></i></span>
+        </a>
+        {% endif %}
         </div>
     </nav>
     </div>
