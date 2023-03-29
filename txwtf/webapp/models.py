@@ -80,6 +80,7 @@ class HashTag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer)
     tag_id = db.Column(db.Integer)
+    post_time = db.Column(db.DateTime)
 
 
 # TODO: notifications table

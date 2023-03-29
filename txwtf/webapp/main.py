@@ -159,7 +159,21 @@ def posts():
     dbposts = db.session.query(PostedMessage).order_by(
         PostedMessage.post_time.desc())
     posts = generate_render_post_data(dbposts)
-    return render_template('posts.html', posts=posts)
+    dbtags = db.session.query(Tag).order_by(
+        Tag.last_used_time.desc()).all()
+    tags = []
+    class TagInfo():
+        pass
+    for dbtag in dbtags:
+        tag = TagInfo()
+        tag.name = dbtag.name
+        tag.last_used_time = dbtag.last_used_time
+        tag.count = len(
+            db.session.query(HashTag).filter(
+                HashTag.tag_id == dbtag.id).all())
+        tags.append(tag)
+    return render_template(
+        'posts.html', posts=posts, tags=tags)
 
 
 @main.route('/p/<post_id>')
@@ -175,7 +189,25 @@ def post_view(post_id):
         'post_view.html', posts=posts, reposts=reposts)
 
 
-def get_hashtags(content):
+@main.route('/h/<name>')
+def hash_tag_view(name):
+    dbtag = db.session.query(Tag).filter(Tag.name == name).first()
+    if not dbtag:
+        return render_template(
+            'error.html', error_msg='Unknown hash tag!')
+    dbposts = db.session.query(PostedMessage).join(
+        HashTag, PostedMessage.id == HashTag.post_id).filter(
+            HashTag.tag_id == dbtag.id).order_by(
+                PostedMessage.post_time.desc()).all()
+    posts = generate_render_post_data(dbposts)
+    description = "{} (last used {})".format(
+        dbtag.tag_description, dbtag.last_used_time.ctime())
+    return render_template(
+        'post_view.html', posts=posts, title="#{}".format(name),
+        description=description)
+
+
+def scrape_hashtags(content):
     textList = content.split()
     hashtags = []
     for i in textList:
@@ -198,7 +230,7 @@ def post_message():
 
     # extract all hash tags and add them to the tables
     markdown_content = request.form.get('post_content')
-    hashtags = get_hashtags(markdown_content)
+    hashtags = scrape_hashtags(markdown_content)
     
     post_content = markdown(markdown_content)
     if len(post_content) == 0:
@@ -244,7 +276,8 @@ def post_message():
         dbtag.last_used_time = now
         new_hashtag = HashTag(
             post_id=msg.id,
-            tag_id=dbtag.id)
+            tag_id=dbtag.id,
+            post_time=now)
         db.session.add(new_hashtag)
         db.session.commit()
 

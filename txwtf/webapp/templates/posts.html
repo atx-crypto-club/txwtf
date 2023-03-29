@@ -21,6 +21,15 @@
 
       <div class="box post-box-img">
       </div>
+
+      <div class="box has-text-left">
+        <label class="label">Hash Tags</label>
+        <ul>
+        {% for tag in tags %}
+          <li><a href="/h/{{ tag.name }}">#{{ tag.name }} {{ tag.count }}</a></li>
+        {% endfor %}
+        </ul>
+      </div>
     </div>
     <div class="column has-text-left">
         {% with messages = get_flashed_messages() %}

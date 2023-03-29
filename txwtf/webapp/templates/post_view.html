@@ -11,6 +11,21 @@
 {% endif %}
 {% endwith %}
 
+{% if title or description %}
+<div class="box has-text-left">
+{% if title %}
+<h1>{{ title }}</h1>
+{% endif %}
+
+{% if description %}
+<div class="box">
+    <p>{{ description }}</p>
+</div>
+{% endif %}
+</div>
+{% endif %}
+
+
 <div class="box has-text-left">
 {{ render_posts(posts, False, True, True, False, True, False, True, True)|safe }}
 </div>
