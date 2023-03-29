@@ -254,5 +254,38 @@ def list_posts(obj, config):
         'ID', 'reply_to', 'repost_id', 'deleted', 'post_time', 'content']))
 
 
+@root.command()
+@click.option(
+    '--config', '-c', default=None,
+    help="Flask configuration file")
+@click.pass_obj
+def list_tags(obj, config):
+    """
+    Print a list of tags known by the system.
+    """
+    from tabulate import tabulate
+    import txwtf.webapp
+    from txwtf.webapp import db
+    from txwtf.webapp.models import Tag, HashTag
+    app = txwtf.webapp.create_app(config_filename=config)
+    table = []
+    with app.app_context():
+        tags = db.session.query(Tag).order_by(
+            Tag.last_used_time.desc()).all()
+        for tag in tags:
+            num_posts = len(db.session.query(HashTag).filter(
+                HashTag.tag_id == tag.id).all())
+            row = [
+                tag.id, tag.name, tag.created_time.ctime(),
+                tag.modified_time.ctime(),
+                tag.last_used_time.ctime(),
+                tag.user_id, num_posts,
+                tag.tag_description]
+            table.append(row)
+    print("{} tags".format(len(tags)))
+    print(tabulate(table, headers=[
+        'ID', 'name', 'created time', 'modified time', 'last used', 'user_id', 'num posts', 'description']))
+
+
 if __name__ == '__main__':
     root(prog_name="txwtf")

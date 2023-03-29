@@ -14,7 +14,8 @@ from markdownify import markdownify
 
 from . import db, upload_archive
 
-from .models import User, UserChange, SystemLog, PostedMessage
+from .models import (
+    User, UserChange, SystemLog, PostedMessage, Tag, HashTag)
 
 
 main = Blueprint('main', __name__)
@@ -174,6 +175,16 @@ def post_view(post_id):
         'post_view.html', posts=posts, reposts=reposts)
 
 
+def get_hashtags(content):
+    textList = content.split()
+    hashtags = []
+    for i in textList:
+        if(i[0] == "#"):
+            x = i.replace("#", '')
+            hashtags.append(x)
+    return hashtags
+
+
 @main.route('/post-message', methods=['POST'])
 @login_required
 def post_message():
@@ -185,9 +196,11 @@ def post_message():
     if repost_id == "":
         repost_id = None
 
-    # TODO: extract all hash tags and add them to the tables
+    # extract all hash tags and add them to the tables
+    markdown_content = request.form.get('post_content')
+    hashtags = get_hashtags(markdown_content)
     
-    post_content = markdown(request.form.get('post_content'))
+    post_content = markdown(markdown_content)
     if len(post_content) == 0:
         flash('Error: Empty post!')
         return redirect(redirect_url)
@@ -210,6 +223,30 @@ def post_message():
     db.session.add(msg)
     db.session.commit()
     flash("Message posted!")
+
+    for hashtag in hashtags:
+        # if the tag doesn't exist, add it to the db and attribute it
+        # to the current_user. Then add a hashtag entry for this post.
+        dbtag = db.session.query(Tag).filter(Tag.name == hashtag).first()
+        if dbtag is None:
+            now = datetime.now()
+            new_tag = Tag(
+                name=hashtag,
+                created_time=now,
+                user_id=current_user.id,
+                tag_description="#{}".format(hashtag),
+                modified_time=now,
+                last_used_time=now)
+            db.session.add(new_tag)
+            db.session.commit()
+            dbtag = new_tag
+
+        new_hashtag = HashTag(
+            post_id=msg.id,
+            tag_id=dbtag.id)
+        db.session.add(new_hashtag)
+        db.session.commit()
+
     return redirect(redirect_url)
 
 
