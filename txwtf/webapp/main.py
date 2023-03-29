@@ -171,7 +171,11 @@ def post_view(post_id):
     dbposts = db.session.query(PostedMessage).filter(
         PostedMessage.id == int(post_id)).all()
     posts = generate_render_post_data(dbposts)
-    return render_template('post_view.html', posts=posts)
+    dbreposts = db.session.query(PostedMessage).filter(
+        PostedMessage.repost_id == int(post_id)).all()
+    reposts = generate_render_post_data(dbreposts)
+    return render_template(
+        'post_view.html', posts=posts, reposts=reposts)
 
 
 @main.route('/post-message', methods=['POST'])

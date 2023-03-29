@@ -12,8 +12,15 @@
 {% endwith %}
 
 <div class="box has-text-left">
-{{ render_posts(posts, True, True, True, False, True, False, True, True)|safe }}
+{{ render_posts(posts, False, True, True, False, True, False, True, True)|safe }}
 </div>
+
+{% if reposts|length > 0 %}
+<div class="box has-text-left">
+    <label class="label">Reposts</label>
+    {{ render_posts(reposts, False, True, True, False, False, False, True, True)|safe }}
+</div>
+{% endif %}
 
 {% if current_user.is_authenticated %}
 {{ render_post_message("", "/p/{}".format(posts[0].id))|safe }}
