@@ -155,7 +155,8 @@ def render_user_card(user):
 def posts():
     # TODO: paginate post rendering by limiting
     # range of posts to render by min/max time
-    dbposts = db.session.query(PostedMessage).order_by(PostedMessage.post_time.desc())
+    dbposts = db.session.query(PostedMessage).order_by(
+        PostedMessage.post_time.desc())
     posts = generate_render_post_data(dbposts)
     return render_template('posts.html', posts=posts)
 
@@ -166,7 +167,8 @@ def post_view(post_id):
         PostedMessage.id == int(post_id)).all()
     posts = generate_render_post_data(dbposts)
     dbreposts = db.session.query(PostedMessage).filter(
-        PostedMessage.repost_id == int(post_id)).all()
+        PostedMessage.repost_id == int(post_id)).order_by(
+        PostedMessage.post_time.desc()).all()
     reposts = generate_render_post_data(dbreposts)
     return render_template(
         'post_view.html', posts=posts, reposts=reposts)
