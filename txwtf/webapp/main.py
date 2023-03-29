@@ -227,9 +227,9 @@ def post_message():
     for hashtag in hashtags:
         # if the tag doesn't exist, add it to the db and attribute it
         # to the current_user. Then add a hashtag entry for this post.
+        now = datetime.now()
         dbtag = db.session.query(Tag).filter(Tag.name == hashtag).first()
         if dbtag is None:
-            now = datetime.now()
             new_tag = Tag(
                 name=hashtag,
                 created_time=now,
@@ -241,6 +241,7 @@ def post_message():
             db.session.commit()
             dbtag = new_tag
 
+        dbtag.last_used_time = now
         new_hashtag = HashTag(
             post_id=msg.id,
             tag_id=dbtag.id)

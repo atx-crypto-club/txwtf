@@ -229,20 +229,36 @@ def verify_email(obj, config, verify, user):
 @click.option(
     '--config', '-c', default=None,
     help="Flask configuration file")
+@click.option(
+    '--hashtag', '-h', default=None,
+    help="Only show posts with this hashtag")
 @click.pass_obj
-def list_posts(obj, config):
+def list_posts(obj, config, hashtag):
     """
     Print a list of posts in the system.
     """
     from tabulate import tabulate
     import txwtf.webapp
     from txwtf.webapp import db
-    from txwtf.webapp.models import PostedMessage
+    from txwtf.webapp.models import PostedMessage, HashTag, Tag
     app = txwtf.webapp.create_app(config_filename=config)
     table = []
     with app.app_context():
-        posts = db.session.query(PostedMessage).order_by(
-            PostedMessage.post_time.desc()).all()
+        if hashtag is not None:
+            dbtag = db.session.query(Tag).filter(Tag.name == hashtag).first()
+            if dbtag is None:
+                logger.error("No such hashtag {}".format(hashtag))
+                return
+            hashtags = db.session.query(HashTag).filter(
+                HashTag.tag_id == dbtag.id).all()
+            posts = []
+            for hashtag in hashtags:
+                post = db.session.query(PostedMessage).filter(
+                    PostedMessage.id == hashtag.post_id).first()
+                posts.append(post)
+        else:
+            posts = db.session.query(PostedMessage).order_by(
+                PostedMessage.post_time.desc()).all()
         for post in posts:
             row = [
                 post.id, str(post.reply_to), str(post.repost_id),
@@ -284,7 +300,8 @@ def list_tags(obj, config):
             table.append(row)
     print("{} tags".format(len(tags)))
     print(tabulate(table, headers=[
-        'ID', 'name', 'created time', 'modified time', 'last used', 'user_id', 'num posts', 'description']))
+        'ID', 'name', 'created time', 'modified time',
+        'last used', 'user_id', 'num posts', 'description']))
 
 
 if __name__ == '__main__':
