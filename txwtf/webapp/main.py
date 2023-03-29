@@ -164,6 +164,14 @@ def posts():
     return render_template('posts.html', posts=posts)
 
 
+@main.route('/p/<post_id>')
+def post_view(post_id):
+    dbposts = db.session.query(PostedMessage).filter(
+        PostedMessage.id == int(post_id)).all()
+    posts = generate_render_post_data(dbposts)
+    return render_template('post_view.html', posts=posts)
+
+
 @main.route('/post-message', methods=['POST'])
 @login_required
 def post_message():

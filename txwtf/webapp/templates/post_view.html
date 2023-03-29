@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="box">
+  <div class="notification is-info">
+      {{ messages[0] }}
+  </div>
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="box">
+{{ render_posts(posts, True, True, True, False, True, False, True, True)|safe }}
+</div>
+
+{% if current_user.is_authenticated %}
+{{ render_post_message()|safe }}
+{% endif %}
+
+{% endblock %}
