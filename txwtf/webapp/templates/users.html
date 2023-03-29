@@ -34,9 +34,9 @@
 </div>
 
 {% if current_user.id == user.id %}
-{{ render_post_message()|safe }}
+{{ render_post_message("", "/u/{}".format(user.email))|safe }}
 {% else %}
-{{ render_post_message(user.email)|safe }}
+{{ render_post_message(user.email, "/u/{}".format(user.email))|safe }}
 {% endif %}
 
 {% endblock %}

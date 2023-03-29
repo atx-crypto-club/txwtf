@@ -1,3 +1,6 @@
+{% if post.deleted %}
+<div class="box post-box-img"></div>
+{% else %}
 <article class="media">
     <figure class="media-left" id="post_left_{{ post.id }}">
         {% if current_user.is_authenticated %}
@@ -13,6 +16,7 @@
         {% endif %}
     </figure>
     <div class="media-content">
+    <a href="/p/{{ post.id }}">
     <div class="content" id="post_content_{{ post.id }}">
         <p>
         <strong>{{ post.name }}</strong> <small>{{ post.email }}</small>
@@ -20,6 +24,7 @@
         {{ post.post_content|safe }}
         </p>
         {% if post.repost and show_repost %}
+            <a href="/p/{{ post.repost_id }}">
             {% if post.repost.deleted %}
             <div class="box post-box-img"></div>
             {% else %}
@@ -27,6 +32,7 @@
                 {{ render_post(post.repost, False, False, False)|safe }}
             </div>
             {% endif %}
+            </a>
         {% endif %}
 
         {% if show_replies %}
@@ -40,6 +46,7 @@
         {% endfor %}
         {% endif %}
     </div>
+    </a>
     <nav class="level is-mobile">
         <div class="level-left">
         {% if current_user.is_authenticated and show_level_menu %}
@@ -63,3 +70,5 @@
         {% endif %}
     </div>
 </article>
+{% endif %}
+</a>

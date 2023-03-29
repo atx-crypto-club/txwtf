@@ -68,6 +68,7 @@ def generate_render_post_data(dbposts):
             dbrepost = db.session.query(PostedMessage).filter(
                 PostedMessage.id == dbpost.repost_id)
             post.repost = generate_render_post_data(dbrepost)[0]
+            post.repost_id = dbpost.repost_id
 
         posts.append(post)
     return posts
@@ -140,9 +141,10 @@ def render_posts(
         show_top_level_replies=show_top_level_replies)
 
 
-def render_post_message(post_content=""):
+def render_post_message(post_content="", redirect_url="/posts"):
     return render_template(
-        'post_message_fragment.html', post_content=post_content)
+        'post_message_fragment.html',
+        post_content=post_content, redirect_url=redirect_url)
 
 
 def render_user_card(user):

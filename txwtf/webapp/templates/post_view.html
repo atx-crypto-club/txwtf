@@ -11,12 +11,12 @@
 {% endif %}
 {% endwith %}
 
-<div class="box">
+<div class="box has-text-left">
 {{ render_posts(posts, True, True, True, False, True, False, True, True)|safe }}
 </div>
 
 {% if current_user.is_authenticated %}
-{{ render_post_message()|safe }}
+{{ render_post_message("", "/p/{}".format(posts[0].id))|safe }}
 {% endif %}
 
 {% endblock %}

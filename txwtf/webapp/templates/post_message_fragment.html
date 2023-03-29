@@ -5,7 +5,7 @@
       <div class="box">
         <label class="label has-text-left" id="modal_title">Post message</label>
         <form method="POST" action="/post-message">
-          <input type="hidden" name="redirect" value="/posts">
+          <input type="hidden" name="redirect" value="{{ redirect_url }}">
           <input type="hidden" id="modal_reply_to" name="reply_to" value="">
           <input type="hidden" id="modal_repost_id" name="repost_id" value="">
           <div class="box is-hidden" id="modal_reply_to_post_box">
