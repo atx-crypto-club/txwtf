@@ -180,6 +180,9 @@ def posts():
 def post_view(post_id):
     dbposts = db.session.query(PostedMessage).filter(
         PostedMessage.id == int(post_id)).all()
+    if len(dbposts) == 0:
+        return render_template(
+            'error.html', error_msg='Unknown post!')
     posts = generate_render_post_data(dbposts)
     dbreposts = db.session.query(PostedMessage).filter(
         PostedMessage.repost_id == int(post_id)).order_by(
