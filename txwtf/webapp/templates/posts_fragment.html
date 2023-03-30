@@ -46,6 +46,8 @@
                 reaction_name: reaction_name
             };
             $.post(url, data, function(data, status) {
+                count = document.getElementById('heart_reaction_count_'+post_id);
+                count.textContent = data;
                 console.log("data: " + data + ", status: " + status);
             });
         }
@@ -57,6 +59,8 @@
                 reaction_name: reaction_name
             };
             $.post(url, data, function(data, status) {
+                count = document.getElementById('heart_reaction_count_'+post_id);
+                count.textContent = data;
                 console.log("data: " + data + ", status: " + status);
             });
         }

@@ -269,7 +269,7 @@ def add_reaction(user_id, post_id, reaction_name):
     else:
         reaction = Reaction(
             user_id=user_id, post_id=post_id, reaction_time=now,
-           emoji_id=emoji.id, deleted=False)
+            emoji_id=emoji.id, deleted=False)
         db.session.add(reaction)
     log_reaction = UserChange(
         user_id=user_id,
@@ -279,6 +279,12 @@ def add_reaction(user_id, post_id, reaction_name):
             reaction_name, post_id))
     db.session.add(log_reaction)
     db.session.commit()
+
+    # Return the posts total number of reactions
+    return len(db.session.query(Reaction).filter(
+        Reaction.post_id == post_id,
+        Reaction.emoji_id == emoji.id,
+        Reaction.deleted == False).all())
     
 
 def remove_reaction(user_id, post_id, reaction_name):
@@ -308,6 +314,12 @@ def remove_reaction(user_id, post_id, reaction_name):
     db.session.add(log_reaction)
     db.session.commit()
 
+    # Return the posts total number of reactions
+    return len(db.session.query(Reaction).filter(
+        Reaction.post_id == post_id,
+        Reaction.emoji_id == emoji.id,
+        Reaction.deleted == False).all())
+
 
 @main.route('/add-reaction', methods=['POST'])
 @login_required
@@ -315,8 +327,7 @@ def post_add_reaction():
     post_id = request.form.get('post_id')
     reaction_name = request.form.get('reaction_name')
     user_id = current_user.id
-    add_reaction(user_id, post_id, reaction_name)
-    return "OK"
+    return str(add_reaction(user_id, post_id, reaction_name))
 
 
 @main.route('/remove-reaction', methods=['POST'])
@@ -325,8 +336,7 @@ def post_remove_reaction():
     post_id = request.form.get('post_id')
     reaction_name = request.form.get('reaction_name')
     user_id = current_user.id
-    remove_reaction(user_id, post_id, reaction_name)
-    return "OK"
+    return str(remove_reaction(user_id, post_id, reaction_name))
 
 
 @main.route('/post-message', methods=['POST'])

@@ -58,11 +58,11 @@
         </a>
         {% if post.current_user_reactions|length > 0 %}
         <a class="level-item heart-reaction-trigger has-text-danger" id="heart_reaction_{{ post.id }}">
-            <span class="icon is-small"><i class="fas fa-heart"></i></span> {{ post.num_reactions }}
+            <span class="icon is-small"><i class="fas fa-heart"></i></span> <span id="heart_reaction_count_{{ post.id }}">{{ post.num_reactions }}</span>
         </a>
         {% else %}
         <a class="level-item heart-reaction-trigger" id="heart_reaction_{{ post.id }}">
-            <span class="icon is-small"><i class="fas fa-heart"></i></span> {{ post.num_reactions }}
+            <span class="icon is-small"><i class="fas fa-heart"></i></span> <span id="heart_reaction_count_{{ post.id }}">{{ post.num_reactions }}</span>
         </a>
         {% endif %}
 
