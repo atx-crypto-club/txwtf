@@ -15,7 +15,7 @@ from markdownify import markdownify
 from . import db, upload_archive
 
 from .models import (
-    User, UserChange, SystemLog, PostedMessage, Tag, HashTag)
+    Emoji, User, UserChange, SystemLog, PostedMessage, Reaction, Tag, HashTag)
 
 
 main = Blueprint('main', __name__)
@@ -64,6 +64,14 @@ def generate_render_post_data(dbposts):
                 PostedMessage.reply_to == dbpost.id).all())
         post.reply_to = dbpost.reply_to
         post.num_replies = len(post.replies)
+        post.reactions = db.session.query(Reaction).filter(
+            Reaction.post_id == dbpost.id,
+            Reaction.deleted == False).all()
+        if logged_in:
+            post.current_user_reactions = db.session.query(Reaction).filter(
+                Reaction.user_id == current_user.id,
+                Reaction.post_id == dbpost.id,
+                Reaction.deleted == False).all()
 
         if dbpost.repost_id:
             dbrepost = db.session.query(PostedMessage).filter(
@@ -218,6 +226,106 @@ def scrape_hashtags(content):
             x = i.replace("#", '')
             hashtags.append(x)
     return hashtags
+
+
+def add_reaction(user_id, post_id, reaction_name):
+    now = datetime.now()
+    user = db.session.query(User).filter(User.id == user_id).first()
+    if not user:
+        logger.error("Invalid user {}".format(user_id))
+        return
+    emoji = db.session.query(Emoji).filter(Emoji.name == reaction_name).first()
+    if not emoji:
+        # TODO: choose a better default url
+        # TODO: add a routine to populate the emoji table with a default set of emojis
+        emoji = Emoji(
+            added_time=now, user_id=user_id, name=reaction_name,
+            emoji_url="/assets/img/cropped-atxcf_logo_small-32x32.jpg",
+            emoji_description=reaction_name,
+            modified_time=now)
+        db.session.add(emoji)
+        new_log = SystemLog(
+            event_code=31337, # default for now
+            event_time=now,
+            event_desc="User {} Adding emoji {}".format(
+                user.name, reaction_name))
+        db.session.add(new_log)
+        db.session.commit()
+
+    # don't do anything if this reaction was already saved
+    reaction = db.session.query(Reaction).filter(
+        Reaction.user_id == user_id,
+        Reaction.post_id == post_id,
+        Reaction.emoji_id == emoji.id).first()
+    if reaction is not None:
+        if not reaction.deleted:
+            logger.warning(
+                "Already recorded user {} reaction {} for post {}".format(
+                    user_id, reaction_name, post_id))
+            return
+        else:
+            reaction.deleted = False
+    else:
+        reaction = Reaction(
+            user_id=user_id, post_id=post_id, reaction_time=now,
+           emoji_id=emoji.id, deleted=False)
+        db.session.add(reaction)
+    log_reaction = UserChange(
+        user_id=user_id,
+        change_code=31337,
+        change_time=now,
+        change_desc="Adding {} reaction to post {}".format(
+            reaction_name, post_id))
+    db.session.add(log_reaction)
+    db.session.commit()
+    
+
+def remove_reaction(user_id, post_id, reaction_name):
+    emoji = db.session.query(Emoji).filter(Emoji.name == reaction_name).first()
+    if not emoji:
+        logger.warning("No emoji {}".format(reaction_name))
+        return
+    reaction = db.session.query(Reaction).filter(
+        Reaction.emoji_id == emoji.id,
+        Reaction.user_id == user_id,
+        Reaction.post_id == post_id).first()
+    if not reaction:
+        logger.warning("No reaction {} by user {} for post {}".format(
+            reaction_name, user_id, post_id))
+        return
+    if reaction.deleted:
+        logger.warning("Reaction {} by user {} for post {} already removed".format(
+            reaction_name, user_id, post_id))
+        return
+    reaction.deleted = True
+    log_reaction = UserChange(
+        user_id=user_id,
+        change_code=31337,
+        change_time=datetime.now(),
+        change_desc="Removing {} reaction to post {}".format(
+            reaction_name, post_id))
+    db.session.add(log_reaction)
+    db.session.commit()
+
+
+@main.route('/add-reaction', methods=['POST'])
+@login_required
+def post_add_reaction():
+    post_id = request.form.get('post_id')
+    reaction_name = request.form.get('reaction_name')
+    user_id = current_user.id
+    add_reaction(user_id, post_id, reaction_name)
+    return "OK"
+
+
+@main.route('/remove-reaction', methods=['POST'])
+@login_required
+def post_remove_reaction():
+    post_id = request.form.get('post_id')
+    reaction_name = request.form.get('reaction_name')
+    user_id = current_user.id
+    remove_reaction(user_id, post_id, reaction_name)
+    return "OK"
 
 
 @main.route('/post-message', methods=['POST'])

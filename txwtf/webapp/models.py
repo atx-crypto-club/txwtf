@@ -63,7 +63,7 @@ class Reaction(db.Model):
     post_id = db.Column(db.Integer)
     reaction_time = db.Column(db.DateTime)
     emoji_id = db.Column(db.Integer)
-    # TODO: add deleted column
+    deleted = db.Column(db.Boolean)
 
 
 class Tag(db.Model):

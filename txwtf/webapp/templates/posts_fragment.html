@@ -39,6 +39,28 @@
             });
         }
 
+        function addReaction(post_id, reaction_name) {
+            const url = '/add-reaction';
+            const data = {
+                post_id: post_id,
+                reaction_name: reaction_name
+            };
+            $.post(url, data, function(data, status) {
+                console.log("data: " + data + ", status: " + status);
+            });
+        }
+
+        function removeReaction(post_id, reaction_name) {
+            const url = '/remove-reaction';
+            const data = {
+                post_id: post_id,
+                reaction_name: reaction_name
+            };
+            $.post(url, data, function(data, status) {
+                console.log("data: " + data + ", status: " + status);
+            });
+        }
+
         (document.querySelectorAll('.delete-trigger') || []).forEach(($trigger) => {
             const post_box = $trigger.dataset.target;
             var vals = post_box.split('_');
@@ -47,6 +69,21 @@
             const $target = document.getElementById(post_box);
             $trigger.addEventListener('click', () => {
                 deletePost($target, post_id);
+            });
+        });
+
+        (document.querySelectorAll('.heart-reaction-trigger') || []).forEach(($trigger) => {
+            $trigger.addEventListener('click', () => {
+                var vals = $trigger.id.split('_');
+                var post_id = vals[vals.length - 1];
+                console.log("post_id: " + post_id);
+                if($trigger.classList.contains('has-text-danger')) {
+                    $trigger.classList.remove('has-text-danger');
+                    removeReaction(post_id, "heart");
+                } else {
+                    $trigger.classList.add('has-text-danger');
+                    addReaction(post_id, "heart");
+                }
             });
         });
     });
