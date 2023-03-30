@@ -12,9 +12,6 @@
         <div class="box post-box-img"></div>
     </div>
     <div class="column has-text-left">
-        <div class="box has-text-centered post-box-img is-bold">
-            <h1>Users</h1>
-        </div>
         <div class="box">
             <table class="table" style="font-size: smaller; font-family:'Courier New', Courier, monospace">
                 <thead>
@@ -22,7 +19,8 @@
                     <th>Avatar</th>
                     <th>Name</th>
                     <th>Email</th>
-                    <th>LastMod</th>
+                    <th>Last Mod</th>
+                    <th>Last Login</th>
                     <th>Is Admin</th>
                   </tr>
                 </thead>
@@ -39,6 +37,11 @@
                         <td>{{ user.name }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.modified_time.ctime() }}</td>
+                        {% if user.last_login %}
+                        <td>{{ user.last_login.ctime() }}</td>
+                        {% else %}
+                        <td>None</td>
+                        {% endif %}
                         <td>{{ user.is_admin }}</td>
                     </tr>
                     {% endfor %}

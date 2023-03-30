@@ -36,9 +36,11 @@ def login_post():
         return redirect(url_for('auth.login'))
 
     login_user(user, remember=remember)
+    now = datetime.now()
+    user.last_login = now
     new_log = SystemLog(
         event_code=31337, # default for now
-        event_time=datetime.now(),
+        event_time=now,
         event_desc="user {} [{}] logged in".format(
             user.email, user.id))
     db.session.add(new_log)
@@ -69,18 +71,20 @@ def register_post():
 
     # create a new user with the form data. Hash the password so the
     # plaintext version isn't saved.
+    now = datetime.now()
     new_user = User(
         email=email, name=name,
         password=generate_password_hash(password, method='sha256'),
-        created_time=datetime.now(),
-        modified_time=datetime.now(),
+        created_time=now,
+        modified_time=now,
         avatar_url="/assets/img/atxcf_logo_small.jpg",
         card_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
         header_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
         header_text=name,
         description="{} is on the scene".format(name),
         email_verified=False,
-        is_admin=False)
+        is_admin=False,
+        last_login=None)
 
     # add the new user to the database
     db.session.add(new_user)
@@ -89,13 +93,13 @@ def register_post():
     new_change = UserChange(
         user_id=new_user.id,
         change_code=31337, # default for now
-        change_time=datetime.now(),
+        change_time=now,
         change_desc="creating new user {} [{}]".format(
         new_user.email, new_user.id))
     db.session.add(new_change)
     new_log = SystemLog(
         event_code=31337, # default for now
-        event_time=datetime.now(),
+        event_time=now,
         event_desc="creating new user {} [{}]".format(
         new_user.email, new_user.id))
     db.session.add(new_log)
