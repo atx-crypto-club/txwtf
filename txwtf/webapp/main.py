@@ -67,6 +67,7 @@ def generate_render_post_data(dbposts):
         post.reactions = db.session.query(Reaction).filter(
             Reaction.post_id == dbpost.id,
             Reaction.deleted == False).all()
+        post.num_reactions = len(post.reactions)
         if logged_in:
             post.current_user_reactions = db.session.query(Reaction).filter(
                 Reaction.user_id == current_user.id,
