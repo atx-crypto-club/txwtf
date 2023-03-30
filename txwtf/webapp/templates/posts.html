@@ -2,25 +2,12 @@
 {% block content %}
 <div class="columns">
     <div class="column is-one-quarter">
-      {% if current_user.is_authenticated %}
       <div class="box">
-        {{ render_user_card(current_user)|safe }}
-      </div>
-      {% else %}
-      <div class="box">
-        <h1 class="title">
-          tx.wtf
-        </h1>
-        <h2 class="subtitle">
-          many crypto, wow
-        </h2>
+        <label class="label">Post Feed</label>
         <img src="/assets/img/atxcf_logo_small.jpg">
-        <p>Log in to post!</p>
       </div>
-      {% endif %}
 
-      <div class="box post-box-img">
-      </div>
+      <div class="box post-box-img"></div>
 
       <div class="box has-text-left">
         <label class="label">Hash Tags</label>
@@ -30,6 +17,8 @@
         {% endfor %}
         </ul>
       </div>
+
+      <div class="box post-box-img"></div>
     </div>
     <div class="column has-text-left">
         {% with messages = get_flashed_messages() %}
@@ -41,10 +30,6 @@
         </div>
         {% endif %}
         {% endwith %}
-
-        <div class="box has-text-centered post-box-img is-bold">
-          <h1>Posts</h1>
-        </div>
 
         {{ render_posts(posts, True, True, True, False, True, False, True, False)|safe }}
     </div>

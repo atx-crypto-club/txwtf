@@ -35,7 +35,7 @@
                 post_id: post_id
             };
             $.post(url, data, function(data, status) {
-                console.log("data: " + data + ", status: " + status);
+                console.log("deletePost data: " + data + ", status: " + status);
             });
         }
 
@@ -48,7 +48,7 @@
             $.post(url, data, function(data, status) {
                 count = document.getElementById('heart_reaction_count_'+post_id);
                 count.textContent = data;
-                console.log("data: " + data + ", status: " + status);
+                console.log("addReaction data: " + data + ", status: " + status);
             });
         }
 
@@ -61,7 +61,7 @@
             $.post(url, data, function(data, status) {
                 count = document.getElementById('heart_reaction_count_'+post_id);
                 count.textContent = data;
-                console.log("data: " + data + ", status: " + status);
+                console.log("removeReaction data: " + data + ", status: " + status);
             });
         }
 
