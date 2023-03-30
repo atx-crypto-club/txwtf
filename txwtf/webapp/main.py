@@ -106,7 +106,7 @@ def user_list():
     return render_template(
         'userlist.html',
         users=db.session.query(User).order_by(
-            User.modified_time.desc()).all())
+            User.last_login.desc()).all())
 
 
 @main.route('/system-log')
