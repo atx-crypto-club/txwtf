@@ -16,65 +16,68 @@
         {% endif %}
     </figure>
     <div class="media-content">
-    <a href="/p/{{ post.id }}">
-    <div class="content" id="post_content_{{ post.id }}">
-        <p>
-        <strong>{{ post.name }}</strong> <small>{{ post.email }}</small>
-        <br>
-        {{ post.post_content|safe }}
-        </p>
-        {% if post.repost and show_repost %}
-            <a href="/p/{{ post.repost_id }}">
-            {% if post.repost.deleted %}
-            <div class="box post-box-img"></div>
-            {% else %}
-            <div class="box">
-                {{ render_post(post.repost, False, False, False, False)|safe }}
-            </div>
-            {% endif %}
+        <div class="content" id="post_content_{{ post.id }}">
+            <a href="/p/{{ post.id }}">
+                <p>
+                    <strong>{{ post.name }}</strong> <small>{{ post.email }}</small>
+                    <br>
+                    {{ post.post_content|safe }}
+                </p>
+                {% if post.repost and show_repost %}
+                    <a href="/p/{{ post.repost_id }}">
+                    {% if post.repost.deleted %}
+                    <div class="box post-box-img"></div>
+                    {% else %}
+                    <div class="box">
+                        {{ render_post(post.repost, False, False, False, False)|safe }}
+                    </div>
+                    {% endif %}
+                    </a>
+                {% endif %}
             </a>
-        {% endif %}
-
-        {% if show_replies %}
-        {% for reply in post.replies %}
-            {% if not reply.deleted %}
-                {{ render_post(reply, True, True, True, True, show_deleted_replies)|safe }}
-            {% endif %}
-            {% if reply.deleted and show_deleted_replies %}
-            <div class="box post-box-img"></div>
-            {% endif %}
-        {% endfor %}
-        {% endif %}
-    </div>
-    </a>
-    <nav class="level is-mobile">
-        <div class="level-left">
-        {% if current_user.is_authenticated and show_level_menu %}
-        <a class="level-item js-modal-trigger-reply" data-target="modal-post" id="reply_{{ post.id }}">
-            <span class="icon is-small"><i class="fas fa-reply"></i></span> {{ post.num_replies }}
-        </a>
-        <a class="level-item js-modal-trigger-repost" data-target="modal-post" id="repost_id_{{ post.id }}">
-            <span class="icon is-small"><i class="fas fa-retweet"></i></span> {{ post.num_reposts }}
-        </a>
-        {% if post.current_user_reactions|length > 0 %}
-        <a class="level-item heart-reaction-trigger has-text-danger" id="heart_reaction_{{ post.id }}">
-            <span class="icon is-small"><i class="fas fa-heart"></i></span> <span id="heart_reaction_count_{{ post.id }}">{{ post.num_reactions }}</span>
-        </a>
-        {% else %}
-        <a class="level-item heart-reaction-trigger" id="heart_reaction_{{ post.id }}">
-            <span class="icon is-small"><i class="fas fa-heart"></i></span> <span id="heart_reaction_count_{{ post.id }}">{{ post.num_reactions }}</span>
-        </a>
-        {% endif %}
-
-        {% endif %}
-        <small class="level-item">{{ post.post_time.ctime() }}</small>
-        {% if post.reply_to %}
-        <a class="level-item" href="/p/{{ post.reply_to }}">
-            <span class="icon is-small"><i class="fas fa-arrow-up"></i></span>
-        </a>
-        {% endif %}
         </div>
-    </nav>
+        <div class="content" id="post_content_nav_{{ post.id }}">
+            <nav class="level is-mobile has-text-left">
+                <div class="level-left">
+                {% if current_user.is_authenticated and show_level_menu %}
+                <a class="level-item js-modal-trigger-reply" data-target="modal-post" id="reply_{{ post.id }}">
+                    <span class="icon is-small"><i class="fas fa-reply"></i></span> {{ post.num_replies }}
+                </a>
+                <a class="level-item js-modal-trigger-repost" data-target="modal-post" id="repost_id_{{ post.id }}">
+                    <span class="icon is-small"><i class="fas fa-retweet"></i></span> {{ post.num_reposts }}
+                </a>
+                {% if post.current_user_reactions|length > 0 %}
+                <a class="level-item heart-reaction-trigger has-text-danger" id="heart_reaction_{{ post.id }}">
+                    <span class="icon is-small"><i class="fas fa-heart"></i></span> <span id="heart_reaction_count_{{ post.id }}">{{ post.num_reactions }}</span>
+                </a>
+                {% else %}
+                <a class="level-item heart-reaction-trigger" id="heart_reaction_{{ post.id }}">
+                    <span class="icon is-small"><i class="fas fa-heart"></i></span> <span id="heart_reaction_count_{{ post.id }}">{{ post.num_reactions }}</span>
+                </a>
+                {% endif %}
+    
+                {% endif %}
+                <small class="level-item">{{ post.post_time.ctime() }}</small>
+                {% if post.reply_to %}
+                <a class="level-item" href="/p/{{ post.reply_to }}">
+                    <span class="icon is-small"><i class="fas fa-arrow-up"></i></span>
+                </a>
+                {% endif %}
+                </div>
+            </nav>
+        </div>
+        <div class="content" id="post_content_replies_{{ post.id }}">
+            {% if show_replies %}
+            {% for reply in post.replies %}
+                {% if not reply.deleted %}
+                    {{ render_post(reply, True, True, True, True, show_deleted_replies)|safe }}
+                {% endif %}
+                {% if reply.deleted and show_deleted_replies %}
+                <div class="box post-box-img"></div>
+                {% endif %}
+            {% endfor %}
+            {% endif %}
+        </div>
     </div>
     <div class="media-right">
         {% if current_user.id == post.user_id and show_delete_button %}
