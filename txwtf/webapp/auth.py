@@ -7,7 +7,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import db
-from .models import User, UserChange, SystemLog
+from .models import SystemLog, User, UserChange
 
 
 auth = Blueprint('auth', __name__)
@@ -39,7 +39,7 @@ def login_post():
     now = datetime.now()
     user.last_login = now
     new_log = SystemLog(
-        event_code=31337, # default for now
+        event_code=31337,  # default for now
         event_time=now,
         event_desc="user {} [{}] logged in".format(
             user.email, user.id))
@@ -92,16 +92,16 @@ def register_post():
 
     new_change = UserChange(
         user_id=new_user.id,
-        change_code=31337, # default for now
+        change_code=31337,  # default for now
         change_time=now,
         change_desc="creating new user {} [{}]".format(
-        new_user.email, new_user.id))
+            new_user.email, new_user.id))
     db.session.add(new_change)
     new_log = SystemLog(
-        event_code=31337, # default for now
+        event_code=31337,  # default for now
         event_time=now,
         event_desc="creating new user {} [{}]".format(
-        new_user.email, new_user.id))
+            new_user.email, new_user.id))
     db.session.add(new_log)
 
     db.session.commit()
@@ -113,7 +113,7 @@ def register_post():
 @login_required
 def logout():
     new_log = SystemLog(
-        event_code=31337, # default for now
+        event_code=31337,  # default for now
         event_time=datetime.now(),
         event_desc="user {} [{}] logging out".format(
             current_user.email, current_user.id))

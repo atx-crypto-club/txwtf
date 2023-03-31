@@ -80,7 +80,8 @@ def bootstrap(obj, replace):
     try:
         subprocess.check_call(
             [obj.edm_bin, "-r", obj.edm_root, "envs",
-             "create", obj.edm_env, "--version=%s" % obj.edm_py_version] + args)
+             "create", obj.edm_env,
+             "--version={}".format(obj.edm_py_version)] + args)
     except subprocess.CalledProcessError:
         pass
 

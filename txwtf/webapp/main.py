@@ -1,21 +1,19 @@
-from datetime import datetime
 import logging
 import os
+from datetime import datetime
 
 from flask import (
-    Blueprint, render_template, send_from_directory, request,
-    flash, redirect, url_for, current_app)
+    Blueprint, current_app, flash, redirect, render_template,
+    request, send_from_directory, url_for)
 
 from flask_login import current_user, login_required
 
 from markdown import markdown
 
-from markdownify import markdownify
-
 from . import db, upload_archive
-
 from .models import (
-    Emoji, User, UserChange, SystemLog, PostedMessage, Reaction, Tag, HashTag)
+    Emoji, HashTag, PostedMessage, Reaction, SystemLog,
+    Tag, User, UserChange)
 
 
 main = Blueprint('main', __name__)
@@ -66,13 +64,13 @@ def generate_render_post_data(dbposts):
         post.num_replies = len(post.replies)
         post.reactions = db.session.query(Reaction).filter(
             Reaction.post_id == dbpost.id,
-            Reaction.deleted == False).all()
+            Reaction.deleted == False).all()  # noqa: E712
         post.num_reactions = len(post.reactions)
         if logged_in:
             post.current_user_reactions = db.session.query(Reaction).filter(
                 Reaction.user_id == current_user.id,
                 Reaction.post_id == dbpost.id,
-                Reaction.deleted == False).all()
+                Reaction.deleted == False).all()  # noqa: E712
 
         if dbpost.repost_id:
             dbrepost = db.session.query(PostedMessage).filter(
@@ -95,7 +93,7 @@ def user_view(email):
     dbposts = db.session.query(PostedMessage).filter(
         PostedMessage.user_id == user.id).order_by(
             PostedMessage.post_time.desc()).all()
-    
+
     posts = generate_render_post_data(dbposts)
     return render_template('users.html', user=user, posts=posts)
 
@@ -171,6 +169,7 @@ def posts():
     dbtags = db.session.query(Tag).order_by(
         Tag.last_used_time.desc()).all()
     tags = []
+
     class TagInfo():
         pass
     for dbtag in dbtags:
@@ -223,7 +222,7 @@ def scrape_hashtags(content):
     textList = content.split()
     hashtags = []
     for i in textList:
-        if(i[0] == "#"):
+        if i[0] == "#":
             x = i.replace("#", '')
             hashtags.append(x)
     return hashtags
@@ -238,7 +237,8 @@ def add_reaction(user_id, post_id, reaction_name):
     emoji = db.session.query(Emoji).filter(Emoji.name == reaction_name).first()
     if not emoji:
         # TODO: choose a better default url
-        # TODO: add a routine to populate the emoji table with a default set of emojis
+        # TODO: add a routine to populate the emoji table with a default
+        # set of emojis
         emoji = Emoji(
             added_time=now, user_id=user_id, name=reaction_name,
             emoji_url="/assets/img/cropped-atxcf_logo_small-32x32.jpg",
@@ -246,7 +246,7 @@ def add_reaction(user_id, post_id, reaction_name):
             modified_time=now)
         db.session.add(emoji)
         new_log = SystemLog(
-            event_code=31337, # default for now
+            event_code=31337,  # default for now
             event_time=now,
             event_desc="User {} Adding emoji {}".format(
                 user.name, reaction_name))
@@ -284,8 +284,8 @@ def add_reaction(user_id, post_id, reaction_name):
     return len(db.session.query(Reaction).filter(
         Reaction.post_id == post_id,
         Reaction.emoji_id == emoji.id,
-        Reaction.deleted == False).all())
-    
+        Reaction.deleted == False).all())  # noqa: E712
+
 
 def remove_reaction(user_id, post_id, reaction_name):
     emoji = db.session.query(Emoji).filter(Emoji.name == reaction_name).first()
@@ -301,8 +301,9 @@ def remove_reaction(user_id, post_id, reaction_name):
             reaction_name, user_id, post_id))
         return
     if reaction.deleted:
-        logger.warning("Reaction {} by user {} for post {} already removed".format(
-            reaction_name, user_id, post_id))
+        logger.warning(
+            "Reaction {} by user {} for post {} already removed".format(
+                reaction_name, user_id, post_id))
         return
     reaction.deleted = True
     log_reaction = UserChange(
@@ -318,7 +319,7 @@ def remove_reaction(user_id, post_id, reaction_name):
     return len(db.session.query(Reaction).filter(
         Reaction.post_id == post_id,
         Reaction.emoji_id == emoji.id,
-        Reaction.deleted == False).all())
+        Reaction.deleted == False).all())  # noqa: E712
 
 
 @main.route('/add-reaction', methods=['POST'])
@@ -353,7 +354,7 @@ def post_message():
     # extract all hash tags and add them to the tables
     markdown_content = request.form.get('post_content')
     hashtags = scrape_hashtags(markdown_content)
-    
+
     post_content = markdown(markdown_content)
     if len(post_content) == 0:
         flash('Error: Empty post!')
@@ -421,13 +422,12 @@ def delete_post():
     post.deleted = True
     new_change = UserChange(
         user_id=current_user.id,
-        change_code=31337, # default for now
+        change_code=31337,  # default for now
         change_time=datetime.now(),
-        change_desc="deleted post {}".format(
-            current_user.email, post.id))
+        change_desc="deleted post {}".format(post.id))
     db.session.add(new_change)
     new_log = SystemLog(
-        event_code=31337, # default for now
+        event_code=31337,  # default for now
         event_time=datetime.now(),
         event_desc="User {} deleted post {}".format(
             current_user.email, post.id))
@@ -463,14 +463,15 @@ def upload_avatar():
         current_user.modified_time = datetime.now()
         new_change = UserChange(
             user_id=current_user.id,
-            change_code=31337, # default for now
+            change_code=31337,  # default for now
             change_time=datetime.now(),
             change_desc="Changing avatar to: {}".format(saved_name))
         db.session.add(new_change)
         new_log = SystemLog(
-            event_code=31337, # default for now
+            event_code=31337,  # default for now
             event_time=datetime.now(),
-            event_desc="User {} Uploaded {}".format(current_user.email, saved_name))
+            event_desc="User {} Uploaded {}".format(
+                current_user.email, saved_name))
         db.session.add(new_log)
         db.session.commit()
         flash("Avatar saved successfully as {}.".format(
@@ -498,12 +499,12 @@ def upload_header_image():
         current_user.modified_time = datetime.now()
         new_change = UserChange(
             user_id=current_user.id,
-            change_code=31337, # default for now
+            change_code=31337,  # default for now
             change_time=datetime.now(),
             change_desc="Changing header to: {}".format(saved_name))
         db.session.add(new_change)
         new_log = SystemLog(
-            event_code=31337, # default for now
+            event_code=31337,  # default for now
             event_time=datetime.now(),
             event_desc="Uploaded {}".format(saved_name))
         db.session.add(new_log)
@@ -533,12 +534,12 @@ def upload_card_image():
         current_user.modified_time = datetime.now()
         new_change = UserChange(
             user_id=current_user.id,
-            change_code=31337, # default for now
+            change_code=31337,  # default for now
             change_time=datetime.now(),
             change_desc="Changing card image to: {}".format(saved_name))
         db.session.add(new_change)
         new_log = SystemLog(
-            event_code=31337, # default for now
+            event_code=31337,  # default for now
             event_time=datetime.now(),
             event_desc="Uploaded {}".format(saved_name))
         db.session.add(new_log)
@@ -551,7 +552,7 @@ def upload_card_image():
     else:
         flash("Invalid request")
         return redirect(url_for("main.editprofile"))
-    
+
 
 @main.route("/update-user-description", methods=['POST'])
 @login_required
@@ -561,7 +562,7 @@ def update_user_description():
     current_user.modified_time = datetime.now()
     new_change = UserChange(
         user_id=current_user.id,
-        change_code=31337, # default for now
+        change_code=31337,  # default for now
         change_time=datetime.now(),
         change_desc="Changing description to: {}".format(desc))
     db.session.add(new_change)
@@ -579,7 +580,7 @@ def update_user_name():
     current_user.modified_time = datetime.now()
     new_change = UserChange(
         user_id=current_user.id,
-        change_code=31337, # default for now
+        change_code=31337,  # default for now
         change_time=datetime.now(),
         change_desc="Changing name to: {}".format(name))
     db.session.add(new_change)
@@ -597,7 +598,7 @@ def update_user_header_text():
     current_user.modified_time = datetime.now()
     new_change = UserChange(
         user_id=current_user.id,
-        change_code=31337, # default for now
+        change_code=31337,  # default for now
         change_time=datetime.now(),
         change_desc="Changing header text to: {}".format(header_text))
     db.session.add(new_change)

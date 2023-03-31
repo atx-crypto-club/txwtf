@@ -1,8 +1,9 @@
-from os.path import join
+import logging
 import secrets
 import tempfile
+from os.path import join
 
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template
 
 from flask_cors import CORS
 
@@ -23,6 +24,7 @@ from markdownify import markdownify
 db = SQLAlchemy()
 migrate = Migrate()
 upload_archive = UploadSet("archive", ALL)
+logger = logging.getLogger(__name__)
 
 
 def create_app(config_filename=None):
@@ -31,27 +33,33 @@ def create_app(config_filename=None):
 
     app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+
     # TODO: by default, lets store the upload archive under the instance dir
-    # next to where the db.sqlite file ends up. 
-    app.config["UPLOADED_ARCHIVE_DEST"] = join(
+    # next to where the db.sqlite file ends up.
+    default_upload_dir = join(
         tempfile.gettempdir(), "txwtf", "uploads")
-    app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024  # 128MB max upload size
+    app.config["UPLOADED_ARCHIVE_DEST"] = default_upload_dir
+
+    # 128MB max upload size
+    app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024
 
     if config_filename is not None:
         app.config.from_pyfile(config_filename)
     app.config.from_prefixed_env(prefix="TXWTF")
+
+    logger.info("upload dir {}".format(
+        app.config["UPLOADED_ARCHIVE_DEST"]))
 
     configure_uploads(app, upload_archive)
     db.init_app(app)
     migrate.init_app(app, db)
 
     # set up matomo stats if available in config
-    if "MATOMO_URL" in app.config and \
-        "MATOMO_SITE_ID" in app.config and \
-        "MATOMO_TOKEN_AUTH" in app.config:
+    matomo_config_keys = [
+        "MATOMO_URL", "MATOMO_SITE_ID", "MATOMO_TOKEN_AUTH"]
+    if all([key in app.config for key in matomo_config_keys]):
         Matomo(
-            app,
-            matomo_url=app.config['MATOMO_URL'],
+            app, matomo_url=app.config['MATOMO_URL'],
             id_site=app.config['MATOMO_SITE_ID'],
             token_auth=app.config['MATOMO_TOKEN_AUTH'])
 
@@ -78,10 +86,11 @@ def create_app(config_filename=None):
     @login_manager.unauthorized_handler
     def unauthorized_handler():
         return render_template('unauthorized.html'), 401
-    
+
     def handle_bad_request(e):
         return render_template('error.html', error_msg="Bad request!!"), 400
     app.register_error_handler(400, handle_bad_request)
+
     def handle_404(e):
         return render_template('error.html', error_msg="Not found!"), 404
     app.register_error_handler(404, handle_404)

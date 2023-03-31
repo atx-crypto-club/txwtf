@@ -142,7 +142,7 @@ def set_admin(obj, config, admin, user):
         log_desc = "setting user {} is_admin flag to {}".format(
             user, admin)
         new_log = SystemLog(
-            event_code=31337, # default for now
+            event_code=31337,  # default for now
             event_time=datetime.now(),
             event_desc=log_desc)
         db.session.add(new_log)
@@ -217,7 +217,7 @@ def verify_email(obj, config, verify, user):
         log_desc = "setting user {} email_verified flag to {}".format(
             user, verify)
         new_log = SystemLog(
-            event_code=31337, # default for now
+            event_code=31337,  # default for now
             event_time=datetime.now(),
             event_desc=log_desc)
         db.session.add(new_log)
