@@ -8,7 +8,7 @@ python_version="3.8"
 
 # parse cmd line
 do_run=0
-while getopts ':rsih' opt; do
+while getopts ':rsiwh' opt; do
   case "$opt" in
     r)
       echo "Running launcher.py after initialization"
@@ -23,6 +23,11 @@ while getopts ':rsih' opt; do
     i)
       echo "Running init shell"
       do_run=3
+      ;;
+
+    w)
+      echo "Running launcher.py wsgi after initialization"
+      do_run=4
       ;;
 
     h)
@@ -103,6 +108,12 @@ case "$do_run" in
     3)
         echo "Launching init edm shell..."
         $edm_bin -r $edm_root shell -e $env_name
+        exit 0
+        ;;
+
+    4)
+        echo "Launching wsgi for txwtf webapp..."
+        $edm_bin -r $edm_root run -e $env_name -- python launcher.py wsgi
         exit 0
         ;;
 esac

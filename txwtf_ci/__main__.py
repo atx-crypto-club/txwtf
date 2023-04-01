@@ -93,7 +93,7 @@ source_dir_option = click.option(
 
 
 def install_deps(obj, source_dir):
-    ENV_DEPS = ["pyyaml", "requests"]
+    ENV_DEPS = ["pyyaml", "requests", "lxml"]
     cmd_base = [obj.edm_bin, "-r", obj.edm_root]
 
     # install edm runtime deps
@@ -213,6 +213,32 @@ def run_txwtf(obj, log, log_level, cmd_args):
             "txwtf",
             "--log={}".format(log),
             "--log-level={}".format(log_level)] + list(cmd_args))
+    
+
+@root.command()
+@click.option(
+    "--log-file", envvar="TXWTF_LOG", default="-",
+    help="Log file. Use '-' for stdout.")
+@click.option(
+    "--log-level", envvar="TXWTF_LOG_LEVEL", default="info",
+    help="Log output level.")
+@click.option(
+    "--bind", envvar="TXWTF_BIND", default="127.0.0.1:8086",
+    help="Interface to bind to")
+@click.pass_obj
+def run_wsgi(obj, log_file, log_level, bind):
+    """
+    Run gunicorn wsgi for the webapp in EDM environment
+    """
+    edm_run_cmd = [
+        obj.edm_bin, "-r", obj.edm_root, "run", "-e", obj.edm_env, "--"]
+    subprocess.check_call(
+        edm_run_cmd + [
+            "gunicorn",
+            "--log-level", log_level,
+            "--log-file", log_file,
+            "--bind", bind,
+            "txwtf.webapp:create_app()"])
 
 
 @root.command()

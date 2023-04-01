@@ -49,6 +49,8 @@ def create_app(config_filename=None):
 
     logger.info("upload dir {}".format(
         app.config["UPLOADED_ARCHIVE_DEST"]))
+    logger.info("database uri: {}".format(
+        app.config["SQLALCHEMY_DATABASE_URI"]))
 
     configure_uploads(app, upload_archive)
     db.init_app(app)

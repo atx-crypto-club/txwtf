@@ -165,6 +165,15 @@ if __name__ == '__main__':
                     "run-txwtf"] + args[1:]]
             args = []  # run consumes the rest of the arguments
 
+        elif arg == "wsgi":
+            cmds = [
+                txwtf_ci + [
+                    "--edm-bin={}".format(EDM_BIN),
+                    "--edm-root={}".format(EDM_ROOT),
+                    "--edm-env={}".format(TXWTF_ENV),
+                    "run-wsgi"] + args[1:]]
+            args = []  # run consumes the rest of the arguments
+
         elif arg == "tmpdir":
             do_tempdir = True
             args = args[1:]
