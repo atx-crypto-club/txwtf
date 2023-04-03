@@ -31,17 +31,17 @@ while getopts ':rsiwh' opt; do
       ;;
 
     h)
-      echo "Usage: $(basename $0) [-r] [-s] [-i]"
+      echo "Usage: $(basename $0) [-r] [-s] [-i] [-w]"
       exit 0
       ;;
 
     :)
-      echo -e "option requires an argument.\nUsage: $(basename $0) [-r] [-s] [-i]"
+      echo -e "option requires an argument.\nUsage: $(basename $0) [-r] [-s] [-i] [-w]"
       exit 1
       ;;
 
     ?)
-      echo -e "Invalid command option.\nUsage: $(basename $0) [-r] [-s] [-i]"
+      echo -e "Invalid command option.\nUsage: $(basename $0) [-r] [-s] [-i] [-w]"
       exit 1
       ;;
   esac
