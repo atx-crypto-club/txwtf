@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # config
-archive_url=https://tx.wtf/a
+archive_url=https://a.tx.wtf
 env_root=$HOME/python-runtime/txwtf
 env_name=txwtf-init
 python_version="3.8"
