@@ -35,3 +35,12 @@ Or you can go all the way and launch the webapp after initializing everything in
 > $ python launcher.py bootstrap install-dev migrate test flake8 txwtf webapp
 
 The default location of the installation is under `$HOME/python-runtime/txwtf`. Everything including the EDM installation in use lives under there. To uninstall the application, you can just nuke that directory. The install location is changeable. Take a look at the config variables in `init.sh` to get an idea how to point to a new location.
+
+## Development
+
+### Database changes
+When modifying or adding new models to the application, use flask-migrate commands to add each change to the database migration scripts. From the EDM environment containing the application install, run the following command to add changes to db migration version control with a message for each change.
+> $ flask --app txwtf.webapp db migrate -m "change message"
+
+After making changes to models, run the following command to actually upgrade the targed database specified by `TXWTF_SQLALCHEMY_DATABASE_URI`:
+> $ flask --app txwtf.webapp db upgrade
