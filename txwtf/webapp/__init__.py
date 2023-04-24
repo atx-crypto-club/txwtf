@@ -1,7 +1,7 @@
 import logging
 import secrets
 import tempfile
-from os.path import join
+from os.path import abspath, dirname, join
 
 from flask import Flask, render_template
 
@@ -31,16 +31,13 @@ def create_app(config_filename=None):
     app = Flask(__name__)
     CORS(app)
 
+    instance_dir = abspath(join(dirname(__file__), "..", "instance"))
+
     app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}/db.sqlite'.format(instance_dir)
+    app.config["UPLOADED_ARCHIVE_DEST"] = join(instance_dir, "uploads")
 
-    # TODO: by default, lets store the upload archive under the instance dir
-    # next to where the db.sqlite file ends up.
-    default_upload_dir = join(
-        tempfile.gettempdir(), "txwtf", "uploads")
-    app.config["UPLOADED_ARCHIVE_DEST"] = default_upload_dir
-
-    # 128MB max upload size
+    # Default 128MB max upload size
     app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024
 
     if config_filename is not None:
