@@ -21,6 +21,7 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean)
     last_login = db.Column(db.DateTime)
     last_login_addr = db.Column(db.String(256))
+    view_count = db.Column(db.Integer)
 
 
 class UserChange(db.Model):
@@ -54,6 +55,7 @@ class PostedMessage(db.Model):
     reply_to = db.Column(db.Integer)  # id of message replied to if any
     repost_id = db.Column(db.Integer)  # id of message being reposted if any
     deleted = db.Column(db.Boolean)
+    view_count = db.Column(db.Integer)
 
 
 # strings between colons like :<string>: are emoji strings

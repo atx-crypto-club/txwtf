@@ -27,14 +27,14 @@ Then at the next prompt, run the `txwtf` application like the following:
 
 This will launch the application, binding to `localhost:8086` by default. You can then load the url `http://localhost:8086` to test it.
 
-## Miscellaneous info
+### Launcher script
 You can combine `launcher.py` commands on the command line. Sometimes it is nice to run testing and a code linter before dropping into the shell so you know what you're working with.
 > $ python launcher.py bootstrap install-dev migrate test flake8 shell
 
 Or you can go all the way and launch the webapp after initializing everything instead of dropping into a shell.
 > $ python launcher.py bootstrap install-dev migrate test flake8 txwtf webapp
 
-## Development
+## Deployment
 
 ### Defaults
 The default location of the installation is under `$HOME/python-runtime/txwtf`. Everything including the EDM installation in use lives under there. To uninstall the application, you can just nuke that directory. The install location is changeable. It should even be relocatable after installation but I haven't tested that. Take a look at the config environment variables in `init.sh` to get an idea how to point to a new location for installation.
@@ -47,6 +47,8 @@ The flask app is configured to use prefixed environment variable names. For inst
 ### Setting Admin Users
 To access special system information and change critical settings through the app interface, you can flag a user as an `admin`. Be extremely careful with this as an `admin` user can do anything and is effectively in god mode. But during testing you will likely need at least one admin user to test things, especially if you need to view system logs. To upgrade a user to `admin` status, you can use the following command:
 > $ txwtf set-admin --admin --user t@tx.wtf
+
+## Development
 
 ### Model Changes
 When modifying or adding new models to the application, use flask-migrate commands to add each change to the database migration scripts. From the EDM environment containing the application install, run the following command to add changes to db migration version control with a message for each change.

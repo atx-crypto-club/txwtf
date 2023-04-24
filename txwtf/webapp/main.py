@@ -388,7 +388,8 @@ def post_message():
         post_content=post_content,
         reply_to=reply_to,
         repost_id=repost_id,
-        deleted=False)
+        deleted=False,
+        view_count=0)
     db.session.add(msg)
     db.session.commit()
     flash("Message posted!")
