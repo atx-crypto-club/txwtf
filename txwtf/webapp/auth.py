@@ -42,7 +42,11 @@ def login_post():
         event_code=31337,  # default for now
         event_time=now,
         event_desc="user {} [{}] logged in".format(
-            user.email, user.id))
+            user.email, user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_log)
     db.session.commit()
     return redirect(url_for('main.user_view', email=user.email))
@@ -105,7 +109,11 @@ def register_post():
         event_code=31337,  # default for now
         event_time=now,
         event_desc="creating new user {} [{}]".format(
-            new_user.email, new_user.id))
+            new_user.email, new_user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_log)
 
     db.session.commit()
@@ -120,7 +128,11 @@ def logout():
         event_code=31337,  # default for now
         event_time=datetime.now(),
         event_desc="user {} [{}] logging out".format(
-            current_user.email, current_user.id))
+            current_user.email, current_user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_log)
     db.session.commit()
     logout_user()
