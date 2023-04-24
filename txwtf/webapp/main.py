@@ -61,6 +61,7 @@ def generate_render_post_data(dbposts):
             db.session.query(PostedMessage).filter(
                 PostedMessage.reply_to == dbpost.id).all())
         post.reply_to = dbpost.reply_to
+        post.view_count = dbpost.view_count
         post.num_replies = len(post.replies)
         post.reactions = db.session.query(Reaction).filter(
             Reaction.post_id == dbpost.id,
@@ -72,6 +73,7 @@ def generate_render_post_data(dbposts):
                 Reaction.post_id == dbpost.id,
                 Reaction.deleted == False).all()  # noqa: E712
 
+        post.repost = None
         if dbpost.repost_id:
             dbrepost = db.session.query(PostedMessage).filter(
                 PostedMessage.id == dbpost.repost_id)
@@ -80,6 +82,26 @@ def generate_render_post_data(dbposts):
 
         posts.append(post)
     return posts
+
+
+def collect_post_ids(posts):
+    post_ids = []
+    for post in posts:
+        post_ids.append(post.id)
+        if post.repost:
+            post_ids.append(post.repost.id)
+        post_ids.extend(collect_post_ids(post.replies))
+    return post_ids
+
+
+def increment_posts_view_count(posts):
+    """
+    For every post in the list, increment the view count in the
+    database.
+    """
+    for msg in db.session.query(PostedMessage).filter(
+        PostedMessage.id.in_(collect_post_ids(posts))):
+        msg.view_count += 1
 
 
 @main.route('/u/<email>')
@@ -95,6 +117,8 @@ def user_view(email):
             PostedMessage.post_time.desc()).all()
 
     posts = generate_render_post_data(dbposts)
+    increment_posts_view_count(posts)
+    db.session.commit()
     return render_template('users.html', user=user, posts=posts)
 
 
@@ -180,6 +204,8 @@ def posts():
             db.session.query(HashTag).filter(
                 HashTag.tag_id == dbtag.id).all())
         tags.append(tag)
+    increment_posts_view_count(posts)
+    db.session.commit()
     return render_template(
         'posts.html', posts=posts, tags=tags)
 
@@ -196,6 +222,9 @@ def post_view(post_id):
         PostedMessage.repost_id == int(post_id)).order_by(
         PostedMessage.post_time.desc()).all()
     reposts = generate_render_post_data(dbreposts)
+    increment_posts_view_count(posts)
+    increment_posts_view_count(reposts)
+    db.session.commit()
     return render_template(
         'post_view.html', posts=posts, reposts=reposts)
 
@@ -211,6 +240,8 @@ def hash_tag_view(name):
             HashTag.tag_id == dbtag.id).order_by(
                 PostedMessage.post_time.desc()).all()
     posts = generate_render_post_data(dbposts)
+    increment_posts_view_count(posts)
+    db.session.commit()
     description = "{} (last used {})".format(
         dbtag.tag_description, dbtag.last_used_time.ctime())
     return render_template(
