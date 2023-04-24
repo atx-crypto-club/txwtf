@@ -58,6 +58,17 @@ class PostedMessage(db.Model):
     view_count = db.Column(db.Integer)
 
 
+class PostedMessageView(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer)
+    view_time = db.Column(db.DateTime)
+    current_user = db.Column(db.String(256))
+    referrer = db.Column(db.String(256))
+    user_agent = db.Column(db.String(512))
+    remote_addr = db.Column(db.String(256))
+    endpoint = db.Column(db.String(128))
+
+
 # strings between colons like :<string>: are emoji strings
 class Emoji(db.Model):
     id = db.Column(db.Integer, primary_key=True)

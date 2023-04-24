@@ -56,3 +56,5 @@ When modifying or adding new models to the application, use flask-migrate comman
 
 After making changes to models, run the following command to actually upgrade the targed database specified by `TXWTF_SQLALCHEMY_DATABASE_URI`:
 > $ flask --app txwtf.webapp db upgrade
+
+When pushing changes, make sure you include the new migration scripts every time you run `migrate` above!

@@ -12,8 +12,8 @@ from markdown import markdown
 
 from . import db, upload_archive
 from .models import (
-    Emoji, HashTag, PostedMessage, Reaction, SystemLog,
-    Tag, User, UserChange)
+    Emoji, HashTag, PostedMessage, PostedMessageView,
+    Reaction, SystemLog, Tag, User, UserChange)
 
 
 main = Blueprint('main', __name__)
@@ -97,11 +97,24 @@ def collect_post_ids(posts):
 def increment_posts_view_count(posts):
     """
     For every post in the list, increment the view count in the
-    database.
+    database and record a log of views for statistics.
     """
+    now_time = datetime.now()
+    current_user_id = None
+    if hasattr(current_user, "id"):
+        current_user_id = current_user.id
     for msg in db.session.query(PostedMessage).filter(
         PostedMessage.id.in_(collect_post_ids(posts))):
         msg.view_count += 1
+        pmv = PostedMessageView(
+            post_id=msg.id,
+            view_time=now_time,
+            current_user=current_user_id,
+            referrer=request.referrer,
+            user_agent=str(request.user_agent),
+            remote_addr=request.remote_addr,
+            endpoint=request.endpoint)
+        db.session.add(pmv)
 
 
 @main.route('/u/<email>')
