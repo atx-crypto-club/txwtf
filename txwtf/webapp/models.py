@@ -28,6 +28,10 @@ class UserChange(db.Model):
     change_code = db.Column(db.Integer)
     change_time = db.Column(db.DateTime)
     change_desc = db.Column(db.String(256))
+    referrer = db.Column(db.String(256))
+    user_agent = db.Column(db.String(512))
+    remote_addr = db.Column(db.String(256))
+    endpoint = db.Column(db.String(128))
 
 
 class SystemLog(db.Model):

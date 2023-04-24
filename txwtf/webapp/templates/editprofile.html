@@ -78,6 +78,8 @@
           <tr>
             <th>Change Code</th>
             <th>Time</th>
+            <th>Remote Addy</th>
+            <th>Agent</th>
             <th>Description</th>
           </tr>
         </thead>
@@ -86,7 +88,9 @@
             <tr>
                 <td>{{ change.change_code }}</td>
                 <td>{{ change.change_time.ctime() }}</td>
-                <td>{{ change.change_desc[0:100] }}</td>
+                <td>{{ change.remote_addr }}</td>
+                <td>{{ change.user_agent[0:42] }}</td>
+                <td>{{ change.change_desc[0:42] }}</td>
             </tr>
             {% endfor %}
         </tbody>

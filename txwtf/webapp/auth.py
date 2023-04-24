@@ -95,7 +95,11 @@ def register_post():
         change_code=31337,  # default for now
         change_time=now,
         change_desc="creating new user {} [{}]".format(
-            new_user.email, new_user.id))
+            new_user.email, new_user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_change)
     new_log = SystemLog(
         event_code=31337,  # default for now

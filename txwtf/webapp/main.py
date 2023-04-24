@@ -38,9 +38,9 @@ def editprofile():
 def generate_render_post_data(dbposts):
     posts = []
     logged_in = hasattr(current_user, 'email_verified')  # janky but whatev
+    class PostInfo(object):
+        pass
     for dbpost in dbposts:
-        class PostInfo(object):
-            pass
         post = PostInfo()
         user = db.session.query(User).filter(User.id == dbpost.user_id).first()
         post.user_id = user.id
@@ -224,6 +224,8 @@ def scrape_hashtags(content):
     for i in textList:
         if i[0] == "#":
             x = i.replace("#", '')
+            # TODO: make sure hashtags are valid C identifiers
+            # as our standard
             hashtags.append(x)
     return hashtags
 
@@ -276,7 +278,11 @@ def add_reaction(user_id, post_id, reaction_name):
         change_code=31337,
         change_time=now,
         change_desc="Adding {} reaction to post {}".format(
-            reaction_name, post_id))
+            reaction_name, post_id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(log_reaction)
     db.session.commit()
 
@@ -311,7 +317,11 @@ def remove_reaction(user_id, post_id, reaction_name):
         change_code=31337,
         change_time=datetime.now(),
         change_desc="Removing {} reaction to post {}".format(
-            reaction_name, post_id))
+            reaction_name, post_id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(log_reaction)
     db.session.commit()
 
@@ -424,7 +434,11 @@ def delete_post():
         user_id=current_user.id,
         change_code=31337,  # default for now
         change_time=datetime.now(),
-        change_desc="deleted post {}".format(post.id))
+        change_desc="deleted post {}".format(post.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_change)
     new_log = SystemLog(
         event_code=31337,  # default for now
@@ -465,7 +479,11 @@ def upload_avatar():
             user_id=current_user.id,
             change_code=31337,  # default for now
             change_time=datetime.now(),
-            change_desc="Changing avatar to: {}".format(saved_name))
+            change_desc="Changing avatar to: {}".format(saved_name),
+            referrer=request.referrer,
+            user_agent=str(request.user_agent),
+            remote_addr=request.remote_addr,
+            endpoint=request.endpoint)
         db.session.add(new_change)
         new_log = SystemLog(
             event_code=31337,  # default for now
@@ -501,7 +519,11 @@ def upload_header_image():
             user_id=current_user.id,
             change_code=31337,  # default for now
             change_time=datetime.now(),
-            change_desc="Changing header to: {}".format(saved_name))
+            change_desc="Changing header to: {}".format(saved_name),
+            referrer=request.referrer,
+            user_agent=str(request.user_agent),
+            remote_addr=request.remote_addr,
+            endpoint=request.endpoint)
         db.session.add(new_change)
         new_log = SystemLog(
             event_code=31337,  # default for now
@@ -536,7 +558,11 @@ def upload_card_image():
             user_id=current_user.id,
             change_code=31337,  # default for now
             change_time=datetime.now(),
-            change_desc="Changing card image to: {}".format(saved_name))
+            change_desc="Changing card image to: {}".format(saved_name),
+            referrer=request.referrer,
+            user_agent=str(request.user_agent),
+            remote_addr=request.remote_addr,
+            endpoint=request.endpoint)
         db.session.add(new_change)
         new_log = SystemLog(
             event_code=31337,  # default for now
@@ -564,7 +590,11 @@ def update_user_description():
         user_id=current_user.id,
         change_code=31337,  # default for now
         change_time=datetime.now(),
-        change_desc="Changing description to: {}".format(desc))
+        change_desc="Changing description to: {}".format(desc),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_change)
     db.session.commit()
     logger.info("Changing user {} description to: {}".format(
@@ -582,7 +612,11 @@ def update_user_name():
         user_id=current_user.id,
         change_code=31337,  # default for now
         change_time=datetime.now(),
-        change_desc="Changing name to: {}".format(name))
+        change_desc="Changing name to: {}".format(name),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_change)
     db.session.commit()
     logger.info("Changing user {} name to: {}".format(
@@ -600,7 +634,11 @@ def update_user_header_text():
         user_id=current_user.id,
         change_code=31337,  # default for now
         change_time=datetime.now(),
-        change_desc="Changing header text to: {}".format(header_text))
+        change_desc="Changing header text to: {}".format(header_text),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_change)
     db.session.commit()
     logger.info("Changing user {} header text to: {}".format(
