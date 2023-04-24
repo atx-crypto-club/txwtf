@@ -20,6 +20,7 @@ class User(UserMixin, db.Model):
     modified_time = db.Column(db.DateTime)
     is_admin = db.Column(db.Boolean)
     last_login = db.Column(db.DateTime)
+    last_login_addr = db.Column(db.String(256))
 
 
 class UserChange(db.Model):

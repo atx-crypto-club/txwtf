@@ -38,6 +38,7 @@ def login_post():
     login_user(user, remember=remember)
     now = datetime.now()
     user.last_login = now
+    user.last_login_addr = request.remote_addr
     new_log = SystemLog(
         event_code=31337,  # default for now
         event_time=now,
@@ -48,6 +49,17 @@ def login_post():
         remote_addr=request.remote_addr,
         endpoint=request.endpoint)
     db.session.add(new_log)
+    new_change = UserChange(
+        user_id=user.id,
+        change_code=31337,  # default for now
+        change_time=now,
+        change_desc="logging in from {}".format(
+            request.remote_addr),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
+    db.session.add(new_change)
     db.session.commit()
     return redirect(url_for('main.user_view', email=user.email))
 
@@ -88,7 +100,8 @@ def register_post():
         description="{} is on the scene".format(name),
         email_verified=False,
         is_admin=False,
-        last_login=None)
+        last_login=None,
+        last_login_addr=None)
 
     # add the new user to the database
     db.session.add(new_user)

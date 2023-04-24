@@ -22,6 +22,9 @@
                     <th>Last Mod</th>
                     <th>Last Login</th>
                     <th>Is Admin</th>
+                    {% if current_user.is_admin %}
+                    <th>Last Addr</th>
+                    {% endif %}
                   </tr>
                 </thead>
                 <tbody>
@@ -43,6 +46,9 @@
                         <td>None</td>
                         {% endif %}
                         <td>{{ user.is_admin }}</td>
+                        {% if current_user.is_admin %}
+                        <td>{{ user.last_login_addr }}</td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>

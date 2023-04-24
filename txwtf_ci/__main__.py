@@ -7,17 +7,20 @@ import click
 
 def _get_default_environment_root():
     return os.environ.get(
-        "ENV_ROOT", join(expanduser("~"), "python-runtime", "txwtf"))
+        "ENV_ROOT", join(
+            expanduser("~"), "python-runtime", "txwtf"))
 
 
 def _get_default_edm_install_prefix():
     return os.environ.get(
-        "EDM_INSTALL_PREFIX", join(_get_default_environment_root(), "edm"))
+        "EDM_INSTALL_PREFIX", join(
+            _get_default_environment_root(), "edm"))
 
 
 def _get_default_edm_root():
     root = os.environ.get(
-        "EDM_ROOT", join(_get_default_environment_root(), "edm-envs"))
+        "EDM_ROOT", join(
+            _get_default_environment_root(), "edm-envs"))
     if "EDM_VIRTUAL_ENV" in os.environ:
         root = os.path.abspath(
             join(os.environ["EDM_VIRTUAL_ENV"], "..", ".."))
@@ -26,30 +29,28 @@ def _get_default_edm_root():
 
 def _get_default_edm_bin():
     return os.environ.get(
-        "EDM_BIN", join(_get_default_edm_install_prefix(), "bin", "edm"))
+        "EDM_BIN", join(
+            _get_default_edm_install_prefix(), "bin", "edm"))
 
 
-@click.group(context_settings={"help_option_names": ['-h', '--help']})
+@click.group(
+    context_settings={"help_option_names": ['-h', '--help']})
 @click.option(
     "--edm-root", default=_get_default_edm_root(),
-    help="EDM root"
-)
+    help="EDM root")
 @click.option(
     "--edm-env", default="txwtf-dev",
-    help="EDM environment to use"
-)
+    help="EDM environment to use")
 @click.option(
     "--edm-py-version", default="3.8",
-    help="Version of python to use"
-)
+    help="Version of python to use")
 @click.option(
     "--edm-bin", default=_get_default_edm_bin(),
-    help="EDM binary to use"
-)
+    help="EDM binary to use")
 @click.pass_context
 def root(context, edm_root, edm_env, edm_py_version, edm_bin):
     """
-    continuous integration tasks
+    txwtf continuous integration tasks
     """
     class Obj:
         pass
@@ -70,7 +71,7 @@ def root(context, edm_root, edm_env, edm_py_version, edm_bin):
 @click.pass_obj
 def bootstrap(obj, replace):
     """
-    create EDM environment for running sscore
+    create EDM environment for running txwtf
     """
     if not os.path.isdir(obj.edm_root):
         os.mkdir(obj.edm_root)
@@ -88,8 +89,7 @@ def bootstrap(obj, replace):
 
 source_dir_option = click.option(
     "--source-dir", default=join(dirname(__file__), ".."),
-    help="Directory where txwtf/setup.py lives"
-)
+    help="Directory where txwtf/setup.py lives")
 
 
 def install_deps(obj, source_dir):
@@ -198,8 +198,8 @@ def run(obj, cmd_args):
     "--log", envvar="TXWTF_LOG", default="-",
     help="Log file. Use '-' for stdout.")
 @click.option(
-    "--log-level", default="WARNING",
-    help="Log output level.")
+    "--log-level", envvar="TXWTF_LOG_LEVEL",
+    default="WARNING", help="Log output level.")
 @click.argument('cmd_args', nargs=-1)
 @click.pass_obj
 def run_txwtf(obj, log, log_level, cmd_args):
