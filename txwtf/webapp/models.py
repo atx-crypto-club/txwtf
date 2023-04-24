@@ -39,6 +39,10 @@ class SystemLog(db.Model):
     event_code = db.Column(db.Integer)
     event_time = db.Column(db.DateTime)
     event_desc = db.Column(db.String(256))
+    referrer = db.Column(db.String(256))
+    user_agent = db.Column(db.String(512))
+    remote_addr = db.Column(db.String(256))
+    endpoint = db.Column(db.String(128))
 
 
 class PostedMessage(db.Model):

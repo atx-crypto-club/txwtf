@@ -251,7 +251,11 @@ def add_reaction(user_id, post_id, reaction_name):
             event_code=31337,  # default for now
             event_time=now,
             event_desc="User {} Adding emoji {}".format(
-                user.name, reaction_name))
+                user.name, reaction_name),
+            referrer=request.referrer,
+            user_agent=str(request.user_agent),
+            remote_addr=request.remote_addr,
+            endpoint=request.endpoint)
         db.session.add(new_log)
         db.session.commit()
 
@@ -444,7 +448,11 @@ def delete_post():
         event_code=31337,  # default for now
         event_time=datetime.now(),
         event_desc="User {} deleted post {}".format(
-            current_user.email, post.id))
+            current_user.email, post.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=request.remote_addr,
+        endpoint=request.endpoint)
     db.session.add(new_log)
     db.session.commit()
     return "OK"
@@ -489,7 +497,11 @@ def upload_avatar():
             event_code=31337,  # default for now
             event_time=datetime.now(),
             event_desc="User {} Uploaded {}".format(
-                current_user.email, saved_name))
+                current_user.email, saved_name),
+            referrer=request.referrer,
+            user_agent=str(request.user_agent),
+            remote_addr=request.remote_addr,
+            endpoint=request.endpoint)
         db.session.add(new_log)
         db.session.commit()
         flash("Avatar saved successfully as {}.".format(
@@ -528,7 +540,11 @@ def upload_header_image():
         new_log = SystemLog(
             event_code=31337,  # default for now
             event_time=datetime.now(),
-            event_desc="Uploaded {}".format(saved_name))
+            event_desc="Uploaded {}".format(saved_name),
+            referrer=request.referrer,
+            user_agent=str(request.user_agent),
+            remote_addr=request.remote_addr,
+            endpoint=request.endpoint)
         db.session.add(new_log)
         db.session.commit()
         flash("Header image saved successfully as {}.".format(
@@ -567,7 +583,11 @@ def upload_card_image():
         new_log = SystemLog(
             event_code=31337,  # default for now
             event_time=datetime.now(),
-            event_desc="Uploaded {}".format(saved_name))
+            event_desc="Uploaded {}".format(saved_name),
+            referrer=request.referrer,
+            user_agent=str(request.user_agent),
+            remote_addr=request.remote_addr,
+            endpoint=request.endpoint)
         db.session.add(new_log)
         db.session.commit()
         flash("Card image saved successfully as {}.".format(

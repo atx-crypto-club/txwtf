@@ -146,10 +146,10 @@
         // the user what they are replying to.
         var post_content_box = document.getElementById('post_content_'+reply_to);
         var modal_reply_to_box_content = document.getElementById('modal_reply_to_box_content');
-        modal_reply_to_box_content.textContent = post_content_box.textContent;
+        modal_reply_to_box_content.innerHTML = post_content_box.innerHTML;
         var post_left_box = document.getElementById('post_left_'+reply_to);
         var modal_reply_to_box_left_content = document.getElementById('modal_reply_to_box_left');
-        modal_reply_to_box_left_content.textContent = post_left_box.textContent;
+        modal_reply_to_box_left_content.innerHTML = post_left_box.innerHTML;
       });
     });
   
@@ -178,12 +178,12 @@
         // fill the repost box content with the post content
         // already in the DOM. This kind of sucks but at least shows
         // the user what they are replying to.
-        var post_content_box = document.getElementById('post_content_'+reply_to);
+        var post_content_box = document.getElementById('post_content_'+repost_id);
         var modal_repost_box_content = document.getElementById('modal_repost_box_content');
-        modal_repost_box_content.textContent = post_content_box.textContent;
-        var post_left_box = document.getElementById('post_left_'+reply_to);
+        modal_repost_box_content.innerHTML = post_content_box.innerHTML;
+        var post_left_box = document.getElementById('post_left_'+repost_id);
         var modal_repost_box_left_content = document.getElementById('modal_repost_box_left');
-        modal_repost_box_left_content.textContent = post_left_box.textContent;
+        modal_repost_box_left_content.innerHTML = post_left_box.innerHTML;
       });
     });
   

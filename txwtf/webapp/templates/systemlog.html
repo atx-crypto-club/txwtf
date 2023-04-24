@@ -14,6 +14,8 @@
       <tr>
         <th>Event Code</th>
         <th>Time</th>
+        <th>Remote Addy</th>
+        <th>Agent</th>
         <th>Description</th>
       </tr>
     </thead>
@@ -22,7 +24,9 @@
         <tr>
             <td>{{ log.event_code }}</td>
             <td>{{ log.event_time.ctime() }}</td>
-            <td>{{ log.event_desc[0:100] }}</td>
+            <td>{{ log.remote_addr }}</td>
+            <td>{{ log.user_agent[0:42] }}</td>
+            <td>{{ log.event_desc[0:42] }}</td>
         </tr>
         {% endfor %}
     </tbody>

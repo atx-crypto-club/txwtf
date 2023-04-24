@@ -122,6 +122,7 @@ def set_admin(obj, config, admin, user):
     """
     Toggle admin for specified user.
     """
+    from getpass import getuser
     from datetime import datetime
     import txwtf.webapp
     from txwtf.webapp import db
@@ -144,7 +145,11 @@ def set_admin(obj, config, admin, user):
         new_log = SystemLog(
             event_code=31337,  # default for now
             event_time=datetime.now(),
-            event_desc=log_desc)
+            event_desc=log_desc,
+            referrer="",
+            user_agent="{}'s command line".format(getuser()),
+            remote_addr="localhost",
+            endpoint="txwtf.set_admin")
         db.session.add(new_log)
         db.session.commit()
         logger.info(log_desc)
@@ -197,6 +202,7 @@ def verify_email(obj, config, verify, user):
     """
     Toggle email verification for the specified user.
     """
+    from getpass import getuser
     from datetime import datetime
     import txwtf.webapp
     from txwtf.webapp import db
@@ -219,7 +225,11 @@ def verify_email(obj, config, verify, user):
         new_log = SystemLog(
             event_code=31337,  # default for now
             event_time=datetime.now(),
-            event_desc=log_desc)
+            event_desc=log_desc,
+            referrer="",
+            user_agent="{}'s command line".format(getuser()),
+            remote_addr="localhost",
+            endpoint="txwtf.verify_email")
         db.session.add(new_log)
         db.session.commit()
         logger.info(log_desc)
