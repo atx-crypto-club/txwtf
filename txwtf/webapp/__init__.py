@@ -31,10 +31,9 @@ def create_app(config_filename=None):
     app = Flask(__name__)
     CORS(app)
 
-    instance_dir = abspath(join(dirname(__file__), "..", "instance"))
-
     app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}/db.sqlite'.format(instance_dir)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    instance_dir = abspath(join(dirname(__file__), "..", "..", "instance"))
     app.config["UPLOADED_ARCHIVE_DEST"] = join(instance_dir, "uploads")
 
     # Default 128MB max upload size

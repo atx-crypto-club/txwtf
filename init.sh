@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # config
 archive_url=https://a.tx.wtf
 env_root=$HOME/python-runtime/txwtf
@@ -8,7 +10,7 @@ python_version="3.8"
 
 # parse cmd line
 do_run=0
-while getopts ':rsiwh' opt; do
+while getopts ':rsiwdh' opt; do
   case "$opt" in
     r)
       echo "Running launcher.py after initialization"
@@ -30,8 +32,15 @@ while getopts ':rsiwh' opt; do
       do_run=4
       ;;
 
+    d)
+      echo "Nuking" $env_root " and instance dir"
+      rm -rf $SCRIPT_DIR/instance
+      rm -rf $env_root
+      exit 0
+      ;;
+
     h)
-      echo "Usage: $(basename $0) [-r] [-s] [-i] [-w]"
+      echo "Usage: $(basename $0) [-r] [-s] [-i] [-w] [-d]"
       exit 0
       ;;
 
