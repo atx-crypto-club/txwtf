@@ -19,7 +19,7 @@
                     <th>Avatar</th>
                     <th>Name</th>
                     <th>Email</th>
-                    <th>Last Mod</th>
+                    <th>uv/pv</th>
                     <th>Last Login</th>
                     <th>Is Admin</th>
                     {% if current_user.is_admin %}
@@ -39,7 +39,7 @@
                         </td>
                         <td>{{ user.name }}</td>
                         <td>{{ user.email }}</td>
-                        <td>{{ user.modified_time.ctime() }}</td>
+                        <td>{{ user.view_count }}/{{ user.post_view_count }}</td>
                         {% if user.last_login %}
                         <td>{{ user.last_login.ctime() }}</td>
                         {% else %}

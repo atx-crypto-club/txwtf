@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime)
     last_login_addr = db.Column(db.String(256))
     view_count = db.Column(db.Integer)
+    post_view_count = db.Column(db.Integer)
 
 
 class UserChange(db.Model):

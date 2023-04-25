@@ -45,6 +45,8 @@
                 <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ user.modified_time.ctime() }}">{{ user.modified_time.ctime() }}</time></span>
                 <br>
                 <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ user.created_time.ctime() }}">{{ user.created_time.ctime() }}</time></span>
+                <br>
+                <span class="icon is-small"><i class="fas fa-chart-line"></i></span><span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">{{ user.view_count }}/{{ user.post_view_count }}</span>
             </div>
         </div>
     </div>

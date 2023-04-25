@@ -101,7 +101,9 @@ def register_post():
         email_verified=False,
         is_admin=False,
         last_login=None,
-        last_login_addr=None)
+        last_login_addr=None,
+        view_count=0,
+        post_view_count=0)
 
     # add the new user to the database
     db.session.add(new_user)

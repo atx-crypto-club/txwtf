@@ -100,14 +100,24 @@ def collect_post_ids(posts):
 def increment_posts_view_count(posts):
     """
     For every post in the list, increment the view count in the
-    database and record a log of views for statistics.
+    database and record a log of views for statistics. Also increment
+    user post_view_count records.
     """
     now_time = datetime.now()
     current_user_id = None
     if hasattr(current_user, "id"):
         current_user_id = current_user.id
+    user_counts = {}
     for msg in db.session.query(PostedMessage).filter(
         PostedMessage.id.in_(collect_post_ids(posts))):
+        # don't count self views
+        if current_user_id is not None and \
+            current_user_id == msg.user_id:
+            continue
+        if msg.user_id not in user_counts:
+            user_counts[msg.user_id] = 1
+        else:
+            user_counts[msg.user_id] += 1
         msg.view_count += 1
         pmv = PostedMessageView(
             post_id=msg.id,
@@ -118,6 +128,9 @@ def increment_posts_view_count(posts):
             remote_addr=request.remote_addr,
             endpoint=request.endpoint)
         db.session.add(pmv)
+    for user in db.session.query(User).filter(
+        User.id.in_(user_counts.keys())):
+        user.post_view_count += user_counts[user.id]
 
 
 @main.route('/u/<email>')
@@ -126,6 +139,10 @@ def user_view(email):
     user = db.session.query(User).filter(User.email == email).first()
     if user is None:
         return render_template('error.html', error_msg='Unknown user!')
+
+    # don't count self views
+    if current_user.id != user.id:
+        user.view_count += 1
 
     # get post messages for this user
     dbposts = db.session.query(PostedMessage).filter(
@@ -144,7 +161,7 @@ def user_list():
     return render_template(
         'userlist.html',
         users=db.session.query(User).order_by(
-            User.last_login.desc()).all())
+            User.post_view_count.desc()).all())
 
 
 @main.route('/system-log')
