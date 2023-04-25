@@ -17,7 +17,7 @@
 {% else %}
 {% if not post.reply_to or show_top_level_replies %}
 <div class="box" id="post_box_{{ post.id }}">
-    {{ render_post(post, show_level_menu, show_delete_button, show_repost, show_replies, show_deleted_replies)|safe }}
+    {{ render_post(post, show_level_menu, show_delete_button, show_repost, show_replies, show_deleted_replies, max_depth)|safe }}
 </div>
 {% endif %}
 {% endif %}

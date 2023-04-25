@@ -27,13 +27,13 @@
 
 
 <div class="box has-text-left">
-{{ render_posts(posts, False, True, True, False, True, False, True, True)|safe }}
+{{ render_posts(posts, False, True, True, False, True, False, True, True, 3)|safe }}
 </div>
 
 {% if reposts|length > 0 %}
 <div class="box has-text-left">
     <label class="label">Reposts</label>
-    {{ render_posts(reposts, False, True, True, False, False, False, True, True)|safe }}
+    {{ render_posts(reposts, False, True, True, False, False, False, True, True, 1)|safe }}
 </div>
 {% endif %}
 

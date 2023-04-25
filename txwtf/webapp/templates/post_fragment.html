@@ -41,7 +41,7 @@
                 <div class="level-left">
                 {% if current_user.is_authenticated and show_level_menu %}
                 <a class="level-item js-modal-trigger-reply" data-target="modal-post" id="reply_{{ post.id }}">
-                    <span class="icon is-small"><i class="fas fa-reply"></i></span> {{ post.num_replies }}
+                    <span class="icon is-small"><i class="fas fa-reply"></i></span> {{ post.num_replies }}/{{ num_posts(post.replies) }}
                 </a>
                 <a class="level-item js-modal-trigger-repost" data-target="modal-post" id="repost_id_{{ post.id }}">
                     <span class="icon is-small"><i class="fas fa-retweet"></i></span> {{ post.num_reposts }}

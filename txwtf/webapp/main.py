@@ -2,6 +2,9 @@ import logging
 import os
 from datetime import datetime
 
+import threading
+# from threading import current_thread
+
 from flask import (
     Blueprint, current_app, flash, redirect, render_template,
     request, send_from_directory, url_for)
@@ -158,15 +161,27 @@ def about():
     return render_template('about.html')
 
 
+_renderPostTL = threading.local()
 def render_post(
         post, show_level_menu=True, show_delete_button=True,
-        show_repost=True, show_replies=True, show_deleted_replies=False):
-    return render_template(
-        'post_fragment.html', post=post,
-        show_level_menu=show_level_menu,
-        show_delete_button=show_delete_button,
-        show_repost=show_repost, show_replies=show_replies,
-        show_deleted_replies=show_deleted_replies)
+        show_repost=True, show_replies=True, show_deleted_replies=False,
+        max_depth=3):
+    local_depth = getattr(_renderPostTL, 'depth', None)
+    if local_depth is None:
+        _renderPostTL.depth = 0
+        local_depth = 0
+    _renderPostTL.depth = local_depth + 1
+    if _renderPostTL.depth > max_depth:
+        retval = ""
+    else:
+        retval = render_template(
+            'post_fragment.html', post=post,
+            show_level_menu=show_level_menu,
+            show_delete_button=show_delete_button,
+            show_repost=show_repost, show_replies=show_replies,
+            show_deleted_replies=show_deleted_replies)
+    _renderPostTL.depth = local_depth
+    return retval
 
 
 def render_posts(
@@ -174,7 +189,8 @@ def render_posts(
         show_repost=True, show_level_menu=True, show_deleted=False,
         show_replies=True, show_deleted_replies=False,
         show_delete_button=True,
-        show_top_level_replies=True):
+        show_top_level_replies=True,
+        max_depth=2):
     return render_template(
         'posts_fragment.html', posts=posts,
         show_level_menu=show_level_menu,
@@ -183,7 +199,8 @@ def render_posts(
         show_deleted=show_deleted, show_replies=show_replies,
         show_deleted_replies=show_deleted_replies,
         show_repost=show_repost,
-        show_top_level_replies=show_top_level_replies)
+        show_top_level_replies=show_top_level_replies,
+        max_depth=max_depth)
 
 
 def render_post_message(post_content="", redirect_url="/posts"):
