@@ -56,6 +56,16 @@
                 </a>
                 {% endif %}
     
+                {% else %}
+                <a class="level-item">
+                    <span class="icon is-small"><i class="fas fa-reply"></i></span> {{ post.num_replies }}/{{ num_posts(post.replies) }}
+                </a>
+                <a class="level-item">
+                    <span class="icon is-small"><i class="fas fa-retweet"></i></span> {{ post.num_reposts }}
+                </a>
+                <a class="level-item">
+                    <span class="icon is-small"><i class="fas fa-heart"></i></span> {{ post.num_reactions }}
+                </a>
                 {% endif %}
                 <small class="level-item">{{ post.post_time.ctime() }}</small>
                 {% if post.reply_to %}
@@ -63,7 +73,9 @@
                     <span class="icon is-small"><i class="fas fa-arrow-up"></i></span>
                 </a>
                 {% endif %}
-                <span class="icon is-small"><i class="fas fa-chart-line"></i></span> {{ post.view_count }}
+                <a class="level-item">
+                    <span class="icon is-small"><i class="fas fa-chart-line"></i></span> {{ post.view_count }}
+                </a>
                 </div>
             </nav>
         </div>
