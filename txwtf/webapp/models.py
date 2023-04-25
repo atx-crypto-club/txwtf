@@ -23,6 +23,7 @@ class User(UserMixin, db.Model):
     last_login_addr = db.Column(db.String(256))
     view_count = db.Column(db.Integer)
     post_view_count = db.Column(db.Integer)
+    username = db.Column(db.String(100))  # should be unique!!! but sqlite doesn't like the constraint since it can't alter table
 
 
 class UserChange(db.Model):

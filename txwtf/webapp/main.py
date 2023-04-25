@@ -49,11 +49,8 @@ def generate_render_post_data(dbposts):
         post.user_id = user.id
         post.avatar_url = user.avatar_url
         post.name = user.name
-        # hide email addresses of users if not logged in.
-        if not logged_in:
-            post.email = ""
-        else:
-            post.email = user.email
+        post.username = user.username
+        post.email = user.email
         post.post_time = dbpost.post_time
         post.post_content = dbpost.post_content
         post.id = dbpost.id
@@ -133,10 +130,10 @@ def increment_posts_view_count(posts):
         user.post_view_count += user_counts[user.id]
 
 
-@main.route('/u/<email>')
+@main.route('/u/<username>')
 @login_required
-def user_view(email):
-    user = db.session.query(User).filter(User.email == email).first()
+def user_view(username):
+    user = db.session.query(User).filter(User.username == username).first()
     if user is None:
         return render_template('error.html', error_msg='Unknown user!')
 

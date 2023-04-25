@@ -21,11 +21,11 @@ def login():
 @auth.route('/login', methods=['POST'])
 def login_post():
     # login code goes here
-    email = request.form.get('email')
+    username = request.form.get('username')
     password = request.form.get('password')
     remember = True if request.form.get('remember') else False
 
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(username=username).first()
 
     # check if the user actually exists
     # take the user-supplied password, hash it, and compare it
@@ -43,7 +43,7 @@ def login_post():
         event_code=31337,  # default for now
         event_time=now,
         event_desc="user {} [{}] logged in".format(
-            user.email, user.id),
+            user.username, user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=request.remote_addr,
@@ -61,7 +61,7 @@ def login_post():
         endpoint=request.endpoint)
     db.session.add(new_change)
     db.session.commit()
-    return redirect(url_for('main.user_view', email=user.email))
+    return redirect(url_for('main.user_view', username=user.username))
 
 
 @auth.route('/register')
@@ -74,7 +74,13 @@ def register_post():
     # code to validate and add user to database goes here
     email = request.form.get('email')
     name = request.form.get('name')
+    username = request.form.get('username')
     password = request.form.get('password')
+    verify_password = request.form.get('verify_password')
+
+    if password != verify_password:
+        flash('Password mismatch!')
+        return redirect(url_for('auth.register'))
 
     # if this returns a user, then the email already exists in database
     user = User.query.filter_by(email=email).first()
@@ -83,6 +89,13 @@ def register_post():
     # user can try again
     if user:
         flash('Email address already exists')
+        return redirect(url_for('auth.register'))
+    
+    # if this returns a user, then the username already exists in database
+    user = User.query.filter_by(username=username).first()
+
+    if user:
+        flash('Username already exists')
         return redirect(url_for('auth.register'))
 
     # create a new user with the form data. Hash the password so the
@@ -103,7 +116,8 @@ def register_post():
         last_login=None,
         last_login_addr=None,
         view_count=0,
-        post_view_count=0)
+        post_view_count=0,
+        username=username)
 
     # add the new user to the database
     db.session.add(new_user)
@@ -114,7 +128,7 @@ def register_post():
         change_code=31337,  # default for now
         change_time=now,
         change_desc="creating new user {} [{}]".format(
-            new_user.email, new_user.id),
+            new_user.username, new_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=request.remote_addr,
@@ -124,7 +138,7 @@ def register_post():
         event_code=31337,  # default for now
         event_time=now,
         event_desc="creating new user {} [{}]".format(
-            new_user.email, new_user.id),
+            new_user.username, new_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=request.remote_addr,
@@ -143,7 +157,7 @@ def logout():
         event_code=31337,  # default for now
         event_time=datetime.now(),
         event_desc="user {} [{}] logging out".format(
-            current_user.email, current_user.id),
+            current_user.username, current_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=request.remote_addr,

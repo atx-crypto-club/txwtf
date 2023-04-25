@@ -17,8 +17,11 @@
                 <thead>
                   <tr>
                     <th>Avatar</th>
+                    <th>Username</th>
                     <th>Name</th>
+                    {% if current_user.is_admin %}
                     <th>Email</th>
+                    {% endif %}
                     <th>uv/pv</th>
                     <th>Last Login</th>
                     <th>Is Admin</th>
@@ -31,14 +34,17 @@
                     {% for user in users %}
                     <tr>
                         <td>
-                            <a href="/u/{{ user.email }}">
+                            <a href="/u/{{ user.username }}">
                                 <figure class="image is-32x32">
                                     <img src="{{ user.avatar_url }}">
                                 </figure>
                             </a>
                         </td>
+                        <td>{{ user.username }}</td>
                         <td>{{ user.name }}</td>
+                        {% if current_user.is_admin %}
                         <td>{{ user.email }}</td>
+                        {% endif %}
                         <td>{{ user.view_count }}/{{ user.post_view_count }}</td>
                         {% if user.last_login %}
                         <td>{{ user.last_login.ctime() }}</td>
