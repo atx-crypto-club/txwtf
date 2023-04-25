@@ -56,7 +56,7 @@
                 </a>
                 {% endif %}
     
-                {% else %}
+                {% elif not current_user.is_authenticated and show_level_menu %}
                 <a class="level-item">
                     <span class="icon is-small"><i class="fas fa-reply"></i></span> {{ post.num_replies }}/{{ num_posts(post.replies) }}
                 </a>
