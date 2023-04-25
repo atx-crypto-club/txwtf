@@ -28,10 +28,8 @@
                 </p>
               </figure>
               <div class="media-content">
-                <div class="field">
-                  <p class="control">
-                    <textarea class="textarea" id="post_content" name="post_content" placeholder="{{ post_content }}">{{ post_content }}</textarea>
-                  </p>
+                <div class="content">
+                  <textarea class="textarea" id="post_content" name="post_content" placeholder="{{ post_content }}">{{ post_content }}</textarea>
                 </div>
                 <nav class="level">
                   <div class="level-left">
@@ -73,7 +71,7 @@
   
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      var simplemde = new SimpleMDE({ element: document.getElementById("post_content") });
+      const mde = new EasyMDE({ element: document.getElementById("post_content") });
   
     // Functions to open and close a modal
     function openModal($el) {
