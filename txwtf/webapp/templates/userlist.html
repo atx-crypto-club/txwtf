@@ -24,7 +24,6 @@
                     {% endif %}
                     <th>uv/pv</th>
                     <th>Last Login</th>
-                    <th>Is Admin</th>
                     {% if current_user.is_admin %}
                     <th>Last Addr</th>
                     {% endif %}
@@ -40,7 +39,16 @@
                                 </figure>
                             </a>
                         </td>
-                        <td>{{ user.username }}</td>
+                        <td>
+                            <span class="icon-text">
+                                <span>{{ user.username }}</span>
+                                {% if user.is_admin %}
+                                <span class="icon has-text-info">
+                                    <i class="fas fa-check-square"></i>
+                                </span>
+                                {% endif %}
+                            </span>
+                        </td>
                         <td>{{ user.name }}</td>
                         {% if current_user.is_admin %}
                         <td>{{ user.email }}</td>
@@ -51,7 +59,6 @@
                         {% else %}
                         <td>None</td>
                         {% endif %}
-                        <td>{{ user.is_admin }}</td>
                         {% if current_user.is_admin %}
                         <td>{{ user.last_login_addr }}</td>
                         {% endif %}

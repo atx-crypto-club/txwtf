@@ -130,7 +130,7 @@ def set_admin(obj, config, admin, user):
     app = txwtf.webapp.create_app(config_filename=config)
     with app.app_context():
         user_obj = db.session.query(User).filter(
-            User.email == user).first()
+            User.username == user).first()
         if user_obj is None:
             logger.error("Unknown user {}".format(user))
             return
@@ -175,7 +175,7 @@ def list_users(obj, config):
             User.modified_time.desc()).all()
         for user in users:
             row = [
-                user.id, user.name, user.email,
+                user.id, user.username, user.name, user.email,
                 str(user.email_verified),
                 str(user.is_admin),
                 user.created_time.ctime(),
@@ -183,7 +183,7 @@ def list_users(obj, config):
             table.append(row)
     print("{} users".format(len(table)))
     print(tabulate(table, headers=[
-        'ID', 'Name', 'Email', 'email_verified', 'is_admin', 'Created',
+        'ID', 'Username', 'Name', 'Email', 'email_verified', 'is_admin', 'Created',
         'Last Modified']))
 
 
