@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="30" height="27" viewBox="0 0 30 27">
-  <g id="Group_32" data-name="Group 32" transform="translate(3550.9 864)">
-    <path id="Icon_ionic-md-exit" data-name="Icon ionic-md-exit" d="M28.5,4.5H7.5a3.009,3.009,0,0,0-3,3v3h3v-3h21v21H7.5v-3h-3v3a3.009,3.009,0,0,0,3,3h21a3.009,3.009,0,0,0,3-3V7.5A3.009,3.009,0,0,0,28.5,4.5Z" transform="translate(-3552.4 -868.5)" fill="#fff"/>
-    <path id="Icon_material-exit-to-app" data-name="Icon material-exit-to-app" d="M12.16,20.765,10.475,22.45,4.5,16.475,10.475,10.5l1.685,1.685-3.083,3.1H20.633v2.39H9.077l3.083,3.1Z" transform="translate(-3555.4 -866.969)" fill="#fff"/>
-  </g>
-</svg>
