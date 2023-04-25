@@ -51,7 +51,23 @@
                         </td>
                         <td>{{ user.name }}</td>
                         {% if current_user.is_admin %}
-                        <td>{{ user.email }}</td>
+                        <td>
+                        {% if user.email_verified %}
+                        <span class="icon-text">
+                            <span>{{ user.email }}</span>
+                            <span class="icon has-text-success">
+                                <i class="fas fa-check-square"></i>
+                            </span>
+                        </span>
+                        {% else %}
+                        <span class="icon-text">
+                            <span>{{ user.email }}</span>
+                            <span class="icon has-text-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </span>
+                        </span>
+                        {% endif %}
+                        </td>
                         {% endif %}
                         <td>{{ user.view_count }}/{{ user.post_view_count }}</td>
                         {% if user.last_login %}

@@ -210,7 +210,7 @@ def verify_email(obj, config, verify, user):
     app = txwtf.webapp.create_app(config_filename=config)
     with app.app_context():
         user_obj = db.session.query(User).filter(
-            User.email == user).first()
+            User.username == user).first()
         if user_obj is None:
             logger.error("Unknown user {}".format(user))
             return
