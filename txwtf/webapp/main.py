@@ -454,7 +454,8 @@ def post_message():
     # replace hashtags with links to hashtag page
     for hashtag in hashtags:
         markdown_content = markdown_content.replace(
-            "#{}".format(hashtag), "[#{}](/h/{})".format(hashtag, hashtag))
+            "#{}".format(hashtag),
+            "[#{}](/h/{})".format(hashtag, hashtag))
         
     # TODO: for some reason the above breaks being able to click on the
     # post and go to its post page
@@ -695,6 +696,17 @@ def upload_card_image():
 @login_required
 def update_user_description():
     desc = request.form.get('user_description')
+
+    # replace hashtags with links to hashtag page
+    for hashtag in scrape_hashtags(desc):
+        dbht = db.session.query(Tag).filter(
+            Tag.name == hashtag).first()
+        if dbht is None:
+            continue  # ignore if no tag exists
+        desc = desc.replace(
+            "#{}".format(hashtag),
+            "[#{}](/h/{})".format(hashtag, hashtag))
+
     current_user.description = markdown(desc)
     current_user.modified_time = datetime.now()
     new_change = UserChange(
@@ -739,6 +751,17 @@ def update_user_name():
 @login_required
 def update_user_header_text():
     header_text = request.form.get('user_header_text')
+
+    # replace hashtags with links to hashtag page
+    for hashtag in scrape_hashtags(header_text):
+        dbht = db.session.query(Tag).filter(
+            Tag.name == hashtag).first()
+        if dbht is None:
+            continue  # ignore if no tag exists
+        header_text = header_text.replace(
+            "#{}".format(hashtag),
+            "[#{}](/h/{})".format(hashtag, hashtag))
+
     current_user.header_text = markdown(header_text)
     current_user.modified_time = datetime.now()
     new_change = UserChange(
