@@ -482,6 +482,8 @@ def post_message():
     db.session.commit()
     flash("Message posted!")
 
+    current_user.post_count += 1
+
     for hashtag in hashtags:
         # if the tag doesn't exist, add it to the db and attribute it
         # to the current_user. Then add a hashtag entry for this post.
@@ -506,7 +508,7 @@ def post_message():
             tag_id=dbtag.id,
             post_time=now)
         db.session.add(new_hashtag)
-        db.session.commit()
+    db.session.commit()
 
     return redirect(redirect_url)
 
