@@ -149,6 +149,8 @@ def user_view(email):
         PostedMessage.user_id == user.id).order_by(
             PostedMessage.post_time.desc()).all()
 
+    # TODO: show total post count
+
     posts = generate_render_post_data(dbposts)
     increment_posts_view_count(posts)
     db.session.commit()
@@ -304,6 +306,8 @@ def scrape_hashtags(content):
             x = i.replace("#", '')
             # TODO: make sure hashtags are valid C identifiers
             # as our standard
+            if len(x) == 0:
+                continue
             hashtags.append(x)
     return hashtags
 
@@ -446,6 +450,14 @@ def post_message():
     # extract all hash tags and add them to the tables
     markdown_content = request.form.get('post_content')
     hashtags = scrape_hashtags(markdown_content)
+
+    # replace hashtags with links to hashtag page
+    for hashtag in hashtags:
+        markdown_content = markdown_content.replace(
+            "#{}".format(hashtag), "[#{}](/h/{})".format(hashtag, hashtag))
+        
+    # TODO: for some reason the above breaks being able to click on the
+    # post and go to its post page
 
     post_content = markdown(markdown_content)
     if len(post_content) == 0:
