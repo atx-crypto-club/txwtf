@@ -137,21 +137,31 @@ def user_view(username):
     if user is None:
         return render_template('error.html', error_msg='Unknown user!')
 
+    post_view = request.args.get("post_view", "public")
+
     # don't count self views
     if current_user.id != user.id:
         user.view_count += 1
 
-    # get post messages for this user
-    dbposts = db.session.query(PostedMessage).filter(
-        PostedMessage.user_id == user.id).order_by(
-            PostedMessage.post_time.desc()).all()
-
-    # TODO: show total post count
+    # get post messages for this user depending on the
+    # view selection
+    dbposts = []
+    if post_view == "public":
+        dbposts = db.session.query(PostedMessage).filter(
+            PostedMessage.user_id == user.id,
+            PostedMessage.reply_to == None).order_by(
+                PostedMessage.post_time.desc()).all()
+    elif post_view == "replies":
+        dbposts = db.session.query(PostedMessage).filter(
+            PostedMessage.user_id == user.id,
+            PostedMessage.reply_to != None).order_by(
+                PostedMessage.post_time.desc()).all()
 
     posts = generate_render_post_data(dbposts)
     increment_posts_view_count(posts)
     db.session.commit()
-    return render_template('users.html', user=user, posts=posts)
+    return render_template(
+        'users.html', user=user, posts=posts, post_view=post_view)
 
 
 @main.route('/user-list')
