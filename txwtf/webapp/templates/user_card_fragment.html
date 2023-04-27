@@ -15,6 +15,13 @@
                 <p class="title is-4">{{ user.name }}</p>
                 <p class="subtitle is-6">{{ user.username }} 
                 <span class="is-7">
+                    {% if user.is_admin %}
+                    <span class="icon-text">
+                        <span class="icon has-text-info">
+                            <i class="fas fa-check-square"></i>
+                        </span>
+                    </span>
+                    {% endif %}
                     {% if user.email_verified %}
                     <span class="icon-text">
                         <span class="icon has-text-success">
@@ -30,11 +37,6 @@
                     {% endif %}
                 </span>
                 </p>
-                {% if user.is_admin %}
-                <div class="notification is-danger has-text-centered">
-                    <p class="subtitle is-4 is-italic has-text-black">admin</p>
-                </div>
-                {% endif %}
             </div>
         </div>
 

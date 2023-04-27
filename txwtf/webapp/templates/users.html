@@ -43,34 +43,41 @@
     <div class="box">
       <div class="tabs is-toggle">
         <ul>
-            {% if post_view == "public" %}
-            <li class="is-active"><a href="/u/{{ user.username }}?post_view=public">Public</a></li>
+            {% if view == "public" %}
+            <li class="is-active"><a href="/u/{{ user.username }}?view=public">Public</a></li>
             {% else %}
-            <li><a href="/u/{{ user.username }}?post_view=public">Public</a></li>
+            <li><a href="/u/{{ user.username }}?view=public">Public</a></li>
             {% endif %}
 
-            {% if post_view == "replies" %}
-            <li class="is-active"><a href="/u/{{ user.username }}?post_view=replies">Replies</a></li>
+            {% if view == "replies" %}
+            <li class="is-active"><a href="/u/{{ user.username }}?view=replies">Replies</a></li>
             {% else %}
-            <li><a href="/u/{{ user.username }}?post_view=replies">Replies</a></li>
+            <li><a href="/u/{{ user.username }}?view=replies">Replies</a></li>
             {% endif %}
 
-            {% if post_view == "private" %}
-            <li class="is-active"><a href="/u/{{ user.username }}?post_view=private">Private</a></li>
+            {% if view == "mentions" %}
+            <li class="is-active"><a href="/u/{{ user.username }}?view=mentions">Mentions</a></li>
             {% else %}
-            <li><a href="/u/{{ user.username }}?post_view=private">Private</a></li>
+            <li><a href="/u/{{ user.username }}?view=mentions">Mentions</a></li>
             {% endif %}
 
-            {% if post_view == "direct" %}
-            <li class="is-active"><a href="/u/{{ user.username }}?post_view=direct">Direct</a></li>
+            {% if view == "private" %}
+            <li class="is-active"><a href="/u/{{ user.username }}?view=private">Private</a></li>
             {% else %}
-            <li><a href="/u/{{ user.username }}?post_view=direct">Direct</a></li>
+            <li><a href="/u/{{ user.username }}?view=private">Private</a></li>
+            {% endif %}
+
+            {% if view == "direct" %}
+            <li class="is-active"><a href="/u/{{ user.username }}?view=direct">Direct</a></li>
+            {% else %}
+            <li><a href="/u/{{ user.username }}?view=direct">Direct</a></li>
             {% endif %}
         </ul>
       </div>
       {{ render_posts(posts, True, True, True, False, False, False, True, True)|safe }}
     </div>
   </div>
+  <div class="column is-one-quarter"></div>
 </div>
 
 {% if current_user.id == user.id %}

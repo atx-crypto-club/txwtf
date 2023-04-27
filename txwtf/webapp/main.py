@@ -16,7 +16,8 @@ from markdown import markdown
 from . import db, upload_archive
 from .models import (
     Emoji, HashTag, PostedMessage, PostedMessageView,
-    Reaction, SystemLog, Tag, User, UserChange)
+    Reaction, SystemLog, Tag, User, UserChange, UserFile,
+    Attachment, Mention)
 
 
 main = Blueprint('main', __name__)
@@ -137,7 +138,7 @@ def user_view(username):
     if user is None:
         return render_template('error.html', error_msg='Unknown user!')
 
-    post_view = request.args.get("post_view", "public")
+    view = request.args.get("view", "public")
 
     # don't count self views
     if current_user.id != user.id:
@@ -146,22 +147,24 @@ def user_view(username):
     # get post messages for this user depending on the
     # view selection
     dbposts = []
-    if post_view == "public":
+    if view == "public":
         dbposts = db.session.query(PostedMessage).filter(
             PostedMessage.user_id == user.id,
             PostedMessage.reply_to == None).order_by(
                 PostedMessage.post_time.desc()).all()
-    elif post_view == "replies":
+    elif view == "replies":
         dbposts = db.session.query(PostedMessage).filter(
             PostedMessage.user_id == user.id,
             PostedMessage.reply_to != None).order_by(
                 PostedMessage.post_time.desc()).all()
+    # TODO: need "private" view once we add followers and
+    # friends user distinction
 
     posts = generate_render_post_data(dbposts)
     increment_posts_view_count(posts)
     db.session.commit()
     return render_template(
-        'users.html', user=user, posts=posts, post_view=post_view)
+        'users.html', user=user, posts=posts, view=view)
 
 
 @main.route('/user-list')
@@ -307,7 +310,7 @@ def hash_tag_view(name):
 
 def scrape_hashtags(content):
     textList = content.split()
-    hashtags = []
+    hashtags = set()
     for i in textList:
         if i[0] == "#":
             x = i.replace("#", '')
@@ -315,8 +318,32 @@ def scrape_hashtags(content):
             # as our standard
             if len(x) == 0:
                 continue
-            hashtags.append(x)
-    return hashtags
+            hashtags.add(x)
+    return list(hashtags)
+
+
+def scrape_mentions(content):
+    textList = content.split()
+    mentions = set()
+    for i in textList:
+        if i[0] == "@":
+            mention = i.replace("@", '')
+            if len(mention) == 0:
+                continue
+
+            # TODO: scan for valid mention strings so we
+            # can capture mentions next to period's and 
+            # other punctuation.
+
+            user = db.session.query(User).filter(
+                User.username == mention).first()
+            if user is None:
+                # if no such user by mention username then
+                # just skip it
+                continue
+
+            mentions.add((mention, user.id))
+    return list(mentions)
 
 
 def add_reaction(user_id, post_id, reaction_name):
@@ -457,15 +484,22 @@ def post_message():
     # extract all hash tags and add them to the tables
     markdown_content = request.form.get('post_content')
     hashtags = scrape_hashtags(markdown_content)
+    mentions = scrape_mentions(markdown_content)
 
     # replace hashtags with links to hashtag page
     for hashtag in hashtags:
         markdown_content = markdown_content.replace(
             "#{}".format(hashtag),
             "[#{}](/h/{})".format(hashtag, hashtag))
-        
+
     # TODO: for some reason the above breaks being able to click on the
     # post and go to its post page
+
+    # replace mentions with links to user page
+    for username, _ in mentions:
+        markdown_content = markdown_content.replace(
+            "@{}".format(username),
+            "[@{}](/u/{})".format(username, username))
 
     post_content = markdown(markdown_content)
     if len(post_content) == 0:
@@ -518,6 +552,13 @@ def post_message():
             tag_id=dbtag.id,
             post_time=now)
         db.session.add(new_hashtag)
+
+    for username, user_id in mentions:
+        new_ment = Mention(
+            user_id=user_id,
+            post_id=msg.id)
+        db.session.add(new_ment)
+
     db.session.commit()
 
     return redirect(redirect_url)
@@ -580,7 +621,7 @@ def upload_avatar():
             return redirect(url_for("main.editprofile"))
         saved_name = upload_archive.save(
             request.files["avatar"],
-            folder=str(current_user.email))
+            folder=str(current_user.username))
         current_user.avatar_url = "/uploads/{}".format(
             saved_name)
         current_user.modified_time = datetime.now()
@@ -624,7 +665,7 @@ def upload_header_image():
             return redirect(url_for("main.editprofile"))
         saved_name = upload_archive.save(
             request.files["header_image"],
-            folder=str(current_user.email))
+            folder=str(current_user.username))
         current_user.header_image_url = "/uploads/{}".format(
             saved_name)
         current_user.modified_time = datetime.now()
@@ -667,7 +708,7 @@ def upload_card_image():
             return redirect(url_for("main.editprofile"))
         saved_name = upload_archive.save(
             request.files["card_image"],
-            folder=str(current_user.email))
+            folder=str(current_user.username))
         current_user.card_image_url = "/uploads/{}".format(
             saved_name)
         current_user.modified_time = datetime.now()
@@ -793,3 +834,31 @@ def update_user_header_text():
 def uploads(path):
     return send_from_directory(
         current_app.config["UPLOADED_ARCHIVE_DEST"], path)
+
+
+@main.route("/upload-file", methods=['POST'])
+@login_required
+def upload_file():
+    name = request.form.get('name')
+    description = request.form.get('description')
+    if "user_file" in request.files:
+        if request.files["user_file"].filename == "":
+            flash("Null upload!!1")
+            return redirect(url_for("main.user_files"))
+        saved_name = upload_archive.save(
+            request.files["user_file"],
+            folder=str(current_user.username))
+        user_file = UserFile(
+            name=name,
+            file_path=saved_name,
+            preview_path=None,  # TODO: generate preview
+            description=description,
+            now=datetime.now(),
+            user_id=current_user.id,
+            deleted=False,
+            view_count=0)
+        db.session.add(user_file)
+        db.session.commit()
+    else:
+        flash("Invalid request")
+        return redirect(url_for("main.user_files"))

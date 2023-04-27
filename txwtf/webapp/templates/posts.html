@@ -1,40 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="columns">
-    <div class="column is-one-quarter">
+  <div class="column is-one-quarter">
+    <div class="box">
+      <h1 class="title">
+        Post Feed
+      </h1>
+      <img src="/assets/img/atxcf_logo_small.jpg">
+    </div>
+
+    <div class="box post-box-img"></div>
+
+    <div class="box has-text-left">
+      <label class="label">Hash Tags</label>
+      <ul>
+      {% for tag in tags %}
+        <li><a href="/h/{{ tag.name }}">#{{ tag.name }} {{ tag.count }}</a></li>
+      {% endfor %}
+      </ul>
+    </div>
+
+    <div class="box post-box-img"></div>
+  </div>
+  <div class="column has-text-left">
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
       <div class="box">
-        <h1 class="title">
-          Post Feed
-        </h1>
-        <img src="/assets/img/atxcf_logo_small.jpg">
-      </div>
-
-      <div class="box post-box-img"></div>
-
-      <div class="box has-text-left">
-        <label class="label">Hash Tags</label>
-        <ul>
-        {% for tag in tags %}
-          <li><a href="/h/{{ tag.name }}">#{{ tag.name }} {{ tag.count }}</a></li>
-        {% endfor %}
-        </ul>
-      </div>
-
-      <div class="box post-box-img"></div>
-    </div>
-    <div class="column has-text-left">
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <div class="box">
-          <div class="notification is-info">
-              {{ messages[0] }}
-          </div>
+        <div class="notification is-info">
+            {{ messages[0] }}
         </div>
-        {% endif %}
-        {% endwith %}
+      </div>
+      {% endif %}
+      {% endwith %}
 
-        {{ render_posts(posts, True, True, True, False, False, False, True, False, 1)|safe }}
-    </div>
+      {{ render_posts(posts, True, True, True, False, False, False, True, False, 1)|safe }}
+  </div>
+  <div class="column is-one-quarter"></div>
 </div>
 
 {% if current_user.is_authenticated %}

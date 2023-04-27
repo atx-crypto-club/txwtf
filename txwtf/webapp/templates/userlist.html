@@ -22,8 +22,7 @@
                     {% if current_user.is_admin %}
                     <th>Email</th>
                     {% endif %}
-                    <th>Posts</th>
-                    <th>uv/pv</th>
+                    <th>p/uv/pv</th>
                     <th>Last Login</th>
                     {% if current_user.is_admin %}
                     <th>Last Addr</th>
@@ -48,30 +47,22 @@
                                     <i class="fas fa-check-square"></i>
                                 </span>
                                 {% endif %}
+                                {% if user.email_verified %}
+                                <span class="icon has-text-success">
+                                    <i class="fas fa-check-square"></i>
+                                </span>
+                                {% else %}
+                                <span class="icon has-text-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </span>
+                                {% endif %}
                             </span>
                         </td>
                         <td>{{ user.name }}</td>
                         {% if current_user.is_admin %}
-                        <td>
-                        {% if user.email_verified %}
-                        <span class="icon-text">
-                            <span>{{ user.email }}</span>
-                            <span class="icon has-text-success">
-                                <i class="fas fa-check-square"></i>
-                            </span>
-                        </span>
-                        {% else %}
-                        <span class="icon-text">
-                            <span>{{ user.email }}</span>
-                            <span class="icon has-text-warning">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </span>
-                        </span>
+                        <td><span>{{ user.email }}</span></td>
                         {% endif %}
-                        </td>
-                        {% endif %}
-                        <td>{{ user.post_count }}</td>
-                        <td>{{ user.view_count }}/{{ user.post_view_count }}</td>
+                        <td>{{ user.post_count }}/{{ user.view_count }}/{{ user.post_view_count }}</td>
                         {% if user.last_login %}
                         <td>{{ user.last_login.ctime() }}</td>
                         {% else %}

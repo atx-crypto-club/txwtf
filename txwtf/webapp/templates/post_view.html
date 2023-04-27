@@ -25,7 +25,10 @@
 </div>
 {% endif %}
 
+<div class="columns">
+    <div class="column is-one-quarter"></div>
 
+<div class="column">
 <div class="box has-text-left">
 {{ render_posts(posts, False, True, True, False, True, False, True, True, 3)|safe }}
 </div>
@@ -36,6 +39,10 @@
     {{ render_posts(reposts, False, True, True, False, False, False, True, True, 1)|safe }}
 </div>
 {% endif %}
+</div>
+
+<div class="column is-one-quarter"></div>
+</div>
 
 {% if current_user.is_authenticated %}
 {{ render_post_message("", "/p/{}".format(posts[0].id))|safe }}

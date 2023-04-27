@@ -109,6 +109,30 @@ class HashTag(db.Model):
     post_time = db.Column(db.DateTime)
 
 
+class UserFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), unique=True)
+    file_path = db.Column(db.String(256), unique=True)  # relative to the upload archive directory
+    preview_path = db.Column(db.String(256), unique=True)  # relative to upload dir too
+    description = db.Column(db.String(1024))
+    created_time = db.Column(db.DateTime)
+    user_id = db.Column(db.Integer)
+    deleted = db.Column(db.Boolean)
+    view_count = db.Column(db.Integer)
+
+
+class Attachment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_file_id = db.Column(db.Integer)
+    post_id = db.Column(db.Integer)
+
+
+class Mention(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
+    post_id = db.Column(db.Integer)
+
+
 # TODO: notifications table
 
 
