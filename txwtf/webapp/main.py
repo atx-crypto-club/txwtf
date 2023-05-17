@@ -157,6 +157,11 @@ def user_view(username):
             PostedMessage.user_id == user.id,
             PostedMessage.reply_to != None).order_by(
                 PostedMessage.post_time.desc()).all()
+    elif view == "mentions":
+        dbposts = db.session.query(PostedMessage).join(
+            Mention, PostedMessage.id == Mention.post_id).filter(
+                Mention.user_id == user.id).order_by(
+                    PostedMessage.post_time.desc()).all()
     # TODO: need "private" view once we add followers and
     # friends user distinction
 
@@ -554,6 +559,7 @@ def post_message():
         db.session.add(new_hashtag)
 
     for username, user_id in mentions:
+        logger.info("mention {} ({})".format(username, user_id))
         new_ment = Mention(
             user_id=user_id,
             post_id=msg.id)
