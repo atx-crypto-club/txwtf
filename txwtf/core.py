@@ -1,6 +1,7 @@
 import cProfile
 import logging
 import pstats
+import re
 import sys
 from contextlib import contextmanager
 
@@ -52,3 +53,14 @@ def cli_context(obj):
 
 def stub():
     return True
+
+
+def valid_identifier(value):
+    """
+    Return whether the value is a valid identifier string for
+    usernames, hashtags and other objects in the system.
+    """
+    # C identifier regex
+    # http://bit.ly/1MExKtn
+    c_ident_re = r"^[_a-zA-Z][_a-zA-Z0-9]{0,30}$"
+    return re.match(c_ident_re, value) is not None

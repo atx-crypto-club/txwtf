@@ -8,9 +8,12 @@ import tempfile
 from os.path import abspath, dirname, expanduser, join
 
 
+project = "txwtf"
+
+
 def _get_default_environment_root():
     return os.environ.get(
-        "ENV_ROOT", join(expanduser("~"), "python-runtime", "txwtf"))
+        "ENV_ROOT", join(expanduser("~"), "python-runtime", project))
 
 
 def _get_default_edm_install_prefix():
@@ -36,13 +39,16 @@ EDM_BIN = _get_default_edm_bin()
 EDM_ROOT = _get_default_edm_root()
 BOOTSTRAP_PY_VER = os.environ.get("BOOTSTRAP_PY_VER", "3.8")
 BOOTSTRAP_ENV = os.environ.get(
-    "BOOTSTRAP_ENV", "txwtf-bootstrap-" + BOOTSTRAP_PY_VER)
+    "BOOTSTRAP_ENV",
+    "{}-bootstrap-{}".format(project, BOOTSTRAP_PY_VER))
 BOOTSTRAP_ENV_DEPS = ["click"]
 BOOTSTRAP_SOURCE = abspath(dirname(__file__))
 
-TXWTF_PY_VER = os.environ.get("TXWTF_PY_VER", "3.8")
-TXWTF_ENV = os.environ.get(
-    "TXWTF_ENV", "txwtf-prod-" + TXWTF_PY_VER)
+PROJ_PY_VER = os.environ.get(
+    "{}_PY_VER".format(project.upper()), "3.8")
+PROJ_ENV = os.environ.get(
+    "{}_ENV".format(project.upper()),
+    "{}-prod-{}".format(project, PROJ_PY_VER))
 
 if __name__ == '__main__':
     env = os.environ.copy()
@@ -53,7 +59,7 @@ if __name__ == '__main__':
 
     cmd_base = [EDM_BIN, "-r", EDM_ROOT]
     cmd_run_base = cmd_base + ["run", "-e", BOOTSTRAP_ENV, "--"]
-    txwtf_ci = cmd_run_base + ["python", "-m", "txwtf_ci"]
+    proj_ci = cmd_run_base + ["python", "-m", "{}_ci".format(project)]
 
     args = [
         "bootstrap", "install-dev", "migrate", "test", "txwtf", "webapp"]
@@ -73,45 +79,45 @@ if __name__ == '__main__':
                     "--version={}".format(BOOTSTRAP_PY_VER)],
                 cmd_base + [   # install bootstrap deps
                     "install", "-e", BOOTSTRAP_ENV, "-y"] + BOOTSTRAP_ENV_DEPS,
-                txwtf_ci + [   # bootstrap txwtf dev env
+                proj_ci + [   # bootstrap txwtf dev env
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
-                    "--edm-py-version={}".format(TXWTF_PY_VER),
+                    "--edm-env={}".format(PROJ_ENV),
+                    "--edm-py-version={}".format(PROJ_PY_VER),
                     "bootstrap"]]
             args = args[1:]
 
         elif arg == "install":
             cmds = [
-                txwtf_ci + [   # install txwtf into dev env
+                proj_ci + [   # install txwtf into dev env
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
+                    "--edm-env={}".format(PROJ_ENV),
                     "install"]]
             args = args[1:]
 
         elif arg == "install-dev":
             cmds = [
-                txwtf_ci + [   # editable install txwtf into dev env
+                proj_ci + [   # editable install txwtf into dev env
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
+                    "--edm-env={}".format(PROJ_ENV),
                     "install-dev"]]
             args = args[1:]
 
         elif arg == "migrate":
             cmds = [
-                txwtf_ci + [
+                proj_ci + [
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
+                    "--edm-env={}".format(PROJ_ENV),
                     "migrate"]]
             args = args[1:]
 
         elif arg == "clean":
             cmds = [
                 cmd_base + [
-                    "envs", "remove", "--force", "-y", TXWTF_ENV],
+                    "envs", "remove", "--force", "-y", PROJ_ENV],
                 cmd_base + [
                     "envs", "remove", "--force", "-y", BOOTSTRAP_ENV]]
             args = args[1:]
@@ -122,55 +128,55 @@ if __name__ == '__main__':
 
         elif arg == "test":
             cmds = [           # run tests
-                txwtf_ci + [
+                proj_ci + [
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
+                    "--edm-env={}".format(PROJ_ENV),
                     "test"]]
             args = args[1:]
 
         elif arg == "flake8":
             cmds = [           # run linter
-                txwtf_ci + [
+                proj_ci + [
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
+                    "--edm-env={}".format(PROJ_ENV),
                     "flake8"]]
             args = args[1:]
 
         elif arg == "shell":
             cmds = [
-                txwtf_ci + [
+                proj_ci + [
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
+                    "--edm-env={}".format(PROJ_ENV),
                     "shell"]]
             args = args[1:]
 
         elif arg == "run":
             cmds = [
-                txwtf_ci + [
+                proj_ci + [
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
+                    "--edm-env={}".format(PROJ_ENV),
                     "run"] + args[1:]]
             args = []  # run consumes the rest of the arguments
 
-        elif arg == "txwtf":
+        elif arg == project:
             cmds = [
-                txwtf_ci + [
+                proj_ci + [
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
-                    "run-txwtf"] + args[1:]]
+                    "--edm-env={}".format(PROJ_ENV),
+                    "run-{}".format(project)] + args[1:]]
             args = []  # run consumes the rest of the arguments
 
         elif arg == "wsgi":
             cmds = [
-                txwtf_ci + [
+                proj_ci + [
                     "--edm-bin={}".format(EDM_BIN),
                     "--edm-root={}".format(EDM_ROOT),
-                    "--edm-env={}".format(TXWTF_ENV),
+                    "--edm-env={}".format(PROJ_ENV),
                     "run-wsgi"] + args[1:]]
             args = []  # run consumes the rest of the arguments
 
