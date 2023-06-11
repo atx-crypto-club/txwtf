@@ -559,7 +559,6 @@ def post_message():
         db.session.add(new_hashtag)
 
     for username, user_id in mentions:
-        logger.info("mention {} ({})".format(username, user_id))
         new_ment = Mention(
             user_id=user_id,
             post_id=msg.id)
