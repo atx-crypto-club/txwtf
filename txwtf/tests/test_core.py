@@ -37,7 +37,7 @@ class TestCore(unittest.TestCase):
         good_values = [
             "b0llocks", "clownworld", "__test", "_test0", "__test__"]
         bad_values = [
-            "1clown", "f00.", "#asdf", r"%fff", r"{ff1...}", "fasd^"]
+            "1clown", "f00.", "#asdf", r"%fff", r"{ff1...}", "fasd^", ""]
         
         # when
         gv = [txwtf.core.valid_identifier(val) for val in good_values]
