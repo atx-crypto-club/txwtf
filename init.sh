@@ -13,12 +13,12 @@ do_run=0
 while getopts ':rsiwdh' opt; do
   case "$opt" in
     r)
-      echo "Running launcher.py after initialization"
+      echo "Running init.py after initialization"
       do_run=1
       ;;
 
     s)
-      echo "Running launcher.py shell after initialization"
+      echo "Running init.py shell after initialization"
       do_run=2
       ;;
 
@@ -28,7 +28,7 @@ while getopts ':rsiwdh' opt; do
       ;;
 
     w)
-      echo "Running launcher.py wsgi after initialization"
+      echo "Running init.py wsgi after initialization"
       do_run=4
       ;;
 
@@ -94,7 +94,8 @@ fi
 # setup edm environment
 $edm_bin -r $edm_root environments create $env_name --version $python_version
 $edm_bin -r $edm_root install -e $env_name click pyyaml --yes
-$edm_bin -r $edm_root run -e $env_name -- python launcher.py bootstrap install-dev migrate test
+# TODO: add flag to toggle install-dev vs install
+$edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run bootstrap install-dev migrate test
 
 # run shell for launcher environment, or actually run the launcher
 case "$do_run" in
@@ -104,13 +105,13 @@ case "$do_run" in
         ;;
     1)
         echo "Launching txwtf webapp..."
-        $edm_bin -r $edm_root run -e $env_name -- python launcher.py txwtf webapp
+        $edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run txwtf webapp
         exit 0
         ;;
 
     2)
         echo "Launching txwtf edm environment shell..."
-        $edm_bin -r $edm_root run -e $env_name -- python launcher.py shell
+        $edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run shell
         exit 0
         ;;
 
@@ -122,7 +123,7 @@ case "$do_run" in
 
     4)
         echo "Launching wsgi for txwtf webapp..."
-        $edm_bin -r $edm_root run -e $env_name -- python launcher.py wsgi
+        $edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run wsgi
         exit 0
         ;;
 esac
