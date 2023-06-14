@@ -1,6 +1,6 @@
 import os
 import subprocess
-from os.path import dirname, expanduser, join
+from os.path import abspath, dirname, expanduser, join
 
 import click
 
@@ -60,7 +60,6 @@ def root(context, edm_root, edm_env, edm_py_version, edm_bin):
     obj.edm_env = edm_env
     obj.edm_py_version = edm_py_version
     obj.edm_bin = edm_bin
-    pass
 
 
 @root.command()
@@ -88,7 +87,7 @@ def bootstrap(obj, replace):
 
 
 source_dir_option = click.option(
-    "--source-dir", default=join(dirname(__file__), ".."),
+    "--source-dir", default=join(abspath(dirname(__file__)), ".."),
     help="Directory where txwtf/setup.py lives")
 
 
@@ -195,7 +194,7 @@ def run(obj, cmd_args):
 
 @root.command()
 @click.option(
-    "--log", envvar="TXWTF_LOG", default="-",
+    "--log-file", envvar="TXWTF_LOG", default="-",
     help="Log file. Use '-' for stdout.")
 @click.option(
     "--log-level", envvar="TXWTF_LOG_LEVEL",
