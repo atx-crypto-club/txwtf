@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 @click.group(context_settings={"help_option_names": ['-h', '--help']})
 @click.option(
-    "--log", envvar="TXWTF_LOG", default="-",
+    "--log-file", envvar="TXWTF_LOG", default="-",
     help="Log file. Use '-' for stdout.")
 @click.option(
     "--log-level", default="INFO",
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
     '--profiling/--no-profiling', default=False,
     help="Print performance profiling info on exit.")
 @click.pass_context
-def root(context, log, log_level, profiling):
+def root(context, log_file, log_level, profiling):
     """
     tx.wtf web application
     """
@@ -31,7 +31,7 @@ def root(context, log, log_level, profiling):
         pass
 
     context.obj = obj = Obj()
-    obj.log = log
+    obj.log = log_file
     obj.log_level = log_level
     obj.profiling = profiling
 

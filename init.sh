@@ -9,28 +9,26 @@ env_name=txwtf-init
 python_version="3.8"
 
 # parse cmd line
-cmd_help="[-r] [-s] [-i] [-w] [-d] [-v <python version>]"
+init_cmd=""
+screen_name=""
+cmd_help="[-r <command>] [-i] [-e <env root>] [-d] [-v <python version>] [-s] [-h]"
 do_run=0
-while getopts ':rsiwdhv:' opt; do
+while getopts ':r:ie:dv:s:h' opt; do
   case "$opt" in
     r)
-      echo "Running init.py after initialization"
+      init_cmd=$OPTARG
+      echo "Running 'init.py run $init_cmd' after initialization"
       do_run=1
-      ;;
-
-    s)
-      echo "Running init.py shell after initialization"
-      do_run=2
       ;;
 
     i)
       echo "Running init shell"
-      do_run=3
+      do_run=2
       ;;
 
-    w)
-      echo "Running init.py wsgi after initialization"
-      do_run=4
+    e)
+      env_root=$OPTARG
+      echo "Environment root is" $env_root
       ;;
 
     d)
@@ -45,6 +43,12 @@ while getopts ':rsiwdhv:' opt; do
     v)
       python_version=$OPTARG
       echo "Using python version $python_version"
+      ;;
+
+    s)
+      screen_name=$OPTARG
+      screen_cmd="screen -S $screen_name -dm"
+      echo "Running in screen $screen_name"
       ;;
 
     h)
@@ -110,27 +114,16 @@ case "$do_run" in
         echo "Done."
         exit 0
         ;;
+
     1)
-        echo "Launching txwtf webapp..."
-        $edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run txwtf webapp
+        echo "Launching txwtf command..."
+        $screen_cmd $edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run $init_cmd
         exit 0
         ;;
 
     2)
-        echo "Launching txwtf edm environment shell..."
-        $edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run shell
-        exit 0
-        ;;
-
-    3)
         echo "Launching init edm shell..."
-        $edm_bin -r $edm_root shell -e $env_name
-        exit 0
-        ;;
-
-    4)
-        echo "Launching wsgi for txwtf webapp..."
-        $edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run wsgi
+        $screen_cmd $edm_bin -r $edm_root shell -e $env_name
         exit 0
         ;;
 esac

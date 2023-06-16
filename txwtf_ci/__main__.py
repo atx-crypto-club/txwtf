@@ -201,7 +201,7 @@ def run(obj, cmd_args):
     default="WARNING", help="Log output level.")
 @click.argument('cmd_args', nargs=-1)
 @click.pass_obj
-def run_txwtf(obj, log, log_level, cmd_args):
+def run_txwtf(obj, log_file, log_level, cmd_args):
     """
     Run txwtf in EDM environment
     """
@@ -210,7 +210,7 @@ def run_txwtf(obj, log, log_level, cmd_args):
     subprocess.check_call(
         edm_run_cmd + [
             "txwtf",
-            "--log={}".format(log),
+            "--log-file={}".format(log_file),
             "--log-level={}".format(log_level)] + list(cmd_args))
     
 
