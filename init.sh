@@ -9,8 +9,9 @@ env_name=txwtf-init
 python_version="3.8"
 
 # parse cmd line
+cmd_help="[-r] [-s] [-i] [-w] [-d] [-v <python version>]"
 do_run=0
-while getopts ':rsiwdh' opt; do
+while getopts ':rsiwdhv:' opt; do
   case "$opt" in
     r)
       echo "Running init.py after initialization"
@@ -33,31 +34,38 @@ while getopts ':rsiwdh' opt; do
       ;;
 
     d)
-      echo "Nuking" $env_root " and instance dir"
+      echo "Nuking" $env_root "and instance dir"
       rm -rf $SCRIPT_DIR/instance
       rm -rf $env_root
-      exit 0
+      if [ "$do_run" = "0" ]; then
+        exit 0
+      fi
+      ;;
+
+    v)
+      python_version=$OPTARG
+      echo "Using python version $python_version"
       ;;
 
     h)
-      echo "Usage: $(basename $0) [-r] [-s] [-i] [-w] [-d]"
+      echo "Usage: $(basename $0) $cmd_help"
       exit 0
       ;;
 
     :)
-      echo -e "option requires an argument.\nUsage: $(basename $0) [-r] [-s] [-i] [-w]"
+      echo -e "option requires an argument.\nUsage: $(basename $0) $cmd_help"
       exit 1
       ;;
 
     ?)
-      echo -e "Invalid command option.\nUsage: $(basename $0) [-r] [-s] [-i] [-w]"
+      echo -e "Invalid command option.\nUsage: $(basename $0) $cmd_help"
       exit 1
       ;;
   esac
 done
 shift "$(($OPTIND -1))"
 
-# choose edm installer
+# choose edm installer based on the OS running this script
 system=`uname`
 installer=""
 if [ "$system" = "Darwin" ]; then
@@ -76,7 +84,6 @@ mkdir -p $env_root
 edm_install_prefix=$env_root/edm
 edm_root=$env_root/edm-envs
 env_prefix=$edm_root/envs/$env_name
-env_prefix_src=$env_prefix/src
 
 # osx edm install
 edm_bin=$edm_install_prefix/bin/edm
@@ -95,7 +102,7 @@ fi
 $edm_bin -r $edm_root environments create $env_name --version $python_version
 $edm_bin -r $edm_root install -e $env_name click pyyaml --yes
 # TODO: add flag to toggle install-dev vs install
-$edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin run bootstrap install-dev migrate test
+$edm_bin -r $edm_root run -e $env_name -- python init.py --edm-root=$edm_root --edm-bin=$edm_bin --bootstrap-py-ver=$python_version --project-py-ver=$python_version run bootstrap install-dev migrate test
 
 # run shell for launcher environment, or actually run the launcher
 case "$do_run" in

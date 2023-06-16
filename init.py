@@ -45,6 +45,7 @@ def _get_default_edm_bin(
             _get_default_edm_install_prefix(env_root), "bin", "edm"))
 
 
+# TODO: move bootstrap and project arguments to run command
 @click.group(
     context_settings={"help_option_names": ['-h', '--help']})
 @click.option(
@@ -130,7 +131,7 @@ def bootstrap_cmds(obj, **kwargs):
         obj.cmd_base + [
             "install", "-e",
             obj.bootstrap_env, "-y"] + obj.bootstrap_env_deps,
-        # bootstrap txwtf dev env
+        # bootstrap project dev env
         obj.proj_ci + ["bootstrap"] + xtra_args], kwargs["args"]
 
 
