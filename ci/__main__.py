@@ -253,8 +253,11 @@ def run_app(obj, root_cmd, log_file, log_level, cmd_args):
 @click.option(
     "--bind", envvar="WSGI_BIND", default="127.0.0.1:8086",
     help="Interface to bind to")
+@click.option(
+    "--workers", envvar="WSGI_WORKERS", default=2,
+    help="Number of worker processes to handle requests.")
 @click.pass_obj
-def run_wsgi(obj, log_file, log_level, bind):
+def run_wsgi(obj, log_file, log_level, bind, workers):
     """
     Run gunicorn wsgi for the webapp in project environment
     """
@@ -266,6 +269,7 @@ def run_wsgi(obj, log_file, log_level, bind):
             "--log-level", log_level,
             "--log-file", log_file,
             "--bind", bind,
+            "--workers", str(workers),
             "txwtf.webapp:create_app()"])
 
 
