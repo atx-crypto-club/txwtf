@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 from flask_login import LoginManager
 
-from flask_matomo import Matomo
+#from flask_matomo import Matomo
 
 from flask_migrate import Migrate
 
@@ -54,13 +54,13 @@ def create_app(config_filename=None):
     migrate.init_app(app, db)
 
     # set up matomo stats if available in config
-    matomo_config_keys = [
-        "MATOMO_URL", "MATOMO_SITE_ID", "MATOMO_TOKEN_AUTH"]
-    if all([key in app.config for key in matomo_config_keys]):
-        Matomo(
-            app, matomo_url=app.config['MATOMO_URL'],
-            id_site=app.config['MATOMO_SITE_ID'],
-            token_auth=app.config['MATOMO_TOKEN_AUTH'])
+    # matomo_config_keys = [
+    #     "MATOMO_URL", "MATOMO_SITE_ID", "MATOMO_TOKEN_AUTH"]
+    # if all([key in app.config for key in matomo_config_keys]):
+    #     Matomo(
+    #         app, matomo_url=app.config['MATOMO_URL'],
+    #         id_site=app.config['MATOMO_SITE_ID'],
+    #         token_auth=app.config['MATOMO_TOKEN_AUTH'])
 
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint

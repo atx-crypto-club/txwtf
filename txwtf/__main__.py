@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 @click.group(context_settings={"help_option_names": ['-h', '--help']})
 @click.option(
-    "--log-file", envvar="TXWTF_LOG", default="-",
+    "--log-file", envvar="LOG_FILE", default="-",
     help="Log file. Use '-' for stdout.")
 @click.option(
-    "--log-level", default="INFO",
+    "--log-level", envvar="LOG_LEVEL", default="INFO",
     help="Log output level.")
 @click.option(
     '--profiling/--no-profiling', default=False,
