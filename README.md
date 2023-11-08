@@ -1,22 +1,34 @@
 # txwtf
 This project is the atx crypto club web application **txwtf**. It provides the web interface and backend biz logic for members interacting with the system.
 
-Use the `init.sh` script to download and install [EDM](https://www.enthought.com/edm/) for the python runtime and drop you into an initialization environment shell. For example:
-> $ bash init.sh -s
-
-If you want to skip the rest of this README and just launch the app from nothing, you can perform the entire init, install and execution of the webapp using the `-r` flag:
-> $ bash init.sh -r
+If you want to skip the rest of this README and just launch the app from nothing, you can perform the entire init, install and execution of the webapp using the `-r "run-app webapp"` command:
+> $ bash init.sh -r "run-app webapp"
 
 ## Install
 
-After running the above script, use the `launcher.py` program to actually bootstrap, install the application and associated third party dependencies and initialize the database.
-> $ python launcher.py bootstrap install-dev migrate
+Use the `init.sh` script to download and install [EDM](https://www.enthought.com/edm/) for the python runtime in the default location, then install the application in a production environment and migrate the database all at once.
+> $ bash init.sh
 
-Note that `install-dev` installs the application in such a way that you can edit the sources in situ and can rely on the entry point `txwtf` running the newest changes regardless of what your current working directory is.
+The default install location for everything including EDM itself is $HOME/python-runtime. You can change it using the `-e` flag like the following:
+> $ bash init.sh -e /tmp/test-install
 
-## Testing
-You can run the application test suite with the following command:
-> $ python launcher.py test
+There are three separate EDM environments that are set up to handle installation, configuration and runtime stages of the application- the init environment, bootstrap environment and the project (production) environment. Default names of each EDM environment are "init", "boot", and "prod" respectively. To optionally specify different names, you can use the following flags, changing the flag arguments accordingly.
+> $ bash init.sh -q init -b boot -p prod
+
+The init environment is used to set up the environment to run the `init.py` script which is a more robust verison of `init.sh`. You can drop into the init environment to run `init.py` manually if you like using the `-i` flag.
+
+The bootstrap environment created by `init.py` is used to execute the `ci` module of the project which handles continuous integration tasks, database setup, and various invocations of the appication.
+
+The project environment is the actual production environment that runs the final application process and has all of the modules specified in `requirements.txt` installed. To enter this environment you can use the `-r` flag like the following:
+> bash init.sh -r "shell"
+
+## Development and Testing
+
+When hacking on the application, use the `-d` flag when running the `init.sh` script to install it in such a way that you can edit the sources in situ and can rely on the entry point `txwtf` running the newest changes of what your current working directory is.
+> $ bash init.sh -q init -b boot -p prod -e /tmp/test-install -d
+
+You can run the application test suite with the `-t` flag:
+> $ bash init.sh -t
 
 ## Running
 To run the web application, run the following command to drop into a shell in the application environment:

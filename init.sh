@@ -9,7 +9,7 @@ archive_url=https://a.tx.wtf
 env_root=$HOME/python-runtime
 edm_install_prefix=$env_root/edm
 env_name=init
-bootstrap_env_name="bootstrap"
+bootstrap_env_name="boot"
 proj_env_name="prod"
 python_version="3.8"
 
