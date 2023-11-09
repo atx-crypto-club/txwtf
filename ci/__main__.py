@@ -229,22 +229,31 @@ def run(obj, cmd_args):
 @click.option(
     "--log-level", envvar="LOG_LEVEL",
     default="WARNING", help="Log output level.")
+@click.option(
+    "--profiling/--no-profiling", 
+    envvar="PROFILING", default=False,
+    help="Enable profiling and print on exit.")
 @click.argument('cmd_args', nargs=-1)
 @click.pass_obj
-def run_app(obj, root_cmd, log_file, log_level, cmd_args):
+def run_app(obj, root_cmd, log_file, log_level, profiling, cmd_args):
     """
     Run application in project environment
     """
-    edm_run_cmd = [
-        obj.edm_bin, "-r", obj.edm_root, "run", "-e", obj.edm_env, "--"]
-    subprocess.check_call(
-        edm_run_cmd + [
-            root_cmd,
-            "--log-file={}".format(log_file),
-            "--log-level={}".format(log_level)] + list(cmd_args))
+    run_cmd = [
+        obj.edm_bin, "-r", obj.edm_root, "run",
+        "-e", obj.edm_env, "--"]
+    run_cmd.append(root_cmd)
+    run_cmd.append("--log-file={}".format(log_file))
+    run_cmd.append("--log-level={}".format(log_level))
+    if profiling:
+        run_cmd.append("--profiling")
+    subprocess.check_call(run_cmd + list(cmd_args))
 
 
 @root.command()
+@click.option(
+    "--app", envvar="WSGI_APP", default="txwtf.webapp",
+    help="The webapp for gunicorn to launch")
 @click.option(
     "--log-file", envvar="LOG_FILE", default="-",
     help="Log file. Use '-' for stdout.")
@@ -258,7 +267,7 @@ def run_app(obj, root_cmd, log_file, log_level, cmd_args):
     "--workers", envvar="WSGI_WORKERS", default=2,
     help="Number of worker processes to handle requests.")
 @click.pass_obj
-def run_wsgi(obj, log_file, log_level, bind, workers):
+def run_wsgi(obj, app, log_file, log_level, bind, workers):
     """
     Run gunicorn wsgi for the webapp in project environment
     """
@@ -271,7 +280,7 @@ def run_wsgi(obj, log_file, log_level, bind, workers):
             "--log-file", log_file,
             "--bind", bind,
             "--workers", str(workers),
-            "txwtf.webapp:create_app()"])
+            "{}:create_app()".format(app)])
 
 
 @root.command()

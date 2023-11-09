@@ -41,7 +41,7 @@ You can run the application test suite with the `-t` flag:
 
 ### init.py script
 
-You can combine `init.py` commands on the command line. Sometimes it is nice to run testing and a code linter before dropping into the shell so you know what you're working with.
+You can combine `init.py` commands on the command line. Sometimes it is nice to run testing and a code linter before dropping into the project environment shell so you know what you're working with.
 
 First enter the init shell:
 > $ bash init.sh -i
@@ -63,7 +63,7 @@ The default location of application data is under the source directory in the `i
 The flask app is configured to use prefixed environment variable names. For instance, to change the `UPLOADED_ARCHIVE_DEST` config variable, you can export the environment variable `TXWTF_UPLOADED_ARCHIVE_DEST` before launching the application process. Likewise, `TXWTF_SECRET_KEY` will set the `SECRET_KEY` config variable, and so on.
 
 ### Setting Admin Users
-To access special system information and change critical settings through the app interface, you can flag a user as an `admin`. Be extremely careful with this as an `admin` user can do anything and is effectively in god mode. But during testing you will likely need at least one admin user to test things, especially if you need to view system logs. To upgrade a user to `admin` status, you can use the following command:
+To access special system information and change critical settings through the app interface, you can flag a user as an `admin`. Be extremely careful with this as an `admin` user can do anything and is effectively in god mode. But during testing you will likely need at least one admin user to test things, especially if you need to view system logs. To upgrade a user to `admin` status, you can use the following command in the project environment:
 > $ txwtf set-admin --admin --user t@tx.wtf
 
 ## Development

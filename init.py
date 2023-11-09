@@ -77,20 +77,23 @@ def root(
 
 
 def bootstrap_cmds(obj, **kwargs):
-    xtra_args = []
+    bootstrap_xtra_args = []
+    project_xtra_args = []
     if kwargs["bootstrap_replace"]:
-        xtra_args = ["--force"]
+        bootstrap_xtra_args = ["--force"]
+    if kwargs["project_replace"]:
+        project_xtra_args = ["--replace"]
     return [
         # set up the EDM environment
         obj.cmd_base + [
             "envs", "create", obj.bootstrap_env,
-            "--version={}".format(obj.bootstrap_py_ver)],
+            "--version={}".format(obj.bootstrap_py_ver)] + bootstrap_xtra_args,
         # install bootstrap deps
         obj.cmd_base + [
             "install", "-e",
             obj.bootstrap_env, "-y"] + obj.bootstrap_env_deps,
         # bootstrap project dev env
-        obj.proj_ci + ["bootstrap"] + xtra_args], kwargs["args"]
+        obj.proj_ci + ["bootstrap"] + project_xtra_args], kwargs["args"]
 
 
 def install_cmds(obj, **kwargs):
@@ -168,6 +171,8 @@ def run_project_cmds(obj, **kwargs):
     cmd.append("run-app")
     cmd.append("--log-file={}".format(kwargs["log_file"]))
     cmd.append("--log-level={}".format(kwargs["log_level"]))
+    if kwargs["profiling"]:
+        cmd.append("--profiling")
     cmd += kwargs["args"]
 
     # run project consumes the rest of the arguments
@@ -233,7 +238,7 @@ def do_run_cmds(cmds, env, cwd):
 @click.option(
     "--bootstrap-replace/--no-bootstrap-replace", default=False,
     envvar="BOOTSTRAP_REPLACE",
-    help="Force replace environment during bootstrap?")
+    help="Force replace bootstrap environment")
 @click.option(
     "--bootstrap-env", default="bootstrap",
     envvar="BOOTSTRAP_ENV",
@@ -242,6 +247,10 @@ def do_run_cmds(cmds, env, cwd):
     "--bootstrap-py-ver", default="3.8",
     envvar="BOOTSTRAP_PY_VER",
     help="bootstrap environment python version")
+@click.option(
+    "--project-replace/--no-project-replace", default=False,
+    envvar="PROJECT_REPLACE",
+    help="Force replace project environment")
 @click.option(
     "--project-env", default="prod",
     envvar="PROJECT_ENV",
@@ -265,6 +274,10 @@ def do_run_cmds(cmds, env, cwd):
     "--log-level", envvar="LOG_LEVEL", default="warning",
     help="Log output level.")
 @click.option(
+    "--profiling/--no-profiling", 
+    envvar="PROFILING", default=False,
+    help="Enable profiling and print on exit.")
+@click.option(
     "--bind", envvar="WSGI_BIND", default="127.0.0.1:8086",
     help="Interface to bind to")
 @click.argument(
@@ -272,8 +285,8 @@ def do_run_cmds(cmds, env, cwd):
 @click.pass_obj
 def run(
     obj, bootstrap_replace, bootstrap_env, bootstrap_py_ver,
-    project_env, project_py_ver, tmpdir, install_source_dir,
-    log_file, log_level, bind, args):
+    project_replace, project_env, project_py_ver, tmpdir,
+    install_source_dir, log_file, log_level, profiling, bind, args):
     """
     Execute a sequential list of commands related to
     standing up an instance of the project services
@@ -309,9 +322,11 @@ def run(
         cmd = args[0]
         kwargs = {
             "bootstrap_replace": bootstrap_replace,
+            "project_replace": project_replace,
             "install_source_dir": install_source_dir,
             "log_file": log_file,
             "log_level": log_level,
+            "profiling": profiling,
             "bind": bind,
             "cmd": cmd,
             "args": args[1:]}
