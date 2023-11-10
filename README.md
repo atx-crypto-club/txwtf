@@ -54,7 +54,25 @@ Or you can go all the way and launch the webapp after initializing everything in
 
 Make sure to use the correct bootstrap and project environments when launching `init.py`.
 
+### Model Changes
+When modifying or adding new models to the application, use flask-migrate commands to add each change to the database migration scripts. Run the following command in the project environment to add changes to db migration version control with a message for each change.
+> $ flask --app txwtf.webapp db migrate -m "change message"
+
+After making changes to models, run the following command in the project environment to actually upgrade the targed database specified by `TXWTF_SQLALCHEMY_DATABASE_URI`:
+> $ flask --app txwtf.webapp db upgrade
+
+You can always wipe out the sqlite file or delete the target database and rerun the above `upgrade` command to regenerate the database tables.
+
+When pushing changes, make sure you include the new migration scripts every time you run `migrate` above!
+
 ## Deployment
+
+When running in a production environment, use the `run-wsgi` command something like the following:
+> $ export WSGI_BIND="127.0.0.1:31337"
+> $ export WSGI_WORKERS=8
+> $ bash init.sh -r "run-wsgi"
+
+Then use a web proxy to route requests to the application.
 
 ### Defaults
 The default location of the installation is under `$HOME/python-runtime/txwtf`. Everything including the EDM installation in use lives under there. To uninstall the application, you can just nuke that directory. The install location is changeable. It should even be relocatable after installation but I haven't tested that.
@@ -68,15 +86,3 @@ The flask app is configured to use prefixed environment variable names. For inst
 To access special system information and change critical settings through the app interface, you can flag a user as an `admin`. Be extremely careful with this as an `admin` user can do anything and is effectively in god mode. But during testing you will likely need at least one admin user to test things, especially if you need to view system logs. To upgrade a user to `admin` status, you can use the following command in the project environment:
 > $ txwtf set-admin --admin --user t@tx.wtf
 
-## Development
-
-### Model Changes
-When modifying or adding new models to the application, use flask-migrate commands to add each change to the database migration scripts. Run the following command in the project environment to add changes to db migration version control with a message for each change.
-> $ flask --app txwtf.webapp db migrate -m "change message"
-
-After making changes to models, run the following command in the project environment to actually upgrade the targed database specified by `TXWTF_SQLALCHEMY_DATABASE_URI`:
-> $ flask --app txwtf.webapp db upgrade
-
-You can always wipe out the sqlite file or delete the target database and rerun the above `upgrade` command to regenerate the database tables.
-
-When pushing changes, make sure you include the new migration scripts every time you run `migrate` above!
