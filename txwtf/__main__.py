@@ -33,6 +33,8 @@ def root(context, log_file, log_level, profiling):
     context.obj = obj = Obj()
     obj.log = log_file
     obj.log_level = log_level
+
+    # TODO: need to actually add profiling support
     obj.profiling = profiling
 
     level = getattr(logging, obj.log_level.upper())

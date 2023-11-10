@@ -9,6 +9,11 @@ from os.path import abspath, dirname, expanduser, join
 import click
 
 
+# TODO: consider adding a command to drop into the 
+# boostrap environment in case a developer wants to
+# run the ci module directly...
+
+
 def _get_default_environment_root():
     return os.environ.get(
         "ENV_ROOT", join(

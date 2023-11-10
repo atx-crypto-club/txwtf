@@ -52,6 +52,8 @@ Then run:
 Or you can go all the way and launch the webapp after initializing everything instead of dropping into a shell.
 > $ python init.py bootstrap install-dev migrate test flake8 txwtf webapp
 
+Make sure to use the correct bootstrap and project environments when launching `init.py`.
+
 ## Deployment
 
 ### Defaults
@@ -69,12 +71,12 @@ To access special system information and change critical settings through the ap
 ## Development
 
 ### Model Changes
-When modifying or adding new models to the application, use flask-migrate commands to add each change to the database migration scripts. From the EDM environment containing the application install, run the following command to add changes to db migration version control with a message for each change.
+When modifying or adding new models to the application, use flask-migrate commands to add each change to the database migration scripts. Run the following command in the project environment to add changes to db migration version control with a message for each change.
 > $ flask --app txwtf.webapp db migrate -m "change message"
 
-After making changes to models, run the following command to actually upgrade the targed database specified by `TXWTF_SQLALCHEMY_DATABASE_URI`:
+After making changes to models, run the following command in the project environment to actually upgrade the targed database specified by `TXWTF_SQLALCHEMY_DATABASE_URI`:
 > $ flask --app txwtf.webapp db upgrade
 
-You can always wipe out the sqlite file and rerun the above `upgrade` command to regenerate the database tables.
+You can always wipe out the sqlite file or delete the target database and rerun the above `upgrade` command to regenerate the database tables.
 
 When pushing changes, make sure you include the new migration scripts every time you run `migrate` above!
