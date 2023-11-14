@@ -255,11 +255,11 @@ def run_app(obj, root_cmd, log_file, log_level, profiling, cmd_args):
     "--app", envvar="WSGI_APP", default="txwtf.webapp",
     help="The webapp for gunicorn to launch")
 @click.option(
-    "--log-file", envvar="LOG_FILE", default="-",
+    "--access-logfile", envvar="ACCESS_LOGFILE", default="-",
     help="Log file. Use '-' for stdout.")
 @click.option(
-    "--log-level", envvar="LOG_LEVEL", default="info",
-    help="Log output level.")
+    "--error-logfile", envvar="ERROR_LOGFILE", default="-",
+    help="Error log file. Use '-' for stdout.")
 @click.option(
     "--bind", envvar="WSGI_BIND", default="127.0.0.1:8086",
     help="Interface to bind to")
@@ -267,7 +267,7 @@ def run_app(obj, root_cmd, log_file, log_level, profiling, cmd_args):
     "--workers", envvar="WSGI_WORKERS", default=2,
     help="Number of worker processes to handle requests.")
 @click.pass_obj
-def run_wsgi(obj, app, log_file, log_level, bind, workers):
+def run_wsgi(obj, app, access_logfile, error_logfile, bind, workers):
     """
     Run gunicorn wsgi for the webapp in project environment
     """
@@ -276,8 +276,8 @@ def run_wsgi(obj, app, log_file, log_level, bind, workers):
     subprocess.check_call(
         edm_run_cmd + [
             "gunicorn",
-            "--log-level", log_level,
-            "--log-file", log_file,
+            "--access-logfile", access_logfile,
+            "--error-logfile", error_logfile,
             "--bind", bind,
             "--workers", str(workers),
             "{}:create_app()".format(app)])
