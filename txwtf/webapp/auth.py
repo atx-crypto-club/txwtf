@@ -103,7 +103,7 @@ def register_post():
     now = datetime.now()
     new_user = User(
         email=email, name=name,
-        password=generate_password_hash(password, method='sha256'),
+        password=generate_password_hash(password),
         created_time=now,
         modified_time=now,
         avatar_url="/assets/img/atxcf_logo_small.jpg",
