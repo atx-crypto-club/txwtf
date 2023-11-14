@@ -6,7 +6,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from . import db
+from . import db, remote_addr
 from .models import SystemLog, User, UserChange
 
 
@@ -38,7 +38,7 @@ def login_post():
     login_user(user, remember=remember)
     now = datetime.now()
     user.last_login = now
-    user.last_login_addr = request.remote_addr
+    user.last_login_addr = remote_addr(request)
     new_log = SystemLog(
         event_code=31337,  # default for now
         event_time=now,
@@ -46,7 +46,7 @@ def login_post():
             user.username, user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_log)
     new_change = UserChange(
@@ -54,10 +54,10 @@ def login_post():
         change_code=31337,  # default for now
         change_time=now,
         change_desc="logging in from {}".format(
-            request.remote_addr),
+            remote_addr(request)),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_change)
     db.session.commit()
@@ -132,7 +132,7 @@ def register_post():
             new_user.username, new_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_change)
     new_log = SystemLog(
@@ -142,7 +142,7 @@ def register_post():
             new_user.username, new_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_log)
 
@@ -161,7 +161,7 @@ def logout():
             current_user.username, current_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_log)
     db.session.commit()

@@ -13,7 +13,7 @@ from flask_login import current_user, login_required
 
 from markdown import markdown
 
-from . import db, upload_archive
+from . import db, remote_addr, upload_archive
 from .models import (
     Emoji, HashTag, PostedMessage, PostedMessageView,
     Reaction, SystemLog, Tag, User, UserChange, UserFile,
@@ -123,7 +123,7 @@ def increment_posts_view_count(posts):
             current_user=current_user_id,
             referrer=request.referrer,
             user_agent=str(request.user_agent),
-            remote_addr=request.remote_addr,
+            remote_addr=remote_addr(request),
             endpoint=request.endpoint)
         db.session.add(pmv)
     for user in db.session.query(User).filter(
@@ -375,7 +375,7 @@ def add_reaction(user_id, post_id, reaction_name):
                 user.name, reaction_name),
             referrer=request.referrer,
             user_agent=str(request.user_agent),
-            remote_addr=request.remote_addr,
+            remote_addr=remote_addr(request),
             endpoint=request.endpoint)
         db.session.add(new_log)
         db.session.commit()
@@ -406,7 +406,7 @@ def add_reaction(user_id, post_id, reaction_name):
             reaction_name, post_id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(log_reaction)
     db.session.commit()
@@ -445,7 +445,7 @@ def remove_reaction(user_id, post_id, reaction_name):
             reaction_name, post_id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(log_reaction)
     db.session.commit()
@@ -588,7 +588,7 @@ def delete_post():
         change_desc="deleted post {}".format(post.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_change)
     new_log = SystemLog(
@@ -598,7 +598,7 @@ def delete_post():
             current_user.email, post.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_log)
     db.session.commit()
@@ -637,7 +637,7 @@ def upload_avatar():
             change_desc="Changing avatar to: {}".format(saved_name),
             referrer=request.referrer,
             user_agent=str(request.user_agent),
-            remote_addr=request.remote_addr,
+            remote_addr=remote_addr(request),
             endpoint=request.endpoint)
         db.session.add(new_change)
         new_log = SystemLog(
@@ -647,7 +647,7 @@ def upload_avatar():
                 current_user.email, saved_name),
             referrer=request.referrer,
             user_agent=str(request.user_agent),
-            remote_addr=request.remote_addr,
+            remote_addr=remote_addr(request),
             endpoint=request.endpoint)
         db.session.add(new_log)
         db.session.commit()
@@ -681,7 +681,7 @@ def upload_header_image():
             change_desc="Changing header to: {}".format(saved_name),
             referrer=request.referrer,
             user_agent=str(request.user_agent),
-            remote_addr=request.remote_addr,
+            remote_addr=remote_addr(request),
             endpoint=request.endpoint)
         db.session.add(new_change)
         new_log = SystemLog(
@@ -690,7 +690,7 @@ def upload_header_image():
             event_desc="Uploaded {}".format(saved_name),
             referrer=request.referrer,
             user_agent=str(request.user_agent),
-            remote_addr=request.remote_addr,
+            remote_addr=remote_addr(request),
             endpoint=request.endpoint)
         db.session.add(new_log)
         db.session.commit()
@@ -724,7 +724,7 @@ def upload_card_image():
             change_desc="Changing card image to: {}".format(saved_name),
             referrer=request.referrer,
             user_agent=str(request.user_agent),
-            remote_addr=request.remote_addr,
+            remote_addr=remote_addr(request),
             endpoint=request.endpoint)
         db.session.add(new_change)
         new_log = SystemLog(
@@ -733,7 +733,7 @@ def upload_card_image():
             event_desc="Uploaded {}".format(saved_name),
             referrer=request.referrer,
             user_agent=str(request.user_agent),
-            remote_addr=request.remote_addr,
+            remote_addr=remote_addr(request),
             endpoint=request.endpoint)
         db.session.add(new_log)
         db.session.commit()
@@ -771,7 +771,7 @@ def update_user_description():
         change_desc="Changing description to: {}".format(desc),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_change)
     db.session.commit()
@@ -793,7 +793,7 @@ def update_user_name():
         change_desc="Changing name to: {}".format(name),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_change)
     db.session.commit()
@@ -826,7 +826,7 @@ def update_user_header_text():
         change_desc="Changing header text to: {}".format(header_text),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
-        remote_addr=request.remote_addr,
+        remote_addr=remote_addr(request),
         endpoint=request.endpoint)
     db.session.add(new_change)
     db.session.commit()

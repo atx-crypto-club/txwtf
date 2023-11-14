@@ -27,6 +27,15 @@ upload_archive = UploadSet("archive", ALL)
 logger = logging.getLogger(__name__)
 
 
+def remote_addr(request):
+    """
+    Get the client address through the proxy if it exists.
+    """
+    return request.headers.get(
+        'X-Forwarded-For', request.headers.get(
+            'X-Real-IP', request.remote_addr))
+
+
 def create_app(config_filename=None):
     app = Flask(__name__)
     CORS(app)
