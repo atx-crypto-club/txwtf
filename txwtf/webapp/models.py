@@ -5,17 +5,17 @@ from . import db
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(100))
-    name = db.Column(db.String(1000))
-    avatar_url = db.Column(db.String(1000))
-    header_image_url = db.Column(db.String(1000))
+    email = db.Column(db.String(128), unique=True)
+    password = db.Column(db.String(1024))
+    name = db.Column(db.String(1024))
+    avatar_url = db.Column(db.String(1024))
+    header_image_url = db.Column(db.String(1024))
     header_text = db.Column(db.String(256))
-    card_image_url = db.Column(db.String(1000))
-    alternate_email = db.Column(db.String(100))
+    card_image_url = db.Column(db.String(1024))
+    alternate_email = db.Column(db.String(128))
     email_verified = db.Column(db.Boolean)
     alternate_email_verified = db.Column(db.Boolean)
-    description = db.Column(db.String(10000))
+    description = db.Column(db.String(10240))
     created_time = db.Column(db.DateTime)
     modified_time = db.Column(db.DateTime)
     is_admin = db.Column(db.Boolean)
@@ -23,7 +23,7 @@ class User(UserMixin, db.Model):
     last_login_addr = db.Column(db.String(256))
     view_count = db.Column(db.Integer)
     post_view_count = db.Column(db.Integer)
-    username = db.Column(db.String(100))  # should be unique!!! but sqlite doesn't like the constraint since it can't alter table
+    username = db.Column(db.String(128))  # should be unique!!! but sqlite doesn't like the constraint since it can't alter table
     post_count = db.Column(db.Integer)
 
 
