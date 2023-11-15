@@ -291,6 +291,7 @@ def run_wsgi(
             "--log-level", log_level,
             "--bind", bind,
             "--workers", str(workers),
+            "--capture-output",
             "{}:create_app()".format(app)])
 
 
