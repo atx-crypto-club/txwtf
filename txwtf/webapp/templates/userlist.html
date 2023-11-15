@@ -18,15 +18,7 @@
                   <tr>
                     <th>Avatar</th>
                     <th>Username</th>
-                    <th>Name</th>
-                    {% if current_user.is_admin %}
-                    <th>Email</th>
-                    {% endif %}
                     <th>p/uv/pv</th>
-                    <th>Last Login</th>
-                    {% if current_user.is_admin %}
-                    <th>Last Addr</th>
-                    {% endif %}
                   </tr>
                 </thead>
                 <tbody>
@@ -58,19 +50,7 @@
                                 {% endif %}
                             </span>
                         </td>
-                        <td>{{ user.name }}</td>
-                        {% if current_user.is_admin %}
-                        <td><span>{{ user.email }}</span></td>
-                        {% endif %}
                         <td>{{ user.post_count }}/{{ user.view_count }}/{{ user.post_view_count }}</td>
-                        {% if user.last_login %}
-                        <td>{{ user.last_login.ctime() }}</td>
-                        {% else %}
-                        <td>None</td>
-                        {% endif %}
-                        {% if current_user.is_admin %}
-                        <td>{{ user.last_login_addr }}</td>
-                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>

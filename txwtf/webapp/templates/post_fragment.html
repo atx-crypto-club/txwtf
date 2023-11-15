@@ -5,13 +5,13 @@
     <figure class="media-left" id="post_left_{{ post.id }}">
         {% if current_user.is_authenticated %}
         <a href="/u/{{ post.username }}">
-        <figure class="image is-64x64">
-            <img src="{{ post.avatar_url }}">
+        <figure class="image is-32x32">
+            <img class="is-rounded" src="{{ post.avatar_url }}">
         </figure>
         </a>
         {% else %}
-        <figure class="image is-64x64">
-            <img src="{{ post.avatar_url }}">
+        <figure class="image is-32x32">
+            <img class="is-rounded" src="{{ post.avatar_url }}">
         </figure>
         {% endif %}
     </figure>
@@ -20,6 +20,8 @@
             <a href="/p/{{ post.id }}">
                 <p>
                     <strong>{{ post.name }}</strong> <small>{{ post.username }}</small>
+                    <br>
+                    <small>{{ post.post_time.ctime() }}</small>
                     <br>
                     {{ post.post_content|safe }}
                 </p>
@@ -67,7 +69,6 @@
                     <span class="icon is-small"><i class="fas fa-heart"></i></span> {{ post.num_reactions }}
                 </a>
                 {% endif %}
-                <small class="level-item">{{ post.post_time.ctime() }}</small>
                 {% if post.reply_to %}
                 <a class="level-item" href="/p/{{ post.reply_to }}">
                     <span class="icon is-small"><i class="fas fa-arrow-up"></i></span>
@@ -99,4 +100,3 @@
     </div>
 </article>
 {% endif %}
-</a>
