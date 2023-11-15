@@ -164,6 +164,7 @@ def user_view(username):
                     PostedMessage.post_time.desc()).all()
     # TODO: need "private" view once we add followers and
     # friends user distinction
+    # TODO: add direct message view once we add DMs
 
     posts = generate_render_post_data(dbposts)
     increment_posts_view_count(posts)
