@@ -11,9 +11,9 @@
 
 <div class="columns">
   <div class="column is-one-quarter">
-    <div class="box">
-      {{ render_user_card(user)|safe }}
-    </div>
+
+    {{ render_user_card(user)|safe }}
+
     {% if current_user.id == user.id %}
     <a class="button" href="/edit-profile">Edit</a>
     {% endif %}
