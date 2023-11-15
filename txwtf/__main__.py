@@ -316,5 +316,15 @@ def list_tags(obj, config):
         'last used', 'user_id', 'num posts', 'description']))
 
 
+@root.command()
+@click.pass_obj
+def gen_secret(obj):
+    """
+    Convenience for generating a random SECRET_KEY.
+    """
+    from txwtf.webapp import gen_secret
+    print(gen_secret())
+
+
 if __name__ == '__main__':
     root(prog_name="txwtf")

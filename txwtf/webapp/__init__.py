@@ -1,4 +1,5 @@
 import logging
+from hashlib import sha256
 import secrets
 import tempfile
 from os.path import abspath, dirname, join
@@ -34,6 +35,11 @@ def remote_addr(request):
     return request.headers.get(
         'X-Forwarded-For', request.headers.get(
             'X-Real-IP', request.remote_addr))
+
+
+def gen_secret():
+    return sha256(
+        str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
 
 
 def create_app(config_filename=None):
