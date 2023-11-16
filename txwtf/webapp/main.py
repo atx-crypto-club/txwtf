@@ -283,15 +283,20 @@ def post_view(post_id):
         return render_template(
             'error.html', error_msg='Unknown post!')
     posts = generate_render_post_data(dbposts)
+    dbreplies = db.session.query(PostedMessage).filter(
+        PostedMessage.reply_to == int(post_id)).order_by(
+        PostedMessage.post_time.asc()).all()
+    replies = generate_render_post_data(dbreplies)
     dbreposts = db.session.query(PostedMessage).filter(
         PostedMessage.repost_id == int(post_id)).order_by(
-        PostedMessage.post_time.desc()).all()
+        PostedMessage.post_time.asc()).all()
     reposts = generate_render_post_data(dbreposts)
     increment_posts_view_count(posts)
     increment_posts_view_count(reposts)
     db.session.commit()
     return render_template(
-        'post_view.html', posts=posts, reposts=reposts)
+        'post_view.html', posts=posts,
+        replies=replies, reposts=reposts)
 
 
 @main.route('/h/<name>')

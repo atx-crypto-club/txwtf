@@ -46,7 +46,7 @@ def create_app(config_filename=None):
     app = Flask(__name__)
     CORS(app)
 
-    # app.config["SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
+    # app.config["SECRET_KEY"] = gen_secret()
     app.config["SECRET_KEY"] = "clownworld"
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
     instance_dir = abspath(join(dirname(__file__), "..", "..", "instance"))

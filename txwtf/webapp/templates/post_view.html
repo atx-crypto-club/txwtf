@@ -26,22 +26,23 @@
 {% endif %}
 
 <div class="columns">
-    <div class="column is-one-quarter"></div>
+    <div class="column is-one-third"></div>
 
-<div class="column">
-<div class="box has-text-left">
-{{ render_posts(posts, False, True, True, False, True, False, True, True, 3)|safe }}
-</div>
+    <div class="column">
+        {{ render_posts(posts, False, True, True, False, False, False, True, True, 3)|safe }}
 
-{% if reposts|length > 0 %}
-<div class="box has-text-left">
-    <label class="label">Reposts</label>
-    {{ render_posts(reposts, False, True, True, False, False, False, True, True, 1)|safe }}
-</div>
-{% endif %}
-</div>
+        {% if replies|length > 0 %}
+        <hr>
+        {{ render_posts(replies, False, False, True, False, False, False, True, True, 1)|safe }}
+        {% endif %}
 
-<div class="column is-one-quarter"></div>
+        {% if reposts|length > 0 %}
+        <hr>
+        {{ render_posts(reposts, False, False, True, False, False, False, True, True, 1)|safe }}
+        {% endif %}
+    </div>
+
+    <div class="column is-one-third"></div>
 </div>
 
 {% if current_user.is_authenticated %}
