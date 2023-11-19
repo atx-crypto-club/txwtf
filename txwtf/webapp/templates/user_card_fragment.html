@@ -44,8 +44,10 @@
         {{ user.description|safe }}
         <br>
             <div class="has-text-centered">
+                {% if user.last_login != none %}
                 <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">last login: <time datetime="{{ user.last_login.ctime() }}">{{ user.last_login.ctime() }}</time></span>
                 <br>
+                {% endif %}
                 <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">modf: <time datetime="{{ user.modified_time.ctime() }}">{{ user.modified_time.ctime() }}</time></span>
                 <br>
                 <span class="is-italic is-size-7" style="font-family: 'Courier New', Courier, monospace;">crtd: <time datetime="{{ user.created_time.ctime() }}">{{ user.created_time.ctime() }}</time></span>
