@@ -122,3 +122,14 @@ def create_app(config_filename=None):
         num_posts=lambda posts: len(collect_post_ids(posts)))
 
     return app
+
+
+def create_wsgi_app(config_filename=None):
+    """
+    Sets up gunicorn logging.
+    """
+    app = create_app(config_filename)
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+    return app

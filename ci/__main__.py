@@ -292,7 +292,7 @@ def run_wsgi(
             "--bind", bind,
             "--workers", str(workers),
             "--capture-output",
-            "{}:create_app()".format(app)])
+            "{}:create_wsgi_app()".format(app)])
 
 
 @root.command()
