@@ -26,9 +26,9 @@
 {% endif %}
 
 <div class="columns">
-    <div class="column is-one-third"></div>
+    <div class="column is-one-quarter"></div>
 
-    <div class="column">
+    <div class="column is-half">
         {{ render_posts(posts, False, True, True, False, False, False, True, True, 3)|safe }}
 
         {% if replies|length > 0 %}
@@ -38,11 +38,11 @@
 
         {% if reposts|length > 0 %}
         <hr>
-        {{ render_posts(reposts, False, False, True, False, False, False, True, True, 1)|safe }}
+        {{ render_posts(reposts, False, True, True, False, False, False, True, True, 1)|safe }}
         {% endif %}
     </div>
 
-    <div class="column is-one-third"></div>
+    <div class="column is-one-quarter"></div>
 </div>
 
 {% if current_user.is_authenticated %}

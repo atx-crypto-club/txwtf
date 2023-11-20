@@ -205,6 +205,11 @@ def render_post(
     if local_depth is None:
         _renderPostTL.depth = 0
         local_depth = 0
+
+    if local_depth == 0:
+        avatar_size = "is-32x32"
+    else:
+        avatar_size = "is-16x16"
     _renderPostTL.depth = local_depth + 1
     if _renderPostTL.depth > max_depth:
         retval = ""
@@ -214,7 +219,8 @@ def render_post(
             show_level_menu=show_level_menu,
             show_delete_button=show_delete_button,
             show_repost=show_repost, show_replies=show_replies,
-            show_deleted_replies=show_deleted_replies)
+            show_deleted_replies=show_deleted_replies,
+            avatar_size=avatar_size)
     _renderPostTL.depth = local_depth
     return retval
 
