@@ -28,13 +28,13 @@ The bootstrap environment created by `init.py` is used to execute the `ci` modul
 
 The project environment is the actual production environment that runs the final application process and has all of the modules specified in `requirements.txt` installed. To enter this environment you can use the `-r` flag like the following:
 
-    bash init.sh -r "shell"
+    $ bash init.sh -r "shell"
 
 ## Running
 
 You can execute the application from the `init.sh` script using the `-r` flag to pass commands to the `init.py` script.
 
-    bash init.sh -r "run-app webapp"
+    $ bash init.sh -r "run-app webapp"
 
  This will launch the application, binding to `localhost:8086` by default. You can then load the url `http://localhost:8086` to test it.
 
