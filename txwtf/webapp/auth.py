@@ -9,6 +9,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from . import db, remote_addr
 from .models import SystemLog, User, UserChange
 
+from .utils import (
+    get_site_logo, get_default_card_image, get_default_header_image)
+
 
 auth = Blueprint('auth', __name__)
 
@@ -106,9 +109,9 @@ def register_post():
         password=generate_password_hash(password),
         created_time=now,
         modified_time=now,
-        avatar_url="/assets/img/atxcf_logo_small.jpg",
-        card_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
-        header_image_url="/assets/img/20200126_atxcf_bg_sq-1.png",
+        avatar_url=get_site_logo(),
+        card_image_url=get_default_card_image(),
+        header_image_url=get_default_header_image(),
         header_text=name,
         description="{} is on the scene".format(name),
         email_verified=False,

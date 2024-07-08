@@ -133,6 +133,12 @@ class Mention(db.Model):
     post_id = db.Column(db.Integer)
 
 
+class GlobalSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    var = db.Column(db.String(128), unique=True)
+    val = db.Column(db.String(256)) 
+
+
 # TODO: notifications table
 
 
