@@ -53,8 +53,11 @@ def test(obj, pattern):
     with txwtf.core.cli_context(obj):
         loader = unittest.TestLoader()
         suite = loader.discover(
-            os.path.abspath(os.path.dirname(__file__)),
-            pattern=pattern)
+            os.path.abspath(
+                os.path.dirname(__file__)),
+            pattern=pattern,
+            top_level_dir=os.path.join(
+                os.path.dirname(__file__), ".."))
         runner = unittest.TextTestRunner(verbosity=2)
         runner.run(suite)
 

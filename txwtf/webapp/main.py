@@ -19,6 +19,9 @@ from .models import (
     Reaction, SystemLog, Tag, User, UserChange, UserFile,
     Attachment, Mention)
 
+from .utils import (
+    get_site_logo, get_default_card_image, get_default_header_image)
+
 
 main = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
