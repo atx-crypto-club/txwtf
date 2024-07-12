@@ -6,11 +6,12 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from . import db, remote_addr
+from . import db
 from .models import SystemLog, User, UserChange
 
 from .utils import (
-    get_site_logo, get_default_card_image, get_default_header_image)
+    get_site_logo, get_default_card_image, get_default_header_image,
+    remote_addr)
 
 
 auth = Blueprint('auth', __name__)

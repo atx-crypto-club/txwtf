@@ -1,13 +1,20 @@
+from datetime import datetime
 import unittest
 
 from flask_testing import TestCase
 
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from txwtf.webapp import create_app, db
+from txwtf.webapp.models import User, UserChange, SystemLog
 from txwtf.webapp.utils import (
     get_setting, set_setting, get_site_logo,
-    get_default_card_image, get_default_header_image,
-    DEFAULT_SITE_LOGO, DEFAULT_CARD_IMAGE,
-    DEFAULT_HEADER_IMAGE)
+    get_default_avatar, get_default_card_image,
+    get_default_header_image, register_user,
+    DEFAULT_SITE_LOGO, DEFAULT_AVATAR,
+    DEFAULT_CARD_IMAGE, DEFAULT_HEADER_IMAGE,
+    UserChangeEventCode, RegistrationErrorCode, 
+    SystemLogEventCode)
 
 
 class TestWebappUtils(TestCase):
@@ -49,13 +56,13 @@ class TestWebappUtils(TestCase):
         # then
         self.assertEqual(get_setting(var), val)
 
-    def test_default_site_logo(self):
+    def test_site_logo(self):
         """
         Test default site logo setting.
         """
         self.assertEqual(get_site_logo(), DEFAULT_SITE_LOGO)
 
-    def test_default_site_logo_change(self):
+    def test_site_logo_change(self):
         """
         Test changing site logo setting.
         """
@@ -67,6 +74,25 @@ class TestWebappUtils(TestCase):
 
         # then
         self.assertEqual(get_site_logo(), site_logo)
+
+    def test_default_avatar(self):
+        """
+        Test default avatar setting.
+        """
+        self.assertEqual(get_default_avatar(), DEFAULT_AVATAR)
+
+    def test_default_avatar_change(self):
+        """
+        Test changing default avatar setting.
+        """
+        # with
+        avatar = "test.png"
+
+        # when
+        set_setting("default_avatar", avatar)
+
+        # then
+        self.assertEqual(get_default_avatar(), avatar)
 
     def test_default_card_image(self):
         """
@@ -105,6 +131,97 @@ class TestWebappUtils(TestCase):
 
         # then
         self.assertEqual(get_default_header_image(), default_header)
+
+    def test_register_user(self):
+        """
+        Test registering a user.
+        """
+        # with
+        username = "root"
+        password = "password"
+        name = "admin"
+        email = "root@tx.wtf"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        class FakeRequest(object):
+            def __init__(self, **kwargs):
+                self.referrer = kwargs["referrer"]
+                self.user_agent = kwargs["user_agent"]
+                self.endpoint = kwargs["endpoint"]
+                self.remote_addr = kwargs["remote_addr"]
+                self.headers = kwargs["headers"]
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        register_user(
+            username, password, name, email, request, cur_time)
+        
+        # then
+        ## check user
+        user = db.session.query(User).first()
+        self.assertEqual(user.email, email)
+        self.assertEqual(user.name, name)
+        self.assertTrue(
+            check_password_hash(user.password, password))
+        self.assertEqual(user.created_time, cur_time)
+        self.assertEqual(user.modified_time, cur_time)
+        self.assertEqual(
+            user.avatar_url,get_default_avatar())
+        self.assertEqual(
+            user.card_image_url, get_default_card_image())
+        self.assertEqual(
+            user.header_image_url, get_default_header_image())
+        self.assertEqual(user.header_text, name)
+        self.assertEqual(
+            user.description, "{} is on the scene".format(name))
+        self.assertEqual(user.email_verified, False)
+        self.assertEqual(user.is_admin, False)
+        self.assertEqual(user.last_login, None)
+        self.assertEqual(user.last_login_addr, None)
+        self.assertEqual(user.view_count, 0)
+        self.assertEqual(user.post_view_count, 0)
+        self.assertEqual(user.username, username)
+        self.assertEqual(user.post_count, 0)
+
+        ## check logs
+        new_change = db.session.query(UserChange).first()
+        self.assertEqual(new_change.user_id, user.id)
+        self.assertEqual(
+            new_change.change_code, UserChangeEventCode.UserCreate)
+        self.assertEqual(new_change.change_time, cur_time)
+        self.assertEqual(
+            new_change.change_desc,
+            "creating new user {} [{}]".format(
+                user.username, user.id))
+        self.assertEqual(new_change.referrer, request.referrer)
+        self.assertEqual(new_change.user_agent, request.user_agent)
+        self.assertEqual(
+            new_change.remote_addr, request.headers.get("X-Forwarded-For"))
+        self.assertEqual(new_change.endpoint, request.endpoint)
+
+        new_log = db.session.query(SystemLog).first()
+        self.assertEqual(
+            new_log.event_code, SystemLogEventCode.UserCreate)
+        self.assertEqual(new_log.event_time, cur_time)
+        self.assertEqual(
+            new_log.event_desc,
+            "creating new user {} [{}]".format(
+                user.username, user.id))
+        self.assertEqual(new_log.referrer, request.referrer)
+        self.assertEqual(new_log.user_agent, request.user_agent)
+        self.assertEqual(
+            new_log.remote_addr, request.headers.get("X-Forwarded-For"))
+        self.assertEqual(new_log.endpoint, request.endpoint)
 
 
 if __name__ == '__main__':

@@ -45,8 +45,11 @@ def root(context, log_file, log_level, profiling):
 @click.option(
     '--pattern', '-p', default='test*.py',
     help="test files to match")
+@click.option(
+    '--verbosity', '-v', default=1,
+    help="test output verbosity")
 @click.pass_obj
-def test(obj, pattern):
+def test(obj, pattern, verbosity):
     """
     Run test suite.
     """
@@ -58,7 +61,8 @@ def test(obj, pattern):
             pattern=pattern,
             top_level_dir=os.path.join(
                 os.path.dirname(__file__), ".."))
-        runner = unittest.TextTestRunner(verbosity=2)
+        runner = unittest.TextTestRunner(
+            verbosity=verbosity)
         runner.run(suite)
 
 

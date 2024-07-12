@@ -28,15 +28,6 @@ upload_archive = UploadSet("archive", ALL)
 logger = logging.getLogger(__name__)
 
 
-def remote_addr(request):
-    """
-    Get the client address through the proxy if it exists.
-    """
-    return request.headers.get(
-        'X-Forwarded-For', request.headers.get(
-            'X-Real-IP', request.remote_addr))
-
-
 def gen_secret():
     return sha256(
         str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
@@ -62,9 +53,9 @@ def create_app(config_class=None, config_filename=None):
         app.config.from_pyfile(config_filename)
     app.config.from_prefixed_env(prefix="TXWTF")
 
-    logger.info("upload dir {}".format(
+    logger.debug("upload dir {}".format(
         app.config["UPLOADED_ARCHIVE_DEST"]))
-    logger.info("database uri: {}".format(
+    logger.debug("database uri: {}".format(
         app.config["SQLALCHEMY_DATABASE_URI"]))
 
     configure_uploads(app, upload_archive)

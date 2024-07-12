@@ -13,14 +13,13 @@ from flask_login import current_user, login_required
 
 from markdown import markdown
 
-from . import db, remote_addr, upload_archive
+from . import db, upload_archive
 from .models import (
     Emoji, HashTag, PostedMessage, PostedMessageView,
     Reaction, SystemLog, Tag, User, UserChange, UserFile,
     Attachment, Mention)
 
-from .utils import (
-    get_site_logo, get_default_card_image, get_default_header_image)
+from .utils import remote_addr
 
 
 main = Blueprint('main', __name__)
