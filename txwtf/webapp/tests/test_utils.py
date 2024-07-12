@@ -16,7 +16,7 @@ class TestWebappUtils(TestCase):
     TESTING = True
 
     def create_app(self):
-        return create_app()
+        return create_app(self)
 
     def setUp(self):
         db.create_all()
@@ -55,17 +55,56 @@ class TestWebappUtils(TestCase):
         """
         self.assertEqual(get_site_logo(), DEFAULT_SITE_LOGO)
 
+    def test_default_site_logo_change(self):
+        """
+        Test changing site logo setting.
+        """
+        # with
+        site_logo = "test.png"
+
+        # when
+        set_setting("site_logo", site_logo)
+
+        # then
+        self.assertEqual(get_site_logo(), site_logo)
+
     def test_default_card_image(self):
         """
         Test default card image setting.
         """
         self.assertEqual(get_default_card_image(), DEFAULT_CARD_IMAGE)
 
+    def test_default_card_image_change(self):
+        """
+        Test changing card image setting.
+        """
+        # with
+        default_card = "test.png"
+
+        # when
+        set_setting("default_card", default_card)
+
+        # then
+        self.assertEqual(get_default_card_image(), default_card)
+
     def test_default_header_image(self):
         """
         Test default header image setting.
         """
         self.assertEqual(get_default_header_image(), DEFAULT_HEADER_IMAGE)
+
+    def test_default_header_image_change(self):
+        """
+        Test changing header image setting.
+        """
+        # with
+        default_header = "test.png"
+
+        # when
+        set_setting("default_header", default_header)
+
+        # then
+        self.assertEqual(get_default_header_image(), default_header)
 
 
 if __name__ == '__main__':

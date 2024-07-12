@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 
 from . import db
@@ -7,6 +8,15 @@ from .models import GlobalSettings
 DEFAULT_SITE_LOGO = "/assets/img/atxcf_logo_small.jpg"
 DEFAULT_CARD_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
 DEFAULT_HEADER_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
+
+
+SystemLogEventCode = Enum(
+    'SystemLogEventCode',
+    ['UserLogin', 'UserCreate', 'UserLogout', 'SettingChange'])
+
+UserChangeEventCode = Enum(
+    'UserChangeEventCode',
+    ['UserLogin', 'UserCreate', 'UserLogout'])
 
 
 def get_setting_record(var_name):

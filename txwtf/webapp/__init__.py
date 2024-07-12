@@ -42,7 +42,7 @@ def gen_secret():
         str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
 
 
-def create_app(config_filename=None):
+def create_app(config_class=None, config_filename=None):
     app = Flask(__name__)
     CORS(app)
 
@@ -54,6 +54,9 @@ def create_app(config_filename=None):
 
     # Default 128MB max upload size
     app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024
+
+    if config_class is not None:
+        app.config.from_object(config_class)
 
     if config_filename is not None:
         app.config.from_pyfile(config_filename)
@@ -124,11 +127,12 @@ def create_app(config_filename=None):
     return app
 
 
-def create_wsgi_app(config_filename=None):
+def create_wsgi_app(config_class=None, config_filename=None):
     """
     Sets up gunicorn logging.
     """
-    app = create_app(config_filename)
+    app = create_app(
+        config_class=config_class, config_filename=config_filename)
     gunicorn_logger = logging.getLogger('gunicorn.error')
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
