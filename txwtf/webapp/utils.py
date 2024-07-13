@@ -99,8 +99,7 @@ def register_user(
         # if this returns a user, then the email already exists in database
         user = User.query.filter_by(email=email).first()
 
-        # if a user is found, we want to redirect back to register page so
-        # user can try again
+        # if a user is found by email, throw an error
         if user is not None:
             raise RegistrationError(
                 ErrorCode.EmailExists,

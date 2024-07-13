@@ -256,6 +256,7 @@ class TestWebappUtils(TestCase):
         register_user(
             username, password, name, email, request, cur_time)
         
+        code = None
         try:
             register_user(
                 username, password, name, email, request, cur_time)
@@ -290,6 +291,7 @@ class TestWebappUtils(TestCase):
         register_user(
             username, password, name, email, request, cur_time)
         
+        code = None
         try:
             # change the email to trigger a username error instead
             email = email + ".net"
@@ -300,6 +302,74 @@ class TestWebappUtils(TestCase):
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.UsernameExists)
+
+    def test_register_invalid_email(self):
+        """
+        Test that there is an error if an unallowed test email is used
+        for registration.
+        """
+        # with
+        username = "root"
+        password = "password"
+        name = "admin"
+        email = "root@localhost"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        code = None
+        try:
+            register_user(
+                username, password, name, email,
+                request, cur_time)
+        except Exception as e:
+            code, _ = e.args
+        
+        self.assertEqual(code, ErrorCode.InvalidEmail)
+
+    def test_register_invalid_email_2(self):
+        """
+        Test that there is an error if a malformed email is used
+        for registration.
+        """
+        # with
+        username = "root"
+        password = "password"
+        name = "admin"
+        email = "root@localhost .com"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        code = None
+        try:
+            register_user(
+                username, password, name, email,
+                request, cur_time)
+        except Exception as e:
+            code, _ = e.args
+        
+        self.assertEqual(code, ErrorCode.InvalidEmail)
 
 
 if __name__ == '__main__':
