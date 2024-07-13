@@ -2,6 +2,8 @@ from datetime import datetime
 from enum import IntEnum
 import logging
 
+from email_validator import validate_email, EmailNotValidError
+
 from werkzeug.security import generate_password_hash
 
 from . import db
@@ -22,9 +24,9 @@ UserChangeEventCode = IntEnum(
     'UserChangeEventCode',
     ['UserLogin', 'UserCreate', 'UserLogout'])
 
-RegistrationErrorCode = IntEnum(
-    'RegistrationErrorCode',
-    ['EmailExists', 'UsernameExists'])
+ErrorCode = IntEnum(
+    'ErrorCode',
+    ['EmailExists', 'UsernameExists', 'InvalidEmail'])
 
 
 class RegistrationError(Exception):
@@ -101,7 +103,7 @@ def register_user(
         # user can try again
         if user is not None:
             raise RegistrationError(
-                RegistrationErrorCode.EmailExists,
+                ErrorCode.EmailExists,
                 'Email address already exists')
         
         # if this returns a user, then the username already exists in database
@@ -109,8 +111,17 @@ def register_user(
 
         if user:
             raise RegistrationError(
-                RegistrationErrorCode.UsernameExists,
+                ErrorCode.UsernameExists,
                 'Username already exists')
+
+        # check email validity
+        try:
+            emailinfo = validate_email(
+                email, check_deliverability=True)
+            email = emailinfo.normalized
+        except EmailNotValidError as e:
+            raise RegistrationError(
+                ErrorCode.InvalidEmail, str(e))
 
         if cur_time is None:
             now = datetime.now()

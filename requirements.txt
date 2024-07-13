@@ -1,6 +1,7 @@
 chardet>=5.2.0
 click>=6.0
 cryptography>=41.0.5
+email-validator>=2.2.0
 flake8>=3.3.0
 flake8-import-order>=0.18
 pandas>=1.1.5

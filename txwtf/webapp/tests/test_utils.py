@@ -3,6 +3,8 @@ import unittest
 
 from flask_testing import TestCase
 
+import email_validator
+
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from txwtf.webapp import create_app, db
@@ -13,8 +15,21 @@ from txwtf.webapp.utils import (
     get_default_header_image, register_user,
     DEFAULT_SITE_LOGO, DEFAULT_AVATAR,
     DEFAULT_CARD_IMAGE, DEFAULT_HEADER_IMAGE,
-    UserChangeEventCode, RegistrationErrorCode, 
-    SystemLogEventCode)
+    UserChangeEventCode, RegistrationError, 
+    ErrorCode, SystemLogEventCode)
+
+
+# Turn off DNS validation for tests
+email_validator.TEST_ENVIRONMENT = True
+
+
+class FakeRequest(object):
+    def __init__(self, **kwargs):
+        self.referrer = kwargs["referrer"]
+        self.user_agent = kwargs["user_agent"]
+        self.endpoint = kwargs["endpoint"]
+        self.remote_addr = kwargs["remote_addr"]
+        self.headers = kwargs["headers"]
 
 
 class TestWebappUtils(TestCase):
@@ -149,14 +164,6 @@ class TestWebappUtils(TestCase):
             "X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
-        class FakeRequest(object):
-            def __init__(self, **kwargs):
-                self.referrer = kwargs["referrer"]
-                self.user_agent = kwargs["user_agent"]
-                self.endpoint = kwargs["endpoint"]
-                self.remote_addr = kwargs["remote_addr"]
-                self.headers = kwargs["headers"]
-
         request = FakeRequest(
             referrer=referrer, user_agent=user_agent,
             endpoint=endpoint, remote_addr=remote_addr,
@@ -222,6 +229,77 @@ class TestWebappUtils(TestCase):
         self.assertEqual(
             new_log.remote_addr, request.headers.get("X-Forwarded-For"))
         self.assertEqual(new_log.endpoint, request.endpoint)
+
+    def test_register_email_exists(self):
+        """
+        Test that there is an error if an email already exists.
+        """
+        # with
+        username = "root"
+        password = "password"
+        name = "admin"
+        email = "root@tx.wtf"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        register_user(
+            username, password, name, email, request, cur_time)
+        
+        try:
+            register_user(
+                username, password, name, email, request, cur_time)
+        except Exception as e:
+            code, _ = e.args
+        
+        self.assertEqual(code, ErrorCode.EmailExists)
+
+    def test_register_username_exists(self):
+        """
+        Test that there is an error if a username already exists.
+        """
+        # with
+        username = "root"
+        password = "password"
+        name = "admin"
+        email = "root@tx.wtf"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        register_user(
+            username, password, name, email, request, cur_time)
+        
+        try:
+            # change the email to trigger a username error instead
+            email = email + ".net"
+            register_user(
+                username, password, name, email,
+                request, cur_time)
+        except Exception as e:
+            code, _ = e.args
+        
+        self.assertEqual(code, ErrorCode.UsernameExists)
 
 
 if __name__ == '__main__':
