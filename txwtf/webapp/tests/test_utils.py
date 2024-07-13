@@ -12,11 +12,28 @@ from txwtf.webapp.models import User, UserChange, SystemLog
 from txwtf.webapp.utils import (
     get_setting, set_setting, get_site_logo,
     get_default_avatar, get_default_card_image,
-    get_default_header_image, register_user,
+    get_default_header_image, get_password_special_symbols,
+    get_password_min_length, get_password_max_length,
+    get_password_special_symbols_enabled,
+    get_password_min_length_enabled,
+    get_password_max_length_enabled,
+    get_password_digit_enabled,
+    get_password_upper_enabled,
+    get_password_lower_enabled,
+    register_user,
     DEFAULT_SITE_LOGO, DEFAULT_AVATAR,
     DEFAULT_CARD_IMAGE, DEFAULT_HEADER_IMAGE,
-    UserChangeEventCode, RegistrationError, 
-    ErrorCode, SystemLogEventCode)
+    DEFAULT_PASSWORD_SPECIAL_SYMBOLS,
+    DEFAULT_PASSWORD_MINIMUM_LENGTH,
+    DEFAULT_PASSWORD_MAXIMUM_LENGTH,
+    DEFAULT_PASSWORD_SPECIAL_SYMBOLS_ENABLED,
+    DEFAULT_PASSWORD_MINIMUM_LENGTH_ENABLED,
+    DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED,
+    DEFAULT_PASSWORD_DIGIT_ENABLED,
+    DEFAULT_PASSWORD_UPPER_ENABLED,
+    DEFAULT_PASSWORD_LOWER_ENABLED,
+    UserChangeEventCode, RegistrationError,
+    PasswordError, ErrorCode, SystemLogEventCode)
 
 
 # Turn off DNS validation for tests
@@ -147,6 +164,183 @@ class TestWebappUtils(TestCase):
         # then
         self.assertEqual(get_default_header_image(), default_header)
 
+    def test_password_special_symbols(self):
+        """
+        Test default password special symbols setting.
+        """
+        self.assertEqual(get_password_special_symbols(), DEFAULT_PASSWORD_SPECIAL_SYMBOLS)
+
+    def test_password_special_symbols_change(self):
+        """
+        Test changing password special symbols setting.
+        """
+        # with
+        special_sym = "$%^&"
+
+        # when
+        set_setting("password_special_symbols", special_sym)
+
+        # then
+        self.assertEqual(get_password_special_symbols(), special_sym)
+
+    def test_password_min_length(self):
+        """
+        Test default password minimumm length.
+        """
+        self.assertEqual(get_password_min_length(), DEFAULT_PASSWORD_MINIMUM_LENGTH)
+
+    def test_password_min_length_change(self):
+        """
+        Test changing password minimum length setting.
+        """
+        # with
+        min_length = 10
+
+        # when
+        set_setting("password_minimum_length", min_length)
+
+        # then
+        self.assertEqual(get_password_min_length(), min_length)
+
+    def test_password_max_length(self):
+        """
+        Test default password maximum length.
+        """
+        self.assertEqual(get_password_max_length(), DEFAULT_PASSWORD_MAXIMUM_LENGTH)
+
+    def test_password_max_length_change(self):
+        """
+        Test changing password maximum length setting.
+        """
+        # with
+        max_length = 128
+
+        # when
+        set_setting("password_maximum_length", max_length)
+
+        # then
+        self.assertEqual(get_password_max_length(), max_length)
+
+    def test_password_special_symbols_enabled(self):
+        """
+        Test default password special symbols enabled flag.
+        """
+        self.assertEqual(get_password_special_symbols_enabled(), DEFAULT_PASSWORD_SPECIAL_SYMBOLS_ENABLED)
+
+    def test_password_special_symbols_enabled_change(self):
+        """
+        Test changing password special symbols enabled flag setting.
+        """
+        # with
+        special_symbols_enabled = 0
+
+        # when
+        set_setting("password_special_symbols_enabled", special_symbols_enabled)
+
+        # then
+        self.assertEqual(get_password_special_symbols_enabled(), special_symbols_enabled)
+
+    def test_password_min_length_enabled(self):
+        """
+        Test default password min length enabled flag.
+        """
+        self.assertEqual(get_password_min_length_enabled(), DEFAULT_PASSWORD_MINIMUM_LENGTH_ENABLED)
+
+    def test_password_min_length_enabled_change(self):
+        """
+        Test changing password min length enabled flag setting.
+        """
+        # with
+        min_length_enabled = 0
+
+        # when
+        set_setting("password_minimum_length_enabled", min_length_enabled)
+
+        # then
+        self.assertEqual(get_password_min_length_enabled(), min_length_enabled)
+
+    def test_password_max_length_enabled(self):
+        """
+        Test default password max length enabled flag.
+        """
+        self.assertEqual(get_password_max_length_enabled(), DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED)
+
+    def test_password_max_length_enabled_change(self):
+        """
+        Test changing password max length enabled flag setting.
+        """
+        # with
+        max_length_enabled = 0
+
+        # when
+        set_setting("password_maximum_length_enabled", max_length_enabled)
+
+        # then
+        self.assertEqual(get_password_max_length_enabled(), max_length_enabled)
+
+    def test_password_digit_enabled(self):
+        """
+        Test default password digit enabled flag.
+        """
+        self.assertEqual(get_password_digit_enabled(), DEFAULT_PASSWORD_DIGIT_ENABLED)
+
+    def test_password_digit_enabled_change(self):
+        """
+        Test changing password digit enabled flag setting.
+        """
+        # with
+        digit_enabled = 0
+
+        # when
+        set_setting("password_digit_enabled", digit_enabled)
+
+        # then
+        self.assertEqual(get_password_digit_enabled(), digit_enabled)
+
+    def test_password_upper_enabled(self):
+        """
+        Test default password upper enabled flag.
+        """
+        self.assertEqual(get_password_upper_enabled(), DEFAULT_PASSWORD_UPPER_ENABLED)
+
+    def test_password_uppper_enabled_change(self):
+        """
+        Test changing password upper enabled flag setting.
+        """
+        # with
+        upper_enabled = 0
+
+        # when
+        set_setting("password_upper_enabled", upper_enabled)
+
+        # then
+        self.assertEqual(get_password_upper_enabled(), upper_enabled)
+
+    def test_password_lower_enabled(self):
+        """
+        Test default password lower enabled flag.
+        """
+        self.assertEqual(get_password_lower_enabled(), DEFAULT_PASSWORD_LOWER_ENABLED)
+
+    def test_password_lower_enabled_change(self):
+        """
+        Test changing password lower enabled flag setting.
+        """
+        # with
+        lower_enabled = 0
+
+        # when
+        set_setting("password_lower_enabled", lower_enabled)
+
+        # then
+        self.assertEqual(get_password_lower_enabled(), lower_enabled)
+
+    def test_password_check(self):
+        """
+        Test that password checking works as expected.
+        """
+        pass
+
     def test_register_user(self):
         """
         Test registering a user.
@@ -171,7 +365,8 @@ class TestWebappUtils(TestCase):
 
         # when
         register_user(
-            username, password, name, email, request, cur_time)
+            username, password, password, name, email,
+            request, cur_time)
         
         # then
         ## check user
@@ -254,13 +449,16 @@ class TestWebappUtils(TestCase):
 
         # when
         register_user(
-            username, password, name, email, request, cur_time)
+            username, password, password, name, email,
+            request, cur_time)
         
         code = None
         try:
             register_user(
-                username, password, name, email, request, cur_time)
+                username, password, password, name,
+                email, request, cur_time)
         except Exception as e:
+            self.assertTrue(isinstance(e, RegistrationError))
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.EmailExists)
@@ -289,16 +487,18 @@ class TestWebappUtils(TestCase):
 
         # when
         register_user(
-            username, password, name, email, request, cur_time)
+            username, password, password, name, email,
+            request, cur_time)
         
         code = None
         try:
             # change the email to trigger a username error instead
             email = email + ".net"
             register_user(
-                username, password, name, email,
+                username, password, password, name, email,
                 request, cur_time)
         except Exception as e:
+            self.assertTrue(isinstance(e, RegistrationError))
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.UsernameExists)
@@ -330,9 +530,10 @@ class TestWebappUtils(TestCase):
         code = None
         try:
             register_user(
-                username, password, name, email,
+                username, password, password, name, email,
                 request, cur_time)
         except Exception as e:
+            self.assertTrue(isinstance(e, RegistrationError))
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.InvalidEmail)
@@ -364,12 +565,48 @@ class TestWebappUtils(TestCase):
         code = None
         try:
             register_user(
-                username, password, name, email,
+                username, password, password, name, email,
                 request, cur_time)
         except Exception as e:
+            self.assertTrue(isinstance(e, RegistrationError))
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.InvalidEmail)
+
+    def test_register_password_mismatch(self):
+        """
+        Test that there is an error if the password and
+        verify_password don't match.
+        """
+        # with
+        username = "root"
+        password = "password"
+        name = "admin"
+        email = "root@tx.wtf"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        code = None
+        try:
+            register_user(
+                username, password, password+"foo", name, email,
+                request, cur_time)
+        except Exception as e:
+            self.assertTrue(isinstance(e, RegistrationError))
+            code, _ = e.args
+        
+        self.assertEqual(code, ErrorCode.PasswordMismatch)
 
 
 if __name__ == '__main__':
