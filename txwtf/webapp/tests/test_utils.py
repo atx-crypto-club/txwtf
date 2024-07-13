@@ -20,7 +20,7 @@ from txwtf.webapp.utils import (
     get_password_digit_enabled,
     get_password_upper_enabled,
     get_password_lower_enabled,
-    register_user,
+    password_check, register_user,
     DEFAULT_SITE_LOGO, DEFAULT_AVATAR,
     DEFAULT_CARD_IMAGE, DEFAULT_HEADER_IMAGE,
     DEFAULT_PASSWORD_SPECIAL_SYMBOLS,
@@ -337,9 +337,259 @@ class TestWebappUtils(TestCase):
 
     def test_password_check(self):
         """
-        Test that password checking works as expected.
+        Test that password checking works as expected with default flags.
         """
-        pass
+        # with
+        password = "asDf1234#!1"
+
+        # when
+        success = True
+        try:
+            password_check(password)
+        except:
+            success = False
+
+        # then
+        self.assertTrue(success)
+
+    def test_password_check_error_min_length(self):
+        """
+        Test that password checking fails on default min length.
+        """
+        # with
+        password = "aD1#!1"
+
+        # when
+        code = None
+        try:
+            password_check(password)
+        except Exception as e:
+            self.assertTrue(isinstance(e, PasswordError))
+            code, _ = e.args
+
+        # then
+        self.assertEqual(code, ErrorCode.PasswordTooShort)
+
+    def test_password_check_error_max_length(self):
+        """
+        Test that password checking fails on default max length.
+        """
+        # with
+        password = "asDf1234#!1"
+        set_setting("password_maximum_length", 8)
+
+        # when
+        code = None
+        try:
+            password_check(password)
+        except Exception as e:
+            self.assertTrue(isinstance(e, PasswordError))
+            code, _ = e.args
+
+        # then
+        self.assertEqual(code, ErrorCode.PasswordTooLong)
+
+    def test_password_check_error_missing_digit(self):
+        """
+        Test that password checking fails on missing digit.
+        """
+        # with
+        password = "asDfFDSA#!!"
+
+        # when
+        code = None
+        try:
+            password_check(password)
+        except Exception as e:
+            self.assertTrue(isinstance(e, PasswordError))
+            code, _ = e.args
+
+        # then
+        self.assertEqual(code, ErrorCode.PasswordMissingDigit)
+
+    def test_password_check_error_missing_upper(self):
+        """
+        Test that password checking fails on missing upper case character.
+        """
+        # with
+        password = "asdf1234#!1"
+
+        # when
+        code = None
+        try:
+            password_check(password)
+        except Exception as e:
+            self.assertTrue(isinstance(e, PasswordError))
+            code, _ = e.args
+
+        # then
+        self.assertEqual(code, ErrorCode.PasswordMissingUpper)
+
+    def test_password_check_error_missing_lower(self):
+        """
+        Test that password checking fails on missing lower case character.
+        """
+        # with
+        password = "ASDF1234#!1"
+
+        # when
+        code = None
+        try:
+            password_check(password)
+        except Exception as e:
+            self.assertTrue(isinstance(e, PasswordError))
+            code, _ = e.args
+
+        # then
+        self.assertEqual(code, ErrorCode.PasswordMissingLower)
+
+    def test_password_check_error_missing_symbol(self):
+        """
+        Test that password checking fails on missing symbol.
+        """
+        # with
+        password = "asDf1234131"
+
+        # when
+        code = None
+        try:
+            password_check(password)
+        except Exception as e:
+            self.assertTrue(isinstance(e, PasswordError))
+            code, _ = e.args
+
+        # then
+        self.assertEqual(code, ErrorCode.PasswordMissingSymbol)
+
+    def test_password_check_symbol_disabled(self):
+        """
+        Test that password checking works with symbol flag disabled.
+        """
+        # with
+        password = "asDf1234!1"
+        set_setting("password_special_symbols_enabled", 0)
+
+        # when
+        success = True
+        try:
+            password_check(password)
+        except:
+            success = False
+
+        # then
+        self.assertTrue(success)
+
+    def test_password_check_symbol_disabled_when_empty(self):
+        """
+        Test that password checking works when no special
+        symbols are specified.
+        """
+        # with
+        password = "asDf1234!1"
+        set_setting("password_special_symbols", "")
+
+        # when
+        success = True
+        try:
+            password_check(password)
+        except:
+            success = False
+
+        # then
+        self.assertTrue(success)
+
+    def test_password_check_min_length_disabled(self):
+        """
+        Test that password checking works with min length flag disabled.
+        """
+        # with
+        password = "Aa#4!1"
+        set_setting("password_minimum_length", 10)
+        set_setting("password_minimum_length_enabled", 0)
+
+        # when
+        success = True
+        try:
+            password_check(password)
+        except:
+            success = False
+
+        # then
+        self.assertTrue(success)
+
+    def test_password_check_max_length_disabled(self):
+        """
+        Test that password checking works with max length flag disabled.
+        """
+        # with
+        password = "Aa#4!1"
+        set_setting("password_minimum_length", 1)
+        set_setting("password_maximum_length", 4)
+        set_setting("password_maximum_length_enabled", 0)
+
+        # when
+        success = True
+        try:
+            password_check(password)
+        except:
+            success = False
+
+        # then
+        self.assertTrue(success)
+
+    def test_password_check_digit_disabled(self):
+        """
+        Test that password checking works with digit flag disabled.
+        """
+        # with
+        password = "asDffdsa#!1"
+        set_setting("password_digit_enabled", 0)
+
+        # when
+        success = True
+        try:
+            password_check(password)
+        except:
+            success = False
+
+        # then
+        self.assertTrue(success)
+
+    def test_password_check_upper_disabled(self):
+        """
+        Test that password checking works with upper flag disabled.
+        """
+        # with
+        password = "asdffdsa#!1"
+        set_setting("password_upper_enabled", 0)
+
+        # when
+        success = True
+        try:
+            password_check(password)
+        except:
+            success = False
+
+        # then
+        self.assertTrue(success)
+
+    def test_password_check_lower_disabled(self):
+        """
+        Test that password checking works with lower flag disabled.
+        """
+        # with
+        password = "ASDFFDSA#!1"
+        set_setting("password_lower_enabled", 0)
+
+        # when
+        success = True
+        try:
+            password_check(password)
+        except:
+            success = False
+
+        # then
+        self.assertTrue(success)
 
     def test_register_user(self):
         """

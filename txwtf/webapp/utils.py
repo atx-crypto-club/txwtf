@@ -110,51 +110,75 @@ def remote_addr(request):
             'X-Real-IP', request.remote_addr))
 
 
-def get_password_special_symbols(default=DEFAULT_PASSWORD_SPECIAL_SYMBOLS):
+def get_password_special_symbols(
+        default=DEFAULT_PASSWORD_SPECIAL_SYMBOLS):
     return get_setting("password_special_symbols", default)
 
 
-def get_password_min_length(default=DEFAULT_PASSWORD_MINIMUM_LENGTH):
+def get_password_min_length(
+        default=DEFAULT_PASSWORD_MINIMUM_LENGTH):
     return int(get_setting("password_minimum_length", default))
 
 
-def get_password_max_length(default=DEFAULT_PASSWORD_MAXIMUM_LENGTH):
+def get_password_max_length(
+        default=DEFAULT_PASSWORD_MAXIMUM_LENGTH):
     return int(get_setting("password_maximum_length", default))
 
 
-def get_password_special_symbols_enabled(default=DEFAULT_PASSWORD_SPECIAL_SYMBOLS_ENABLED):
+def get_password_special_symbols_enabled(
+        default=DEFAULT_PASSWORD_SPECIAL_SYMBOLS_ENABLED):
     return int(get_setting("password_special_symbols_enabled", default))
 
 
-def get_password_min_length_enabled(default=DEFAULT_PASSWORD_MINIMUM_LENGTH_ENABLED):
+def get_password_min_length_enabled(
+        default=DEFAULT_PASSWORD_MINIMUM_LENGTH_ENABLED):
     return int(get_setting("password_minimum_length_enabled", default))
 
 
-def get_password_max_length_enabled(default=DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED):
+def get_password_max_length_enabled(
+        default=DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED):
     return int(get_setting("password_maximum_length_enabled", default))
 
 
-def get_password_digit_enabled(default=DEFAULT_PASSWORD_DIGIT_ENABLED):
+def get_password_digit_enabled(
+        default=DEFAULT_PASSWORD_DIGIT_ENABLED):
     return int(get_setting("password_digit_enabled", default))
 
 
-def get_password_upper_enabled(default=DEFAULT_PASSWORD_UPPER_ENABLED):
+def get_password_upper_enabled(
+        default=DEFAULT_PASSWORD_UPPER_ENABLED):
     return int(get_setting("password_upper_enabled", default))
 
 
-def get_password_lower_enabled(default=DEFAULT_PASSWORD_LOWER_ENABLED):
+def get_password_lower_enabled(
+        default=DEFAULT_PASSWORD_LOWER_ENABLED):
     return int(get_setting("password_lower_enabled", default))
 
 
-def password_check(passwd, **kwargs):
+def password_check(passwd):
+    """
+    Check password for validity and throw an error if invalid
+    based on global flags and settings.
+    """
+    password_min_length_enabled = get_password_min_length_enabled()
+    password_max_length_enabled = get_password_max_length_enabled()
+    password_digit_enabled = get_password_digit_enabled()
+    password_upper_enabled = get_password_upper_enabled()
+    password_lower_enabled = get_password_lower_enabled()
+    password_special_symbols_enabled = get_password_special_symbols_enabled()
+
     special_sym = get_password_special_symbols()
     min_length = get_password_min_length()
     max_length = get_password_max_length()
-    if len(passwd) < min_length:
+
+    if len(special_sym) == 0:
+        password_special_symbols_enabled = False
+
+    if password_min_length_enabled and len(passwd) < min_length:
         raise PasswordError(
             ErrorCode.PasswordTooShort,
             'length should be at least {}'.format(min_length))
-    if len(passwd) > max_length:
+    if password_max_length_enabled and len(passwd) > max_length:
         raise PasswordError(
             ErrorCode.PasswordTooLong,
             'length should be not be greater than {}'.format(max_length))
@@ -174,22 +198,23 @@ def password_check(passwd, **kwargs):
         elif char in special_sym:
             has_sym = True
  
-    if not has_digit:
+    if password_digit_enabled and not has_digit:
         raise PasswordError(
             ErrorCode.PasswordMissingDigit,
             'Password should have at least one numeral')
-    if not has_upper:
+    if password_upper_enabled and not has_upper:
         raise PasswordError(
             ErrorCode.PasswordMissingUpper,
             'Password should have at least one uppercase letter')
-    if not has_lower:
+    if password_lower_enabled and not has_lower:
         raise PasswordError(
             ErrorCode.PasswordMissingLower,
             'Password should have at least one lowercase letter')
-    if not has_sym:
+    if password_special_symbols_enabled and not has_sym:
         raise PasswordError(
             ErrorCode.PasswordMissingSymbol,
-            'Password should have at least one of the symbols $@#')
+            'Password should have at least one of the symbols {}'.format(
+                special_sym))
 
 
 def register_user(
