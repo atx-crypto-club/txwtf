@@ -597,7 +597,7 @@ class TestWebappUtils(TestCase):
         """
         # with
         username = "root"
-        password = "password"
+        password = "asDf1234#!1"
         name = "admin"
         email = "root@tx.wtf"
         referrer = "localhost"
@@ -681,7 +681,7 @@ class TestWebappUtils(TestCase):
         """
         # with
         username = "root"
-        password = "password"
+        password = "asDf1234#!1"
         name = "admin"
         email = "root@tx.wtf"
         referrer = "localhost"
@@ -719,7 +719,7 @@ class TestWebappUtils(TestCase):
         """
         # with
         username = "root"
-        password = "password"
+        password = "asDf1234#!1"
         name = "admin"
         email = "root@tx.wtf"
         referrer = "localhost"
@@ -760,7 +760,7 @@ class TestWebappUtils(TestCase):
         """
         # with
         username = "root"
-        password = "password"
+        password = "asDf1234#!1"
         name = "admin"
         email = "root@localhost"
         referrer = "localhost"
@@ -795,7 +795,7 @@ class TestWebappUtils(TestCase):
         """
         # with
         username = "root"
-        password = "password"
+        password = "asDf1234#!1"
         name = "admin"
         email = "root@localhost .com"
         referrer = "localhost"
@@ -830,7 +830,7 @@ class TestWebappUtils(TestCase):
         """
         # with
         username = "root"
-        password = "password"
+        password = "asDf1234#!1"
         name = "admin"
         email = "root@tx.wtf"
         referrer = "localhost"
@@ -857,6 +857,41 @@ class TestWebappUtils(TestCase):
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.PasswordMismatch)
+
+    def test_register_password_check_fail(self):
+        """
+        Test that there is an error if the password fails the password
+        check.
+        """
+        # with
+        username = "root"
+        password = "password"
+        name = "admin"
+        email = "root@tx.wtf"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        code = None
+        try:
+            register_user(
+                username, password, password, name, email,
+                request, cur_time)
+        except Exception as e:
+            self.assertTrue(isinstance(e, PasswordError))
+            code, _ = e.args
+        
+        self.assertIsNotNone(code)
 
 
 if __name__ == '__main__':

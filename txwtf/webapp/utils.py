@@ -228,6 +228,9 @@ def register_user(
             ErrorCode.PasswordMismatch,
             "Password mismatch!")
 
+    # make sure the password passes system checks
+    password_check(password)
+
     # if this returns a user, then the email already exists in database
     user = User.query.filter_by(email=email).first()
 
@@ -246,6 +249,7 @@ def register_user(
             'Username already exists')
 
     # check email validity
+    # TODO: add settings flag for deliverability
     try:
         emailinfo = validate_email(
             email, check_deliverability=True)
