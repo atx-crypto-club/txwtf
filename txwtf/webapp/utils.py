@@ -23,6 +23,7 @@ DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED = 1
 DEFAULT_PASSWORD_DIGIT_ENABLED = 1
 DEFAULT_PASSWORD_UPPER_ENABLED = 1
 DEFAULT_PASSWORD_LOWER_ENABLED = 1
+DEFAULT_EMAIL_VALIDATE_DELIVERABILITY_ENABLED = 1
 
 
 SystemLogEventCode = IntEnum(
@@ -217,6 +218,13 @@ def password_check(passwd):
                 special_sym))
 
 
+def get_email_validate_deliverability_enabled(
+        default=DEFAULT_EMAIL_VALIDATE_DELIVERABILITY_ENABLED):
+    return int(
+        get_setting(
+            "email_validate_deliverability_enabled", default))
+
+
 def register_user(
         username, password, verify_password, name, email,
         request, cur_time=None):
@@ -249,10 +257,10 @@ def register_user(
             'Username already exists')
 
     # check email validity
-    # TODO: add settings flag for deliverability
+    check_deliverability = get_email_validate_deliverability_enabled()
     try:
         emailinfo = validate_email(
-            email, check_deliverability=True)
+            email, check_deliverability=check_deliverability)
         email = emailinfo.normalized
     except EmailNotValidError as e:
         raise RegistrationError(

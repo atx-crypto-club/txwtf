@@ -20,6 +20,7 @@ from txwtf.webapp.utils import (
     get_password_digit_enabled,
     get_password_upper_enabled,
     get_password_lower_enabled,
+    get_email_validate_deliverability_enabled,
     password_check, register_user,
     DEFAULT_SITE_LOGO, DEFAULT_AVATAR,
     DEFAULT_CARD_IMAGE, DEFAULT_HEADER_IMAGE,
@@ -32,6 +33,7 @@ from txwtf.webapp.utils import (
     DEFAULT_PASSWORD_DIGIT_ENABLED,
     DEFAULT_PASSWORD_UPPER_ENABLED,
     DEFAULT_PASSWORD_LOWER_ENABLED,
+    DEFAULT_EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
     UserChangeEventCode, RegistrationError,
     PasswordError, ErrorCode, SystemLogEventCode)
 
@@ -334,6 +336,28 @@ class TestWebappUtils(TestCase):
 
         # then
         self.assertEqual(get_password_lower_enabled(), lower_enabled)
+
+    def test_email_validate_deliverability_enabled(self):
+        """
+        Test default email validate deliverability enabled flag.
+        """
+        self.assertEqual(
+            get_email_validate_deliverability_enabled(),
+            DEFAULT_EMAIL_VALIDATE_DELIVERABILITY_ENABLED)
+
+    def test_email_validate_deliverability_enabled_change(self):
+        """
+        Test email validate deliverability enabled flag setting.
+        """
+        # with
+        enabled = 0
+
+        # when
+        set_setting("email_validate_deliverability_enabled", enabled)
+
+        # then
+        self.assertEqual(
+            get_email_validate_deliverability_enabled(), enabled)
 
     def test_password_check(self):
         """
