@@ -10,20 +10,20 @@ from . import db
 from .models import GlobalSettings, User, UserChange, SystemLog
 
 
-DEFAULT_SITE_LOGO = "/assets/img/atxcf_logo_small.jpg"
-DEFAULT_AVATAR = "/assets/img/atxcf_logo_small.jpg"
-DEFAULT_CARD_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
-DEFAULT_HEADER_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
-DEFAULT_PASSWORD_SPECIAL_SYMBOLS = '$@#%'
-DEFAULT_PASSWORD_MINIMUM_LENGTH = 8
-DEFAULT_PASSWORD_MAXIMUM_LENGTH = 64
-DEFAULT_PASSWORD_SPECIAL_SYMBOLS_ENABLED = 1
-DEFAULT_PASSWORD_MINIMUM_LENGTH_ENABLED = 1
-DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED = 1
-DEFAULT_PASSWORD_DIGIT_ENABLED = 1
-DEFAULT_PASSWORD_UPPER_ENABLED = 1
-DEFAULT_PASSWORD_LOWER_ENABLED = 1
-DEFAULT_EMAIL_VALIDATE_DELIVERABILITY_ENABLED = 1
+SITE_LOGO = "/assets/img/atxcf_logo_small.jpg"
+AVATAR = "/assets/img/atxcf_logo_small.jpg"
+CARD_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
+HEADER_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
+PASSWORD_SPECIAL_SYMBOLS = '$@#%'
+PASSWORD_MINIMUM_LENGTH = 8
+PASSWORD_MAXIMUM_LENGTH = 64
+PASSWORD_SPECIAL_SYMBOLS_ENABLED = 1
+PASSWORD_MINIMUM_LENGTH_ENABLED = 1
+PASSWORD_MAXIMUM_LENGTH_ENABLED = 1
+PASSWORD_DIGIT_ENABLED = 1
+PASSWORD_UPPER_ENABLED = 1
+PASSWORD_LOWER_ENABLED = 1
+EMAIL_VALIDATE_DELIVERABILITY_ENABLED = 1
 
 
 SystemLogEventCode = IntEnum(
@@ -86,19 +86,19 @@ def set_setting(var_name, value):
     db.session.commit()
 
 
-def get_site_logo(default=DEFAULT_SITE_LOGO):
+def get_site_logo(default=SITE_LOGO):
     return get_setting("site_logo", default)
 
 
-def get_default_avatar(default=DEFAULT_AVATAR):
+def get_default_avatar(default=AVATAR):
     return get_setting("default_avatar", default)
 
 
-def get_default_card_image(default=DEFAULT_CARD_IMAGE):
+def get_default_card_image(default=CARD_IMAGE):
     return get_setting("default_card", default)
 
 
-def get_default_header_image(default=DEFAULT_HEADER_IMAGE):
+def get_default_header_image(default=HEADER_IMAGE):
     return get_setting("default_header", default)
 
 
@@ -112,47 +112,47 @@ def remote_addr(request):
 
 
 def get_password_special_symbols(
-        default=DEFAULT_PASSWORD_SPECIAL_SYMBOLS):
+        default=PASSWORD_SPECIAL_SYMBOLS):
     return get_setting("password_special_symbols", default)
 
 
 def get_password_min_length(
-        default=DEFAULT_PASSWORD_MINIMUM_LENGTH):
+        default=PASSWORD_MINIMUM_LENGTH):
     return int(get_setting("password_minimum_length", default))
 
 
 def get_password_max_length(
-        default=DEFAULT_PASSWORD_MAXIMUM_LENGTH):
+        default=PASSWORD_MAXIMUM_LENGTH):
     return int(get_setting("password_maximum_length", default))
 
 
 def get_password_special_symbols_enabled(
-        default=DEFAULT_PASSWORD_SPECIAL_SYMBOLS_ENABLED):
+        default=PASSWORD_SPECIAL_SYMBOLS_ENABLED):
     return int(get_setting("password_special_symbols_enabled", default))
 
 
 def get_password_min_length_enabled(
-        default=DEFAULT_PASSWORD_MINIMUM_LENGTH_ENABLED):
+        default=PASSWORD_MINIMUM_LENGTH_ENABLED):
     return int(get_setting("password_minimum_length_enabled", default))
 
 
 def get_password_max_length_enabled(
-        default=DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED):
+        default=PASSWORD_MAXIMUM_LENGTH_ENABLED):
     return int(get_setting("password_maximum_length_enabled", default))
 
 
 def get_password_digit_enabled(
-        default=DEFAULT_PASSWORD_DIGIT_ENABLED):
+        default=PASSWORD_DIGIT_ENABLED):
     return int(get_setting("password_digit_enabled", default))
 
 
 def get_password_upper_enabled(
-        default=DEFAULT_PASSWORD_UPPER_ENABLED):
+        default=PASSWORD_UPPER_ENABLED):
     return int(get_setting("password_upper_enabled", default))
 
 
 def get_password_lower_enabled(
-        default=DEFAULT_PASSWORD_LOWER_ENABLED):
+        default=PASSWORD_LOWER_ENABLED):
     return int(get_setting("password_lower_enabled", default))
 
 
@@ -219,7 +219,7 @@ def password_check(passwd):
 
 
 def get_email_validate_deliverability_enabled(
-        default=DEFAULT_EMAIL_VALIDATE_DELIVERABILITY_ENABLED):
+        default=EMAIL_VALIDATE_DELIVERABILITY_ENABLED):
     return int(
         get_setting(
             "email_validate_deliverability_enabled", default))

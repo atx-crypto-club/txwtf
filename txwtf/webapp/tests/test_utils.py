@@ -22,18 +22,18 @@ from txwtf.webapp.utils import (
     get_password_lower_enabled,
     get_email_validate_deliverability_enabled,
     password_check, register_user,
-    DEFAULT_SITE_LOGO, DEFAULT_AVATAR,
-    DEFAULT_CARD_IMAGE, DEFAULT_HEADER_IMAGE,
-    DEFAULT_PASSWORD_SPECIAL_SYMBOLS,
-    DEFAULT_PASSWORD_MINIMUM_LENGTH,
-    DEFAULT_PASSWORD_MAXIMUM_LENGTH,
-    DEFAULT_PASSWORD_SPECIAL_SYMBOLS_ENABLED,
-    DEFAULT_PASSWORD_MINIMUM_LENGTH_ENABLED,
-    DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED,
-    DEFAULT_PASSWORD_DIGIT_ENABLED,
-    DEFAULT_PASSWORD_UPPER_ENABLED,
-    DEFAULT_PASSWORD_LOWER_ENABLED,
-    DEFAULT_EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
+    SITE_LOGO, AVATAR,
+    CARD_IMAGE, HEADER_IMAGE,
+    PASSWORD_SPECIAL_SYMBOLS,
+    PASSWORD_MINIMUM_LENGTH,
+    PASSWORD_MAXIMUM_LENGTH,
+    PASSWORD_SPECIAL_SYMBOLS_ENABLED,
+    PASSWORD_MINIMUM_LENGTH_ENABLED,
+    PASSWORD_MAXIMUM_LENGTH_ENABLED,
+    PASSWORD_DIGIT_ENABLED,
+    PASSWORD_UPPER_ENABLED,
+    PASSWORD_LOWER_ENABLED,
+    EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
     UserChangeEventCode, RegistrationError,
     PasswordError, ErrorCode, SystemLogEventCode)
 
@@ -94,7 +94,7 @@ class TestWebappUtils(TestCase):
         """
         Test default site logo setting.
         """
-        self.assertEqual(get_site_logo(), DEFAULT_SITE_LOGO)
+        self.assertEqual(get_site_logo(), SITE_LOGO)
 
     def test_site_logo_change(self):
         """
@@ -113,7 +113,7 @@ class TestWebappUtils(TestCase):
         """
         Test default avatar setting.
         """
-        self.assertEqual(get_default_avatar(), DEFAULT_AVATAR)
+        self.assertEqual(get_default_avatar(), AVATAR)
 
     def test_default_avatar_change(self):
         """
@@ -132,7 +132,7 @@ class TestWebappUtils(TestCase):
         """
         Test default card image setting.
         """
-        self.assertEqual(get_default_card_image(), DEFAULT_CARD_IMAGE)
+        self.assertEqual(get_default_card_image(), CARD_IMAGE)
 
     def test_default_card_image_change(self):
         """
@@ -151,7 +151,7 @@ class TestWebappUtils(TestCase):
         """
         Test default header image setting.
         """
-        self.assertEqual(get_default_header_image(), DEFAULT_HEADER_IMAGE)
+        self.assertEqual(get_default_header_image(), HEADER_IMAGE)
 
     def test_default_header_image_change(self):
         """
@@ -170,7 +170,8 @@ class TestWebappUtils(TestCase):
         """
         Test default password special symbols setting.
         """
-        self.assertEqual(get_password_special_symbols(), DEFAULT_PASSWORD_SPECIAL_SYMBOLS)
+        self.assertEqual(
+            get_password_special_symbols(), PASSWORD_SPECIAL_SYMBOLS)
 
     def test_password_special_symbols_change(self):
         """
@@ -189,7 +190,8 @@ class TestWebappUtils(TestCase):
         """
         Test default password minimumm length.
         """
-        self.assertEqual(get_password_min_length(), DEFAULT_PASSWORD_MINIMUM_LENGTH)
+        self.assertEqual(
+            get_password_min_length(), PASSWORD_MINIMUM_LENGTH)
 
     def test_password_min_length_change(self):
         """
@@ -208,7 +210,8 @@ class TestWebappUtils(TestCase):
         """
         Test default password maximum length.
         """
-        self.assertEqual(get_password_max_length(), DEFAULT_PASSWORD_MAXIMUM_LENGTH)
+        self.assertEqual(
+            get_password_max_length(), PASSWORD_MAXIMUM_LENGTH)
 
     def test_password_max_length_change(self):
         """
@@ -227,7 +230,9 @@ class TestWebappUtils(TestCase):
         """
         Test default password special symbols enabled flag.
         """
-        self.assertEqual(get_password_special_symbols_enabled(), DEFAULT_PASSWORD_SPECIAL_SYMBOLS_ENABLED)
+        self.assertEqual(
+            get_password_special_symbols_enabled(),
+            PASSWORD_SPECIAL_SYMBOLS_ENABLED)
 
     def test_password_special_symbols_enabled_change(self):
         """
@@ -237,16 +242,22 @@ class TestWebappUtils(TestCase):
         special_symbols_enabled = 0
 
         # when
-        set_setting("password_special_symbols_enabled", special_symbols_enabled)
+        set_setting(
+            "password_special_symbols_enabled",
+            special_symbols_enabled)
 
         # then
-        self.assertEqual(get_password_special_symbols_enabled(), special_symbols_enabled)
+        self.assertEqual(
+            get_password_special_symbols_enabled(),
+            special_symbols_enabled)
 
     def test_password_min_length_enabled(self):
         """
         Test default password min length enabled flag.
         """
-        self.assertEqual(get_password_min_length_enabled(), DEFAULT_PASSWORD_MINIMUM_LENGTH_ENABLED)
+        self.assertEqual(
+            get_password_min_length_enabled(),
+            PASSWORD_MINIMUM_LENGTH_ENABLED)
 
     def test_password_min_length_enabled_change(self):
         """
@@ -256,16 +267,22 @@ class TestWebappUtils(TestCase):
         min_length_enabled = 0
 
         # when
-        set_setting("password_minimum_length_enabled", min_length_enabled)
+        set_setting(
+            "password_minimum_length_enabled", 
+            min_length_enabled)
 
         # then
-        self.assertEqual(get_password_min_length_enabled(), min_length_enabled)
+        self.assertEqual(
+            get_password_min_length_enabled(),
+            min_length_enabled)
 
     def test_password_max_length_enabled(self):
         """
         Test default password max length enabled flag.
         """
-        self.assertEqual(get_password_max_length_enabled(), DEFAULT_PASSWORD_MAXIMUM_LENGTH_ENABLED)
+        self.assertEqual(
+            get_password_max_length_enabled(),
+            PASSWORD_MAXIMUM_LENGTH_ENABLED)
 
     def test_password_max_length_enabled_change(self):
         """
@@ -275,16 +292,22 @@ class TestWebappUtils(TestCase):
         max_length_enabled = 0
 
         # when
-        set_setting("password_maximum_length_enabled", max_length_enabled)
+        set_setting(
+            "password_maximum_length_enabled",
+            max_length_enabled)
 
         # then
-        self.assertEqual(get_password_max_length_enabled(), max_length_enabled)
+        self.assertEqual(
+            get_password_max_length_enabled(),
+            max_length_enabled)
 
     def test_password_digit_enabled(self):
         """
         Test default password digit enabled flag.
         """
-        self.assertEqual(get_password_digit_enabled(), DEFAULT_PASSWORD_DIGIT_ENABLED)
+        self.assertEqual(
+            get_password_digit_enabled(),
+            PASSWORD_DIGIT_ENABLED)
 
     def test_password_digit_enabled_change(self):
         """
@@ -303,7 +326,9 @@ class TestWebappUtils(TestCase):
         """
         Test default password upper enabled flag.
         """
-        self.assertEqual(get_password_upper_enabled(), DEFAULT_PASSWORD_UPPER_ENABLED)
+        self.assertEqual(
+            get_password_upper_enabled(),
+            PASSWORD_UPPER_ENABLED)
 
     def test_password_uppper_enabled_change(self):
         """
@@ -322,7 +347,9 @@ class TestWebappUtils(TestCase):
         """
         Test default password lower enabled flag.
         """
-        self.assertEqual(get_password_lower_enabled(), DEFAULT_PASSWORD_LOWER_ENABLED)
+        self.assertEqual(
+            get_password_lower_enabled(),
+            PASSWORD_LOWER_ENABLED)
 
     def test_password_lower_enabled_change(self):
         """
@@ -343,7 +370,7 @@ class TestWebappUtils(TestCase):
         """
         self.assertEqual(
             get_email_validate_deliverability_enabled(),
-            DEFAULT_EMAIL_VALIDATE_DELIVERABILITY_ENABLED)
+            EMAIL_VALIDATE_DELIVERABILITY_ENABLED)
 
     def test_email_validate_deliverability_enabled_change(self):
         """
