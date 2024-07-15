@@ -21,7 +21,7 @@ from txwtf.webapp.utils import (
     get_password_upper_enabled,
     get_password_lower_enabled,
     get_email_validate_deliverability_enabled,
-    password_check, register_user,
+    password_check, register_user, execute_login,
     SITE_LOGO, AVATAR,
     CARD_IMAGE, HEADER_IMAGE,
     PASSWORD_SPECIAL_SYMBOLS,
@@ -943,6 +943,79 @@ class TestWebappUtils(TestCase):
             code, _ = e.args
         
         self.assertIsNotNone(code)
+
+    def test_execute_login(self):
+        """
+        Test registering then loggin in a user.
+        """
+        # with
+        username = "root"
+        password = "asDf1234#!1"
+        name = "admin"
+        email = "root@tx.wtf"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        register_user(
+            username, password, password, name, email,
+            request, cur_time)
+        
+        request.endpoint = "/login"
+        user = execute_login(
+            username, password, request, cur_time=cur_time)
+
+        # then
+        ## check logs
+        user_changes = db.session.query(UserChange).order_by(
+            UserChange.id.desc())
+        self.assertEqual(user_changes.count(), 2)
+        last_user_change = user_changes.first()
+        self.assertEqual(last_user_change.user_id, user.id)
+        self.assertEqual(
+            last_user_change.change_code,
+            UserChangeEventCode.UserLogin)
+        self.assertEqual(
+            last_user_change.change_time, cur_time)
+        self.assertEqual(
+            last_user_change.change_desc,
+            "logging in from {}".format(headers["X-Forwarded-For"]))
+        self.assertEqual(
+            last_user_change.referrer, request.referrer)
+        self.assertEqual(
+            last_user_change.user_agent, request.user_agent)
+        self.assertEqual(
+            last_user_change.remote_addr,
+            request.headers.get("X-Forwarded-For"))
+        self.assertEqual(
+            last_user_change.endpoint, request.endpoint)
+        
+        system_logs = db.session.query(SystemLog).order_by(
+            SystemLog.id.desc())
+        self.assertEqual(system_logs.count(), 2)
+        last_log = system_logs.first()
+        self.assertEqual(
+            last_log.event_code, SystemLogEventCode.UserLogin)
+        self.assertEqual(last_log.event_time, cur_time)
+        self.assertEqual(
+            last_log.event_desc,
+            "user {} [{}] logged in".format(
+                user.username, user.id))
+        self.assertEqual(last_log.referrer, request.referrer)
+        self.assertEqual(last_log.user_agent, request.user_agent)
+        self.assertEqual(
+            last_log.remote_addr, request.headers.get("X-Forwarded-For"))
+        self.assertEqual(last_log.endpoint, request.endpoint)
 
 
 if __name__ == '__main__':

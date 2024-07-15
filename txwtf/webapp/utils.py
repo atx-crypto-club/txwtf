@@ -4,7 +4,7 @@ import logging
 
 from email_validator import validate_email, EmailNotValidError
 
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from . import db
 from .models import GlobalSettings, User, UserChange, SystemLog
@@ -38,7 +38,8 @@ ErrorCode = IntEnum(
     'ErrorCode',
     ['EmailExists', 'UsernameExists', 'InvalidEmail', 'PasswordMismatch',
      'PasswordTooShort', 'PasswordTooLong', 'PasswordMissingDigit',
-     'PasswordMissingUpper', 'PasswordMissingLower', 'PasswordMissingSymbol'])
+     'PasswordMissingUpper', 'PasswordMissingLower', 'PasswordMissingSymbol',
+     'UserDoesNotExist', 'UserPasswordIncorrect'])
 
 
 class PasswordError(Exception):
@@ -321,9 +322,58 @@ def register_user(
     db.session.commit()
 
 
-def execute_login(user, login_function=None):
+def execute_login(
+        username, password, request, remember=False,
+        cur_time=None, login_function=None):
     """
     Record a login and execute a provided login function if the supplied
     credentials are correct.
     """
-    pass
+    user = User.query.filter_by(username=username).first()
+
+    # check if the user exists
+    if not user:
+        raise RegistrationError(
+            ErrorCode.UserDoesNotExist,
+            'Access denied!')
+
+    # take the user-supplied password, hash it, and compare it
+    # to the hashed password in the database
+    if not check_password_hash(user.password, password):
+        raise RegistrationError(
+            ErrorCode.UserPasswordIncorrect,
+            'Access denied!')
+
+    if login_function is not None:
+        login_function(user, remember=remember)
+
+    if cur_time is None:
+        cur_time = datetime.now()
+
+    now = cur_time
+    user.last_login = now
+    user.last_login_addr = remote_addr(request)
+    new_log = SystemLog(
+        event_code=SystemLogEventCode.UserLogin,
+        event_time=now,
+        event_desc="user {} [{}] logged in".format(
+            user.username, user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint)
+    db.session.add(new_log)
+    new_change = UserChange(
+        user_id=user.id,
+        change_code=UserChangeEventCode.UserLogin,
+        change_time=now,
+        change_desc="logging in from {}".format(
+            remote_addr(request)),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint)
+    db.session.add(new_change)
+    db.session.commit()
+
+    return user
