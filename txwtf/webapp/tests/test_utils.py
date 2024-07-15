@@ -34,7 +34,7 @@ from txwtf.webapp.utils import (
     PASSWORD_UPPER_ENABLED,
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
-    UserChangeEventCode, RegistrationError,
+    UserChangeEventCode, RegistrationError, LoginError,
     PasswordError, ErrorCode, SystemLogEventCode)
 
 
@@ -1016,6 +1016,78 @@ class TestWebappUtils(TestCase):
         self.assertEqual(
             last_log.remote_addr, request.headers.get("X-Forwarded-For"))
         self.assertEqual(last_log.endpoint, request.endpoint)
+
+    def test_execute_login_user_doesnt_exist(self):
+        """
+        Test logging in when user doesn't exist, triggering an error.
+        """
+        # with
+        username = "root"
+        password = "asDf1234#!1"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/login"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        code = None
+        try:
+            execute_login(
+                username, password, request, cur_time=cur_time)
+        except Exception as e:
+            self.assertIsInstance(e, LoginError)
+            code, msg = e.args
+
+        self.assertEqual(code, ErrorCode.UserDoesNotExist)
+        self.assertEqual(msg, "Access denied!")
+
+    def test_execute_login_password_error(self):
+        """
+        Test registering then loggin in a user with a wrong password
+        triggering an error.
+        """
+        # with
+        username = "root"
+        password = "asDf1234#!1"
+        name = "admin"
+        email = "root@tx.wtf"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+        cur_time = datetime.now()
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        register_user(
+            username, password, password, name, email,
+            request, cur_time)
+        
+        request.endpoint = "/login"
+        code = None
+        try:
+            execute_login(
+                username, password+"foo", request, cur_time=cur_time)
+        except Exception as e:
+            self.assertIsInstance(e, LoginError)
+            code, msg = e.args
+
+        self.assertEqual(code, ErrorCode.UserPasswordIncorrect)
+        self.assertEqual(msg, "Access denied!")
 
 
 if __name__ == '__main__':

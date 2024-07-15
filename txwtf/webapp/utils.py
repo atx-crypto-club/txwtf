@@ -48,6 +48,9 @@ class PasswordError(Exception):
 class RegistrationError(Exception):
     pass
 
+class LoginError(Exception):
+    pass
+
 
 def get_setting_record(var_name):
     return db.session.query(GlobalSettings).filter(
@@ -333,14 +336,14 @@ def execute_login(
 
     # check if the user exists
     if not user:
-        raise RegistrationError(
+        raise LoginError(
             ErrorCode.UserDoesNotExist,
             'Access denied!')
 
     # take the user-supplied password, hash it, and compare it
     # to the hashed password in the database
     if not check_password_hash(user.password, password):
-        raise RegistrationError(
+        raise LoginError(
             ErrorCode.UserPasswordIncorrect,
             'Access denied!')
 
