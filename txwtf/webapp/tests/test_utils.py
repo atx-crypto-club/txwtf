@@ -415,7 +415,7 @@ class TestWebappUtils(TestCase):
         try:
             password_check(password)
         except Exception as e:
-            self.assertTrue(isinstance(e, PasswordError))
+            self.assertIsInstance(e, PasswordError)
             code, _ = e.args
 
         # then
@@ -434,7 +434,7 @@ class TestWebappUtils(TestCase):
         try:
             password_check(password)
         except Exception as e:
-            self.assertTrue(isinstance(e, PasswordError))
+            self.assertIsInstance(e, PasswordError)
             code, _ = e.args
 
         # then
@@ -452,7 +452,7 @@ class TestWebappUtils(TestCase):
         try:
             password_check(password)
         except Exception as e:
-            self.assertTrue(isinstance(e, PasswordError))
+            self.assertIsInstance(e, PasswordError)
             code, _ = e.args
 
         # then
@@ -470,7 +470,7 @@ class TestWebappUtils(TestCase):
         try:
             password_check(password)
         except Exception as e:
-            self.assertTrue(isinstance(e, PasswordError))
+            self.assertIsInstance(e, PasswordError)
             code, _ = e.args
 
         # then
@@ -488,7 +488,7 @@ class TestWebappUtils(TestCase):
         try:
             password_check(password)
         except Exception as e:
-            self.assertTrue(isinstance(e, PasswordError))
+            self.assertIsInstance(e, PasswordError)
             code, _ = e.args
 
         # then
@@ -506,7 +506,7 @@ class TestWebappUtils(TestCase):
         try:
             password_check(password)
         except Exception as e:
-            self.assertTrue(isinstance(e, PasswordError))
+            self.assertIsInstance(e, PasswordError)
             code, _ = e.args
 
         # then
@@ -759,7 +759,7 @@ class TestWebappUtils(TestCase):
                 username, password, password, name,
                 email, request, cur_time)
         except Exception as e:
-            self.assertTrue(isinstance(e, RegistrationError))
+            self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.EmailExists)
@@ -799,7 +799,7 @@ class TestWebappUtils(TestCase):
                 username, password, password, name, email,
                 request, cur_time)
         except Exception as e:
-            self.assertTrue(isinstance(e, RegistrationError))
+            self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.UsernameExists)
@@ -834,7 +834,7 @@ class TestWebappUtils(TestCase):
                 username, password, password, name, email,
                 request, cur_time)
         except Exception as e:
-            self.assertTrue(isinstance(e, RegistrationError))
+            self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.InvalidEmail)
@@ -869,7 +869,7 @@ class TestWebappUtils(TestCase):
                 username, password, password, name, email,
                 request, cur_time)
         except Exception as e:
-            self.assertTrue(isinstance(e, RegistrationError))
+            self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.InvalidEmail)
@@ -904,7 +904,7 @@ class TestWebappUtils(TestCase):
                 username, password, password+"foo", name, email,
                 request, cur_time)
         except Exception as e:
-            self.assertTrue(isinstance(e, RegistrationError))
+            self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
         
         self.assertEqual(code, ErrorCode.PasswordMismatch)
@@ -939,7 +939,7 @@ class TestWebappUtils(TestCase):
                 username, password, password, name, email,
                 request, cur_time)
         except Exception as e:
-            self.assertTrue(isinstance(e, PasswordError))
+            self.assertIsInstance(e, PasswordError)
             code, _ = e.args
         
         self.assertIsNotNone(code)
