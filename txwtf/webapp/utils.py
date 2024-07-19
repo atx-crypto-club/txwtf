@@ -380,3 +380,39 @@ def execute_login(
     db.session.commit()
 
     return user
+
+
+def execute_logout(
+        request, current_user, cur_time=None,
+        logout_user=None):
+    """
+    Record a logout and execute a provided logout function.
+    """
+    if cur_time is None:
+        cur_time = datetime.now()
+
+    new_log = SystemLog(
+        event_code=SystemLogEventCode.UserLogout,
+        event_time=cur_time,
+        event_desc="user {} [{}] logging out".format(
+            current_user.username, current_user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint)
+    db.session.add(new_log)
+    new_change = UserChange(
+        user_id=current_user.id,
+        change_code=UserChangeEventCode.UserLogout,
+        change_time=cur_time,
+        change_desc="logging in from {}".format(
+            remote_addr(request)),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint)
+    db.session.add(new_change)
+    db.session.commit()
+
+    if logout_user is not None:
+        logout_user()
