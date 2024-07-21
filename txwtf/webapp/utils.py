@@ -52,13 +52,17 @@ class LoginError(Exception):
     pass
 
 
-def get_setting_record(var_name):
+def get_setting_record(var_name, parent_id=None):
+    if parent_id is None:
+        return db.session.query(GlobalSettings).filter(
+            GlobalSettings.var == var_name).first()
     return db.session.query(GlobalSettings).filter(
-        GlobalSettings.var == var_name).first()
+        GlobalSettings.var == var_name,
+        GlobalSettings.parent_id == parent_id).first()
 
 
-def get_setting(var_name, default=None):
-    setting = get_setting_record(var_name)
+def get_setting(var_name, default=None, parent_id=None):
+    setting = get_setting_record(var_name, parent_id=parent_id)
     if setting is not None:
         return setting.val
     
@@ -66,18 +70,18 @@ def get_setting(var_name, default=None):
     # has been set, then set the setting then return the default.
     if default is not None:
         default = str(default)
-        set_setting(var_name, default)
+        set_setting(var_name, default, parent_id=parent_id)
         return default
 
     return None
 
 
-def set_setting(var_name, value):
+def set_setting(var_name, value, parent_id=None):
     """
     Sets a setting to the global settings table.
     """
     value = str(value)
-    setting = get_setting_record(var_name)
+    setting = get_setting_record(var_name, parent_id=parent_id)
     if setting:
         setting.val = value
         db.session.commit()
@@ -85,7 +89,8 @@ def set_setting(var_name, value):
 
     setting = GlobalSettings(
         var=var_name,
-        val=value)
+        val=value,
+        parent_id=parent_id)
     db.session.add(setting)
     db.session.commit()
 

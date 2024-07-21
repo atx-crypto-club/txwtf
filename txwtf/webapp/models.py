@@ -135,8 +135,9 @@ class Mention(db.Model):
 
 class GlobalSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    var = db.Column(db.String(128), unique=True)
-    val = db.Column(db.String(256)) 
+    var = db.Column(db.String(128))
+    val = db.Column(db.String(256))
+    parent_id = db.Column(db.Integer)
 
 
 # TODO: notifications table
