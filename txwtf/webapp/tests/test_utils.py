@@ -8,10 +8,10 @@ import email_validator
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from txwtf.webapp import create_app, db
-from txwtf.webapp.models import User, UserChange, SystemLog
+from txwtf.webapp.models import User, UserChange, SystemLog, GlobalSettings
 from txwtf.webapp.utils import (
-    get_setting, set_setting, get_site_logo,
-    get_default_avatar, get_default_card_image,
+    get_setting_record, get_setting, set_setting,
+    get_site_logo, get_default_avatar, get_default_card_image,
     get_default_header_image, get_password_special_symbols,
     get_password_min_length, get_password_max_length,
     get_password_special_symbols_enabled,
@@ -89,6 +89,49 @@ class TestWebappUtils(TestCase):
 
         # then
         self.assertEqual(get_setting(var), val)
+
+    def test_get_setting_record_recursive(self):
+        """
+        Test that we can get child settings.
+        """
+        # with
+        var0 = "test_root"
+        val0 = "q"
+        var1 = "test_nested"
+        val1 = "r"
+
+        # when
+        now0 = datetime.now()
+        setting0 = GlobalSettings(
+            var=var0,
+            val=val0,
+            parent_id=None,
+            created_time=now0,
+            modified_time=now0,
+            accessed_time=now0)
+        db.session.add(setting0)
+        db.session.commit()
+        now1 = datetime.now()
+        setting1 = GlobalSettings(
+            var=var1,
+            val=val1,
+            parent_id=setting0.id,
+            created_time=now1,
+            modified_time=now1,
+            accessed_time=now1)
+        db.session.add(setting1)
+        db.session.commit()
+
+        # then
+        self.assertEqual(
+            setting0, get_setting_record(var0))
+        #import pdb; pdb.set_trace()
+        self.assertEqual(
+            setting1,
+            get_setting_record(var1, parent_id=setting0.id))
+        #import pdb; pdb.set_trace()
+        self.assertEqual(setting1, get_setting_record([var0, var1]))
+
 
     def test_site_logo(self):
         """

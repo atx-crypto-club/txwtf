@@ -53,9 +53,16 @@ class LoginError(Exception):
 
 
 def get_setting_record(var_name, parent_id=None):
-    if parent_id is None:
-        return db.session.query(GlobalSettings).filter(
-            GlobalSettings.var == var_name).first()
+    if isinstance(var_name, list):
+        last_setting = None
+        for var in var_name:
+            setting = get_setting_record(var, parent_id=parent_id)
+            if setting is None:
+                return last_setting
+            parent_id = setting.id
+            last_setting = setting
+        return setting
+
     return db.session.query(GlobalSettings).filter(
         GlobalSettings.var == var_name,
         GlobalSettings.parent_id == parent_id).first()
@@ -76,7 +83,7 @@ def get_setting(var_name, default=None, parent_id=None):
     return None
 
 
-def set_setting(var_name, value, parent_id=None):
+def set_setting(var_name, value, parent_id=None, now=None, do_commit=True):
     """
     Sets a setting to the global settings table.
     """
@@ -84,15 +91,23 @@ def set_setting(var_name, value, parent_id=None):
     setting = get_setting_record(var_name, parent_id=parent_id)
     if setting:
         setting.val = value
-        db.session.commit()
+        if do_commit:
+            db.session.commit()
         return
+
+    if now is None:
+        now = datetime.now()
 
     setting = GlobalSettings(
         var=var_name,
         val=value,
-        parent_id=parent_id)
+        parent_id=parent_id,
+        created_time=now,
+        modified_time=now,
+        accessed_time=now)
     db.session.add(setting)
-    db.session.commit()
+    if do_commit:
+        db.session.commit()
 
 
 def get_site_logo(default=SITE_LOGO):

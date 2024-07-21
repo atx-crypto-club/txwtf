@@ -138,6 +138,9 @@ class GlobalSettings(db.Model):
     var = db.Column(db.String(128))
     val = db.Column(db.String(256))
     parent_id = db.Column(db.Integer)
+    created_time = db.Column(db.DateTime)
+    modified_time = db.Column(db.DateTime)
+    accessed_time = db.Column(db.DateTime)
 
 
 # TODO: notifications table
