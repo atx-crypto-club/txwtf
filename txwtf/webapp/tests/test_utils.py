@@ -10,11 +10,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from txwtf.webapp import create_app, db
 from txwtf.webapp.models import User, UserChange, SystemLog, GlobalSettings
 from txwtf.webapp.utils import (
-    get_setting_record, get_setting, set_setting,
-    get_site_logo, get_default_avatar, get_default_card_image,
-    get_default_header_image, get_password_special_symbols,
-    get_password_min_length, get_password_max_length,
-    get_password_special_symbols_enabled,
+    get_setting_record, get_setting, set_setting, 
+    has_setting, get_site_logo, get_default_avatar,
+    get_default_card_image, get_default_header_image,
+    get_password_special_symbols, get_password_min_length,
+    get_password_max_length, get_password_special_symbols_enabled,
     get_password_min_length_enabled,
     get_password_max_length_enabled,
     get_password_digit_enabled,
@@ -80,6 +80,7 @@ class TestWebappUtils(TestCase):
 
         # then
         self.assertEqual(code, ErrorCode.SettingDoesntExist)
+        self.assertFalse(has_setting("nothing"))
 
     def test_get_setting(self):
         """
@@ -94,6 +95,7 @@ class TestWebappUtils(TestCase):
 
         # then
         self.assertEqual(get_setting(var), val)
+        self.assertTrue(has_setting(var))
 
     def test_get_setting_record_recursive(self):
         """
@@ -137,7 +139,7 @@ class TestWebappUtils(TestCase):
         except Exception as e:
             self.assertIsInstance(e, SettingsError)
             code, _ = e.args
-            self.assertEqual(code, ErrorCode.SettingDoesntExist)
+        self.assertEqual(code, ErrorCode.SettingDoesntExist)
         self.assertEqual(
             setting1,
             get_setting_record(var1, parent_id=setting0.id))
@@ -194,6 +196,7 @@ class TestWebappUtils(TestCase):
         # then
         self.assertEqual(val0, get_setting(var0))
         self.assertEqual(val1, get_setting(var0, var1))
+        self.assertTrue(has_setting(var0, var1))
 
     def test_get_setting_parent_none(self):
         """
@@ -211,6 +214,7 @@ class TestWebappUtils(TestCase):
         # then
         self.assertIsNone(get_setting(var0))
         self.assertEqual(get_setting(var0, var1), val1)
+        self.assertTrue(has_setting(var0, var1))
 
     def test_get_setting_parent_not_none(self):
         """
@@ -229,6 +233,7 @@ class TestWebappUtils(TestCase):
         # then
         self.assertEqual(get_setting(var0), val0)
         self.assertEqual(get_setting(var0, var1), val1)
+        self.assertTrue(has_setting(var0, var1))
 
     def test_site_logo(self):
         """

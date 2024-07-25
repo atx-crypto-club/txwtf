@@ -80,14 +80,26 @@ def get_setting_record(
                 modified_time=now,
                 accessed_time=now)
             db.session.add(setting)
+        if create or setting is not None:
             db.session.commit()
-        elif setting is None and not create:
+        if setting is None and not create:
             raise SettingsError(
                 ErrorCode.SettingDoesntExist,
                 '.'.join(args[:idx+1]))
         parent_id = setting.id
 
     return setting
+
+
+def has_setting(*args, parent_id=None):
+    for var in args:
+        setting = db.session.query(GlobalSettings).filter(
+            GlobalSettings.var == var,
+            GlobalSettings.parent_id == parent_id).first()
+        if setting is None:
+            return False
+        parent_id = setting.id
+    return True
 
 
 def set_setting(
