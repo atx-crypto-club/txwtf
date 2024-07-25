@@ -39,7 +39,7 @@ ErrorCode = IntEnum(
     ['EmailExists', 'UsernameExists', 'InvalidEmail', 'PasswordMismatch',
      'PasswordTooShort', 'PasswordTooLong', 'PasswordMissingDigit',
      'PasswordMissingUpper', 'PasswordMissingLower', 'PasswordMissingSymbol',
-     'UserDoesNotExist', 'UserPasswordIncorrect'])
+     'UserDoesNotExist', 'UserPasswordIncorrect', 'SettingDoesntExist'])
 
 
 class PasswordError(Exception):
@@ -51,79 +51,90 @@ class RegistrationError(Exception):
 class LoginError(Exception):
     pass
 
-
-def get_setting_record(var_name, parent_id=None):
-    if isinstance(var_name, list):
-        last_setting = None
-        for var in var_name:
-            setting = get_setting_record(var, parent_id=parent_id)
-            if setting is None:
-                return last_setting
-            parent_id = setting.id
-            last_setting = setting
-        return setting
-
-    return db.session.query(GlobalSettings).filter(
-        GlobalSettings.var == var_name,
-        GlobalSettings.parent_id == parent_id).first()
+class SettingsError(Exception):
+    pass
 
 
-def get_setting(var_name, default=None, parent_id=None):
-    setting = get_setting_record(var_name, parent_id=parent_id)
-    if setting is not None:
-        return setting.val
+def get_setting_record(
+        *args, parent_id=None, create=False, default=None, now=None):
     
-    # If no such setting exists with that var name but a default
-    # has been set, then set the setting then return the default.
-    if default is not None:
-        default = str(default)
-        set_setting(var_name, default, parent_id=parent_id)
-        return default
-
-    return None
-
-
-def set_setting(var_name, value, parent_id=None, now=None, do_commit=True):
-    """
-    Sets a setting to the global settings table.
-    """
-    value = str(value)
-    setting = get_setting_record(var_name, parent_id=parent_id)
-    if setting:
-        setting.val = value
-        if do_commit:
-            db.session.commit()
-        return
-
     if now is None:
         now = datetime.now()
 
-    setting = GlobalSettings(
-        var=var_name,
-        val=value,
-        parent_id=parent_id,
-        created_time=now,
-        modified_time=now,
-        accessed_time=now)
-    db.session.add(setting)
-    if do_commit:
-        db.session.commit()
+    setting = None
+    for idx, var in enumerate(args):
+        val = None
+        if idx == len(args) - 1:
+            val = default
+        setting = db.session.query(GlobalSettings).filter(
+            GlobalSettings.var == var,
+            GlobalSettings.parent_id == parent_id).first()
+        if setting is not None:
+            setting.accessed_time = now
+        if setting is None and create:
+            setting = GlobalSettings(
+                var=var,
+                val=val,
+                parent_id=parent_id,
+                created_time=now,
+                modified_time=now,
+                accessed_time=now)
+            db.session.add(setting)
+            db.session.commit()
+        elif setting is None and not create:
+            raise SettingsError(
+                ErrorCode.SettingDoesntExist,
+                '.'.join(args[:idx+1]))
+        parent_id = setting.id
+
+    return setting
+
+
+def set_setting(
+        *args, parent_id=None, now=None,
+        do_commit=True):
+    """
+    Sets a setting to the global settings table.
+    """
+    var = args[:-1]
+    value = str(args[-1])
+    setting = get_setting_record(
+        *var, parent_id=parent_id, create=True,
+        default=value, now=now)
+    if setting is not None and setting.val != value:
+        setting.val = value
+        setting.modified_time = datetime.now()
+        if do_commit:
+            db.session.commit()
+        return setting
+    return setting
+
+
+def get_setting(*args, default=None, parent_id=None):
+    create = False
+    if default is not None:
+        create = True
+    setting = get_setting_record(
+        *args, parent_id=parent_id, default=default, create=create)
+    if setting is not None:
+        return setting.val
+    return None
 
 
 def get_site_logo(default=SITE_LOGO):
-    return get_setting("site_logo", default)
+    return get_setting("site_logo", default=default)
 
 
 def get_default_avatar(default=AVATAR):
-    return get_setting("default_avatar", default)
+    return get_setting("default_avatar", default=default)
 
 
 def get_default_card_image(default=CARD_IMAGE):
-    return get_setting("default_card", default)
+    return get_setting("default_card", default=default)
 
 
 def get_default_header_image(default=HEADER_IMAGE):
-    return get_setting("default_header", default)
+    return get_setting("default_header", default=default)
 
 
 def remote_addr(request):
@@ -137,47 +148,56 @@ def remote_addr(request):
 
 def get_password_special_symbols(
         default=PASSWORD_SPECIAL_SYMBOLS):
-    return get_setting("password_special_symbols", default)
+    return get_setting(
+        "password_special_symbols", default=default)
 
 
 def get_password_min_length(
         default=PASSWORD_MINIMUM_LENGTH):
-    return int(get_setting("password_minimum_length", default))
+    return int(get_setting(
+        "password_minimum_length", default=default))
 
 
 def get_password_max_length(
         default=PASSWORD_MAXIMUM_LENGTH):
-    return int(get_setting("password_maximum_length", default))
+    return int(get_setting(
+        "password_maximum_length", default=default))
 
 
 def get_password_special_symbols_enabled(
         default=PASSWORD_SPECIAL_SYMBOLS_ENABLED):
-    return int(get_setting("password_special_symbols_enabled", default))
+    return int(get_setting(
+        "password_special_symbols_enabled", default=default))
 
 
 def get_password_min_length_enabled(
         default=PASSWORD_MINIMUM_LENGTH_ENABLED):
-    return int(get_setting("password_minimum_length_enabled", default))
+    return int(get_setting(
+        "password_minimum_length_enabled", default=default))
 
 
 def get_password_max_length_enabled(
         default=PASSWORD_MAXIMUM_LENGTH_ENABLED):
-    return int(get_setting("password_maximum_length_enabled", default))
+    return int(get_setting(
+        "password_maximum_length_enabled", default=default))
 
 
 def get_password_digit_enabled(
         default=PASSWORD_DIGIT_ENABLED):
-    return int(get_setting("password_digit_enabled", default))
+    return int(get_setting(
+        "password_digit_enabled", default=default))
 
 
 def get_password_upper_enabled(
         default=PASSWORD_UPPER_ENABLED):
-    return int(get_setting("password_upper_enabled", default))
+    return int(get_setting(
+        "password_upper_enabled", default=default))
 
 
 def get_password_lower_enabled(
         default=PASSWORD_LOWER_ENABLED):
-    return int(get_setting("password_lower_enabled", default))
+    return int(get_setting(
+        "password_lower_enabled", default=default))
 
 
 def password_check(passwd):
@@ -246,7 +266,7 @@ def get_email_validate_deliverability_enabled(
         default=EMAIL_VALIDATE_DELIVERABILITY_ENABLED):
     return int(
         get_setting(
-            "email_validate_deliverability_enabled", default))
+            "email_validate_deliverability_enabled", default=default))
 
 
 def register_user(

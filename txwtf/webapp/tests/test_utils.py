@@ -35,7 +35,7 @@ from txwtf.webapp.utils import (
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
     UserChangeEventCode, RegistrationError, LoginError,
-    PasswordError, ErrorCode, SystemLogEventCode)
+    PasswordError, SettingsError, ErrorCode, SystemLogEventCode)
 
 
 # Turn off DNS validation for tests
@@ -71,10 +71,15 @@ class TestWebappUtils(TestCase):
         Test that get setting returns None when no setting is available.
         """
         # when
-        val = get_setting("nothing")
+        code = None
+        try:
+            get_setting("nothing")
+        except Exception as e:
+            self.assertIsInstance(e, SettingsError)
+            code, _ = e.args
 
         # then
-        self.assertIsNone(val)
+        self.assertEqual(code, ErrorCode.SettingDoesntExist)
 
     def test_get_setting(self):
         """
@@ -125,18 +130,111 @@ class TestWebappUtils(TestCase):
         # then
         self.assertEqual(
             setting0, get_setting_record(var0))
-        #import pdb; pdb.set_trace()
+
+        code = None
+        try:
+            get_setting_record(var1)
+        except Exception as e:
+            self.assertIsInstance(e, SettingsError)
+            code, _ = e.args
+            self.assertEqual(code, ErrorCode.SettingDoesntExist)
         self.assertEqual(
             setting1,
             get_setting_record(var1, parent_id=setting0.id))
-        #import pdb; pdb.set_trace()
-        self.assertEqual(setting1, get_setting_record([var0, var1]))
+        self.assertEqual(setting1, get_setting_record(var0, var1))
 
+    def test_get_setting_record_recursive_create(self):
+        """
+        Test that we can get child settings, creating
+        records on demand.
+        """
+        # with
+        var0 = "test_root"
+        val0 = "q"
+        var1 = "test_nested"
+        val1 = "r"
+
+        # when
+        now0 = datetime.now()
+        setting0 = GlobalSettings(
+            var=var0,
+            val=val0,
+            parent_id=None,
+            created_time=now0,
+            modified_time=now0,
+            accessed_time=now0)
+        db.session.add(setting0)
+        db.session.commit()
+
+        # then
+        setting1 = get_setting_record(
+            var0, var1, create=True, default=val1,
+            now=now0)
+        self.assertIsNotNone(setting1)
+        self.assertEqual(setting1.parent_id, setting0.id)
+        self.assertEqual(setting1.val, val1)
+        self.assertEqual(setting1.created_time, now0)
+
+    def test_set_setting_child(self):
+        """
+        Test that we can get child settings.
+        """
+        # with
+        var0 = "test_root"
+        val0 = "q"
+        var1 = "test_nested"
+        val1 = "r"
+
+        # when
+        now = datetime.now()
+        #import pdb; pdb.set_trace()
+        set_setting(var0, val0)
+        set_setting(var0, var1, val1)
+
+        # then
+        self.assertEqual(val0, get_setting(var0))
+        self.assertEqual(val1, get_setting(var0, var1))
+
+    def test_get_setting_parent_none(self):
+        """
+        Test verify that parent nodes return none
+        """
+        # with
+        var0 = "test_root"
+        val0 = "q"
+        var1 = "test_nested"
+        val1 = "r"
+
+        # when
+        set_setting(var0, var1, val1)
+
+        # then
+        self.assertIsNone(get_setting(var0))
+        self.assertEqual(get_setting(var0, var1), val1)
+
+    def test_get_setting_parent_not_none(self):
+        """
+        Test verify that parent nodes can return a value
+        """
+        # with
+        var0 = "test_root"
+        val0 = "q"
+        var1 = "test_nested"
+        val1 = "r"
+
+        # when
+        set_setting(var0, var1, val1)
+        set_setting(var0, val0)
+
+        # then
+        self.assertEqual(get_setting(var0), val0)
+        self.assertEqual(get_setting(var0, var1), val1)
 
     def test_site_logo(self):
         """
         Test default site logo setting.
         """
+        #import pdb; pdb.set_trace()
         self.assertEqual(get_site_logo(), SITE_LOGO)
 
     def test_site_logo_change(self):
