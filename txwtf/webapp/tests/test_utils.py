@@ -10,7 +10,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from txwtf.webapp import create_app, db
 from txwtf.webapp.models import User, UserChange, SystemLog, GlobalSettings
 from txwtf.webapp.utils import (
-    get_setting_record, get_setting, set_setting, 
+    get_setting_record, get_setting, set_setting, list_setting,
     has_setting, get_site_logo, get_default_avatar,
     get_default_card_image, get_default_header_image,
     get_password_special_symbols, get_password_min_length,
@@ -197,6 +197,8 @@ class TestWebappUtils(TestCase):
         self.assertEqual(val0, get_setting(var0))
         self.assertEqual(val1, get_setting(var0, var1))
         self.assertTrue(has_setting(var0, var1))
+        self.assertEqual(set(list_setting(var0)), {var1})
+        self.assertEqual(set(list_setting(var0, var1)), set())
 
     def test_get_setting_parent_none(self):
         """

@@ -83,15 +83,23 @@ def get_setting_record(
         if create or setting is not None:
             db.session.commit()
         if setting is None and not create:
+            parent_id_str = ""
+            if parent_id is not None:
+                parent_id_str = "{}:".format(parent_id)
             raise SettingsError(
                 ErrorCode.SettingDoesntExist,
-                '.'.join(args[:idx+1]))
+                "{}{}".format(
+                    parent_id_str, '.'.join(args[:idx+1])))
         parent_id = setting.id
 
     return setting
 
 
 def has_setting(*args, parent_id=None):
+    """
+    Returns a whether args with parent id points to an
+    existing record.
+    """
     for var in args:
         setting = db.session.query(GlobalSettings).filter(
             GlobalSettings.var == var,
@@ -100,6 +108,21 @@ def has_setting(*args, parent_id=None):
             return False
         parent_id = setting.id
     return True
+
+
+def list_setting(*args, parent_id=None):
+    """
+    Returns a list of child vars for this setting.
+    """
+    retval = []
+    setting = get_setting_record(*args, parent_id=parent_id)
+    if setting is None:
+        return retval
+    children = db.session.query(GlobalSettings).filter(
+        GlobalSettings.parent_id == setting.id).all()
+    for child in children:
+        retval.append(child.var)
+    return retval
 
 
 def set_setting(
