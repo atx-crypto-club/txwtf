@@ -21,7 +21,7 @@ from txwtf.webapp.utils import (
     get_password_upper_enabled,
     get_password_lower_enabled,
     get_email_validate_deliverability_enabled,
-    password_check, register_user, execute_login,
+    password_check, register_user, execute_login, execute_logout,
     SITE_LOGO, AVATAR,
     CARD_IMAGE, HEADER_IMAGE,
     PASSWORD_SPECIAL_SYMBOLS,
@@ -35,7 +35,8 @@ from txwtf.webapp.utils import (
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
     UserChangeEventCode, RegistrationError, LoginError,
-    PasswordError, SettingsError, ErrorCode, SystemLogEventCode)
+    LogoutError, PasswordError, SettingsError, ErrorCode,
+    SystemLogEventCode)
 
 
 # Turn off DNS validation for tests
@@ -1194,12 +1195,13 @@ class TestWebappUtils(TestCase):
             self.assertIsInstance(e, LoginError)
             code, msg = e.args
 
+        # then
         self.assertEqual(code, ErrorCode.UserDoesNotExist)
         self.assertEqual(msg, "Access denied!")
 
     def test_execute_login_password_error(self):
         """
-        Test registering then loggin in a user with a wrong password
+        Test registering then logging in a user with a wrong password
         triggering an error.
         """
         # with
@@ -1237,6 +1239,101 @@ class TestWebappUtils(TestCase):
         self.assertEqual(code, ErrorCode.UserPasswordIncorrect)
         self.assertEqual(msg, "Access denied!")
 
+    def test_execute_logout_with_null_current_user(self):
+        """
+        Test that we get an error when passing a null current user
+        """
+        # when
+        code = None
+        try:
+            execute_logout(None, None)
+        except Exception as e:
+            self.assertIsInstance(e, LogoutError)
+            code, msg = e.args
+
+        # then
+        self.assertEqual(code, ErrorCode.UserNull)
+        self.assertEqual(msg, "Null user")
+
+    def test_execute_logout(self):
+        """
+        Test that calling execute_logout writes the expected
+        records to database.
+        """
+        # with
+        username = "root"
+        password = "asDf1234#!1"
+        name = "admin"
+        email = "root@tx.wtf"
+        referrer = "localhost"
+        user_agent = "mozkillah 420.69"
+        endpoint = "/register"
+        remote_addr = "127.0.0.1"
+        headers = {
+            "X-Forwarded-For": "192.168.0.1"}
+
+        request = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint=endpoint, remote_addr=remote_addr,
+            headers=headers)
+        request_login = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint="/login", remote_addr=remote_addr,
+            headers=headers)
+        request_logout = FakeRequest(
+            referrer=referrer, user_agent=user_agent,
+            endpoint="/logout", remote_addr=remote_addr,
+            headers=headers)
+
+        # when
+        register_user(
+            username, password, password, name, email,
+            request)
+        user = execute_login(username, password, request_login)
+
+        code = None
+        cur_time = datetime.now()
+        execute_logout(request_logout, user, cur_time)
+
+        # then
+        user_changes = db.session.query(UserChange).order_by(
+            UserChange.id.desc())
+        last_user_change = user_changes.first()
+        self.assertEqual(last_user_change.user_id, user.id)
+        self.assertEqual(
+            last_user_change.change_code,
+            UserChangeEventCode.UserLogout)
+        self.assertEqual(
+            last_user_change.change_time, cur_time)
+        self.assertEqual(
+            last_user_change.change_desc,
+            "logging out from {}".format(headers["X-Forwarded-For"]))
+        self.assertEqual(
+            last_user_change.referrer, request_logout.referrer)
+        self.assertEqual(
+            last_user_change.user_agent, request_logout.user_agent)
+        self.assertEqual(
+            last_user_change.remote_addr,
+            request_logout.headers.get("X-Forwarded-For"))
+        self.assertEqual(
+            last_user_change.endpoint, request_logout.endpoint)
+        
+        system_logs = db.session.query(SystemLog).order_by(
+            SystemLog.id.desc())
+        last_log = system_logs.first()
+        self.assertEqual(
+            last_log.event_code, SystemLogEventCode.UserLogout)
+        self.assertEqual(last_log.event_time, cur_time)
+        self.assertEqual(
+            last_log.event_desc,
+            "user {} [{}] logging out".format(
+                user.username, user.id))
+        self.assertEqual(last_log.referrer, request_logout.referrer)
+        self.assertEqual(last_log.user_agent, request_logout.user_agent)
+        self.assertEqual(
+            last_log.remote_addr,
+            request_logout.headers.get("X-Forwarded-For"))
+        self.assertEqual(last_log.endpoint, request_logout.endpoint)
 
 if __name__ == '__main__':
     unittest.main()

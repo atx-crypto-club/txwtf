@@ -39,7 +39,8 @@ ErrorCode = IntEnum(
     ['EmailExists', 'UsernameExists', 'InvalidEmail', 'PasswordMismatch',
      'PasswordTooShort', 'PasswordTooLong', 'PasswordMissingDigit',
      'PasswordMissingUpper', 'PasswordMissingLower', 'PasswordMissingSymbol',
-     'UserDoesNotExist', 'UserPasswordIncorrect', 'SettingDoesntExist'])
+     'UserDoesNotExist', 'UserPasswordIncorrect', 'SettingDoesntExist',
+     'UserNull'])
 
 
 class PasswordError(Exception):
@@ -49,6 +50,9 @@ class RegistrationError(Exception):
     pass
 
 class LoginError(Exception):
+    pass
+
+class LogoutError(Exception):
     pass
 
 class SettingsError(Exception):
@@ -461,8 +465,11 @@ def execute_logout(
         request, current_user, cur_time=None,
         logout_user=None):
     """
-    Record a logout and execute a provided logout function.
+    Record a logout and execute a provided logout_user function.
     """
+    if current_user is None:
+        raise LogoutError(ErrorCode.UserNull, "Null user")
+
     if cur_time is None:
         cur_time = datetime.now()
 
@@ -480,7 +487,7 @@ def execute_logout(
         user_id=current_user.id,
         change_code=UserChangeEventCode.UserLogout,
         change_time=cur_time,
-        change_desc="logging in from {}".format(
+        change_desc="logging out from {}".format(
             remote_addr(request)),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
