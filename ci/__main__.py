@@ -100,8 +100,10 @@ source_dir_option = click.option(
     help="Directory where setup.py lives")
 
 
-def install_deps(obj, source_dir):
-    ENV_DEPS = ["click", "flake8", "pyyaml", "wheel", "requests", "lxml", "sphinx"]
+def install_deps(obj, source_dir, use_poetry=True):
+    ENV_DEPS = [
+        "click", "flake8", "pyyaml", "wheel", "requests",
+        "lxml", "sphinx"]
     cmd_base = [obj.edm_bin, "-r", obj.edm_root]
 
     # install edm runtime deps
@@ -111,19 +113,34 @@ def install_deps(obj, source_dir):
 
     # install other requirements via pip
     edm_run_cmd = cmd_base + ["run", "-e", obj.edm_env, "--"]
-    req = join(source_dir, "requirements.txt")
-    subprocess.check_call(
-        edm_run_cmd + ["pip", "install", "-r", req])
+
+    if not use_poetry:
+        req = join(source_dir, "requirements.txt")
+        subprocess.check_call(
+            edm_run_cmd + ["pip", "install", "-r", req])
+    else:
+        subprocess.check_call(
+            edm_run_cmd + ["pip", "install", "poetry"])
+        subprocess.check_call(
+            edm_run_cmd + ["poetry", "config", "virtualenvs.create", "false"])
+        subprocess.check_call(
+            edm_run_cmd + [
+                "poetry", "install", "--no-root"], cwd=source_dir)
 
 
-def install_application(obj, source_dir, editable=False):
+def install_application(obj, source_dir, editable=False, use_poetry=True):
     cmd_base = [obj.edm_bin, "-r", obj.edm_root]
     edm_run_cmd = cmd_base + ["run", "-e", obj.edm_env, "--"]
-    editable_arg = []
-    if editable:
-        editable_arg = ["-e"]
-    subprocess.check_call(
-        edm_run_cmd + ["pip", "install"] + editable_arg + [source_dir])
+
+    if not use_poetry:
+        editable_arg = []
+        if editable:
+            editable_arg = ["-e"]
+        subprocess.check_call(
+            edm_run_cmd + ["pip", "install"] + editable_arg + [source_dir])
+    else:
+        subprocess.check_call(
+            edm_run_cmd + ["poetry", "install"], cwd=source_dir)
 
 
 @root.command()

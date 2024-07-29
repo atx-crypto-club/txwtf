@@ -303,7 +303,7 @@ def run(
     obj.project_env = project_env
     obj.project_py_ver = project_py_ver
     obj.tmpdir = tmpdir
-    obj.bootstrap_env_deps = ["click", "pyyaml"]
+    obj.bootstrap_env_deps = ["click", "pyyaml", "poetry_core"]
     obj.cmd_run_base = obj.cmd_base + [
         "run", "-e", obj.bootstrap_env, "--"]
     obj.proj_ci = obj.cmd_run_base + [
