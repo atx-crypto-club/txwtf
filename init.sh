@@ -1,8 +1,8 @@
 #!/bin/bash
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-installer_darwin="edm_cli_3.6.0_osx_x86_64.sh"
-installer_linux="edm_cli_3.6.0_linux_x86_64.sh"
+installer_darwin="edm_cli_3.7.0_osx_x86_64.sh"
+installer_linux="edm_cli_3.7.0_linux_x86_64.sh"
 
 # default config
 archive_url=https://a.tx.wtf
@@ -147,8 +147,10 @@ echo "Project environment:" $proj_env_name
 $edm_bin -r $edm_root environments create $env_name --version=$python_version
 $edm_bin -r $edm_root install -e $env_name click --yes
 
+init_script="$edm_bin -r $edm_root run -e $env_name -- python $SCRIPT_DIR/init.py --edm-root=$edm_root --edm-bin=$edm_bin run --bootstrap-env=$bootstrap_env_name --bootstrap-py-ver=$python_version --project-env=$proj_env_name --project-py-ver=$python_version"
+
 # install the project in the environment
-$edm_bin -r $edm_root run -e $env_name -- python $SCRIPT_DIR/init.py --edm-root=$edm_root --edm-bin=$edm_bin run --bootstrap-env=$bootstrap_env_name --bootstrap-py-ver=$python_version --project-env=$proj_env_name --project-py-ver=$python_version bootstrap $install_cmd migrate $test_cmd
+$init_script bootstrap $install_cmd migrate $test_cmd
 
 # run shell for launcher environment, or actually run the launcher
 case "$do_run" in
@@ -159,7 +161,7 @@ case "$do_run" in
 
     1)
         echo "Launching command..."
-        $screen_cmd $edm_bin -r $edm_root run -e $env_name -- python $SCRIPT_DIR/init.py --edm-root=$edm_root --edm-bin=$edm_bin run --bootstrap-env=$bootstrap_env_name --bootstrap-py-ver=$python_version --project-env=$proj_env_name --project-py-ver=$python_version $init_cmd
+        $screen_cmd $init_script $init_cmd
         exit 0
         ;;
 
