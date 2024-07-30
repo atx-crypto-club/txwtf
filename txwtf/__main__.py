@@ -105,8 +105,9 @@ def webapp(obj, host, port, threaded, debug, config):
     """
     import txwtf.webapp
 
-    app = txwtf.webapp.create_app(config_filename=config)
-    app.run(host=host, port=port, threaded=threaded, debug=debug)
+    with txwtf.core.cli_context(obj):
+        app = txwtf.webapp.create_app(config_filename=config)
+        app.run(host=host, port=port, threaded=threaded, debug=debug)
 
 
 @root.command()
@@ -124,31 +125,32 @@ def set_admin(obj, config, admin, user):
     from txwtf.webapp import db
     from txwtf.webapp.models import User, SystemLog
 
-    app = txwtf.webapp.create_app(config_filename=config)
-    with app.app_context():
-        user_obj = db.session.query(User).filter(User.username == user).first()
-        if user_obj is None:
-            logger.error("Unknown user {}".format(user))
-            return
-        if user_obj.is_admin == admin:
-            logger.warning(
-                "User {} is_admin flag already set to {}".format(user, admin)
+    with txwtf.core.cli_context(obj):
+        app = txwtf.webapp.create_app(config_filename=config)
+        with app.app_context():
+            user_obj = db.session.query(User).filter(User.username == user).first()
+            if user_obj is None:
+                logger.error("Unknown user {}".format(user))
+                return
+            if user_obj.is_admin == admin:
+                logger.warning(
+                    "User {} is_admin flag already set to {}".format(user, admin)
+                )
+                return
+            user_obj.is_admin = admin
+            log_desc = "setting user {} is_admin flag to {}".format(user, admin)
+            new_log = SystemLog(
+                event_code=31337,  # default for now
+                event_time=datetime.now(),
+                event_desc=log_desc,
+                referrer="",
+                user_agent="{}'s command line".format(getuser()),
+                remote_addr="localhost",
+                endpoint="txwtf.set_admin",
             )
-            return
-        user_obj.is_admin = admin
-        log_desc = "setting user {} is_admin flag to {}".format(user, admin)
-        new_log = SystemLog(
-            event_code=31337,  # default for now
-            event_time=datetime.now(),
-            event_desc=log_desc,
-            referrer="",
-            user_agent="{}'s command line".format(getuser()),
-            remote_addr="localhost",
-            endpoint="txwtf.set_admin",
-        )
-        db.session.add(new_log)
-        db.session.commit()
-        logger.info(log_desc)
+            db.session.add(new_log)
+            db.session.commit()
+            logger.info(log_desc)
 
 
 @root.command()
@@ -163,38 +165,39 @@ def list_users(obj, config):
     from txwtf.webapp import db
     from txwtf.webapp.models import User
 
-    app = txwtf.webapp.create_app(config_filename=config)
-    table = []
-    with app.app_context():
-        users = db.session.query(User).order_by(User.modified_time.desc()).all()
-        for user in users:
-            row = [
-                user.id,
-                user.username,
-                user.name,
-                user.email,
-                str(user.email_verified),
-                str(user.is_admin),
-                user.created_time.ctime(),
-                user.modified_time.ctime(),
-            ]
-            table.append(row)
-    print("{} users".format(len(table)))
-    print(
-        tabulate(
-            table,
-            headers=[
-                "ID",
-                "Username",
-                "Name",
-                "Email",
-                "email_verified",
-                "is_admin",
-                "Created",
-                "Last Modified",
-            ],
+    with txwtf.core.cli_context(obj):
+        app = txwtf.webapp.create_app(config_filename=config)
+        table = []
+        with app.app_context():
+            users = db.session.query(User).order_by(User.modified_time.desc()).all()
+            for user in users:
+                row = [
+                    user.id,
+                    user.username,
+                    user.name,
+                    user.email,
+                    str(user.email_verified),
+                    str(user.is_admin),
+                    user.created_time.ctime(),
+                    user.modified_time.ctime(),
+                ]
+                table.append(row)
+        print("{} users".format(len(table)))
+        print(
+            tabulate(
+                table,
+                headers=[
+                    "ID",
+                    "Username",
+                    "Name",
+                    "Email",
+                    "email_verified",
+                    "is_admin",
+                    "Created",
+                    "Last Modified",
+                ],
+            )
         )
-    )
 
 
 @root.command()
@@ -214,31 +217,32 @@ def verify_email(obj, config, verify, user):
     from txwtf.webapp import db
     from txwtf.webapp.models import User, SystemLog
 
-    app = txwtf.webapp.create_app(config_filename=config)
-    with app.app_context():
-        user_obj = db.session.query(User).filter(User.username == user).first()
-        if user_obj is None:
-            logger.error("Unknown user {}".format(user))
-            return
-        if user_obj.email_verified == verify:
-            logger.warning(
-                "User {} email_verified flag already set to {}".format(user, verify)
+    with txwtf.core.cli_context(obj):
+        app = txwtf.webapp.create_app(config_filename=config)
+        with app.app_context():
+            user_obj = db.session.query(User).filter(User.username == user).first()
+            if user_obj is None:
+                logger.error("Unknown user {}".format(user))
+                return
+            if user_obj.email_verified == verify:
+                logger.warning(
+                    "User {} email_verified flag already set to {}".format(user, verify)
+                )
+                return
+            user_obj.email_verified = verify
+            log_desc = "setting user {} email_verified flag to {}".format(user, verify)
+            new_log = SystemLog(
+                event_code=31337,  # default for now
+                event_time=datetime.now(),
+                event_desc=log_desc,
+                referrer="",
+                user_agent="{}'s command line".format(getuser()),
+                remote_addr="localhost",
+                endpoint="txwtf.verify_email",
             )
-            return
-        user_obj.email_verified = verify
-        log_desc = "setting user {} email_verified flag to {}".format(user, verify)
-        new_log = SystemLog(
-            event_code=31337,  # default for now
-            event_time=datetime.now(),
-            event_desc=log_desc,
-            referrer="",
-            user_agent="{}'s command line".format(getuser()),
-            remote_addr="localhost",
-            endpoint="txwtf.verify_email",
-        )
-        db.session.add(new_log)
-        db.session.commit()
-        logger.info(log_desc)
+            db.session.add(new_log)
+            db.session.commit()
+            logger.info(log_desc)
 
 
 @root.command()
@@ -254,48 +258,49 @@ def list_posts(obj, config, hashtag):
     from txwtf.webapp import db
     from txwtf.webapp.models import PostedMessage, HashTag, Tag
 
-    app = txwtf.webapp.create_app(config_filename=config)
-    table = []
-    with app.app_context():
-        if hashtag is not None:
-            dbtag = db.session.query(Tag).filter(Tag.name == hashtag).first()
-            if dbtag is None:
-                logger.error("No such hashtag {}".format(hashtag))
-                return
-            hashtags = (
-                db.session.query(HashTag).filter(HashTag.tag_id == dbtag.id).all()
-            )
-            posts = []
-            for hashtag in hashtags:
-                post = (
-                    db.session.query(PostedMessage)
-                    .filter(PostedMessage.id == hashtag.post_id)
-                    .first()
+    with txwtf.core.cli_context(obj):
+        app = txwtf.webapp.create_app(config_filename=config)
+        table = []
+        with app.app_context():
+            if hashtag is not None:
+                dbtag = db.session.query(Tag).filter(Tag.name == hashtag).first()
+                if dbtag is None:
+                    logger.error("No such hashtag {}".format(hashtag))
+                    return
+                hashtags = (
+                    db.session.query(HashTag).filter(HashTag.tag_id == dbtag.id).all()
                 )
-                posts.append(post)
-        else:
-            posts = (
-                db.session.query(PostedMessage)
-                .order_by(PostedMessage.post_time.desc())
-                .all()
+                posts = []
+                for hashtag in hashtags:
+                    post = (
+                        db.session.query(PostedMessage)
+                        .filter(PostedMessage.id == hashtag.post_id)
+                        .first()
+                    )
+                    posts.append(post)
+            else:
+                posts = (
+                    db.session.query(PostedMessage)
+                    .order_by(PostedMessage.post_time.desc())
+                    .all()
+                )
+            for post in posts:
+                row = [
+                    post.id,
+                    str(post.reply_to),
+                    str(post.repost_id),
+                    str(post.deleted),
+                    post.post_time.ctime(),
+                    post.post_content,
+                ]
+                table.append(row)
+        print("{} posts".format(len(posts)))
+        print(
+            tabulate(
+                table,
+                headers=["ID", "reply_to", "repost_id", "deleted", "post_time", "content"],
             )
-        for post in posts:
-            row = [
-                post.id,
-                str(post.reply_to),
-                str(post.repost_id),
-                str(post.deleted),
-                post.post_time.ctime(),
-                post.post_content,
-            ]
-            table.append(row)
-    print("{} posts".format(len(posts)))
-    print(
-        tabulate(
-            table,
-            headers=["ID", "reply_to", "repost_id", "deleted", "post_time", "content"],
         )
-    )
 
 
 @root.command()
@@ -310,41 +315,42 @@ def list_tags(obj, config):
     from txwtf.webapp import db
     from txwtf.webapp.models import Tag, HashTag
 
-    app = txwtf.webapp.create_app(config_filename=config)
-    table = []
-    with app.app_context():
-        tags = db.session.query(Tag).order_by(Tag.last_used_time.desc()).all()
-        for tag in tags:
-            num_posts = len(
-                db.session.query(HashTag).filter(HashTag.tag_id == tag.id).all()
+    with txwtf.core.cli_context(obj):
+        app = txwtf.webapp.create_app(config_filename=config)
+        table = []
+        with app.app_context():
+            tags = db.session.query(Tag).order_by(Tag.last_used_time.desc()).all()
+            for tag in tags:
+                num_posts = len(
+                    db.session.query(HashTag).filter(HashTag.tag_id == tag.id).all()
+                )
+                row = [
+                    tag.id,
+                    tag.name,
+                    tag.created_time.ctime(),
+                    tag.modified_time.ctime(),
+                    tag.last_used_time.ctime(),
+                    tag.user_id,
+                    num_posts,
+                    tag.tag_description,
+                ]
+                table.append(row)
+        print("{} tags".format(len(tags)))
+        print(
+            tabulate(
+                table,
+                headers=[
+                    "ID",
+                    "name",
+                    "created time",
+                    "modified time",
+                    "last used",
+                    "user_id",
+                    "num posts",
+                    "description",
+                ],
             )
-            row = [
-                tag.id,
-                tag.name,
-                tag.created_time.ctime(),
-                tag.modified_time.ctime(),
-                tag.last_used_time.ctime(),
-                tag.user_id,
-                num_posts,
-                tag.tag_description,
-            ]
-            table.append(row)
-    print("{} tags".format(len(tags)))
-    print(
-        tabulate(
-            table,
-            headers=[
-                "ID",
-                "name",
-                "created time",
-                "modified time",
-                "last used",
-                "user_id",
-                "num posts",
-                "description",
-            ],
         )
-    )
 
 
 @root.command()
@@ -356,6 +362,20 @@ def gen_secret(obj):
     from txwtf.webapp import gen_secret
 
     print(gen_secret())
+
+
+@root.command()
+@click.option("--host", "-h", envvar="TXWTF_BACKEND_HOSTNAME", default="localhost", help="host interface to bind to")
+@click.option("--port", "-p", envvar="TXWTF_BACKEND_PORT", default=8086, help="service port")
+@click.pass_obj
+def backend(obj, host, port):
+    """
+    Launch the fastapi backend.
+    """
+    import uvicorn
+
+    with txwtf.core.cli_context(obj):
+        uvicorn.run("txwtf.api:app", host=host, port=port, reload=True)
 
 
 if __name__ == "__main__":
