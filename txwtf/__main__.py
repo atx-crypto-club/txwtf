@@ -37,7 +37,6 @@ def root(context, log_file, log_level, profiling):
     obj.log = log_file
     obj.log_level = log_level
 
-    # TODO: need to actually add profiling support
     obj.profiling = profiling
 
     level = getattr(logging, obj.log_level.upper())
@@ -365,8 +364,8 @@ def gen_secret(obj):
 
 
 @root.command()
-@click.option("--host", "-h", envvar="TXWTF_BACKEND_HOSTNAME", default="localhost", help="host interface to bind to")
-@click.option("--port", "-p", envvar="TXWTF_BACKEND_PORT", default=8086, help="service port")
+@click.option("--host", "-h", type=click.STRING, envvar="TXWTF_BACKEND_HOSTNAME", default="localhost", help="host interface to bind to")
+@click.option("--port", "-p", type=click.INT, envvar="TXWTF_BACKEND_PORT", default=8086, help="service port")
 @click.pass_obj
 def backend(obj, host, port):
     """
