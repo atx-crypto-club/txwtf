@@ -10,24 +10,27 @@ from . import db
 from .models import SystemLog, User, UserChange
 
 from .utils import (
-    get_site_logo, get_default_card_image, get_default_header_image,
-    remote_addr)
+    get_site_logo,
+    get_default_card_image,
+    get_default_header_image,
+    remote_addr,
+)
 
 
-auth = Blueprint('auth', __name__)
+auth = Blueprint("auth", __name__)
 
 
-@auth.route('/login')
+@auth.route("/login")
 def login():
-    return render_template('login.html')
+    return render_template("login.html")
 
 
-@auth.route('/login', methods=['POST'])
+@auth.route("/login", methods=["POST"])
 def login_post():
     # login code goes here
-    username = request.form.get('username')
-    password = request.form.get('password')
-    remember = True if request.form.get('remember') else False
+    username = request.form.get("username")
+    password = request.form.get("password")
+    remember = True if request.form.get("remember") else False
 
     user = User.query.filter_by(username=username).first()
 
@@ -35,9 +38,9 @@ def login_post():
     # take the user-supplied password, hash it, and compare it
     # to the hashed password in the database
     if not user or not check_password_hash(user.password, password):
-        flash('Please check your login details and try again.')
+        flash("Please check your login details and try again.")
         # if the user doesn't exist or password is wrong, reload the page
-        return redirect(url_for('auth.login'))
+        return redirect(url_for("auth.login"))
 
     login_user(user, remember=remember)
     now = datetime.now()
@@ -46,45 +49,45 @@ def login_post():
     new_log = SystemLog(
         event_code=31337,  # default for now
         event_time=now,
-        event_desc="user {} [{}] logged in".format(
-            user.username, user.id),
+        event_desc="user {} [{}] logged in".format(user.username, user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
-        endpoint=request.endpoint)
+        endpoint=request.endpoint,
+    )
     db.session.add(new_log)
     new_change = UserChange(
         user_id=user.id,
         change_code=31337,  # default for now
         change_time=now,
-        change_desc="logging in from {}".format(
-            remote_addr(request)),
+        change_desc="logging in from {}".format(remote_addr(request)),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
-        endpoint=request.endpoint)
+        endpoint=request.endpoint,
+    )
     db.session.add(new_change)
     db.session.commit()
-    return redirect(url_for('main.user_view', username=user.username))
+    return redirect(url_for("main.user_view", username=user.username))
 
 
-@auth.route('/register')
+@auth.route("/register")
 def register():
-    return render_template('register.html')
+    return render_template("register.html")
 
 
-@auth.route('/register', methods=['POST'])
+@auth.route("/register", methods=["POST"])
 def register_post():
     # code to validate and add user to database goes here
-    email = request.form.get('email')
-    name = request.form.get('name')
-    username = request.form.get('username')
-    password = request.form.get('password')
-    verify_password = request.form.get('verify_password')
+    email = request.form.get("email")
+    name = request.form.get("name")
+    username = request.form.get("username")
+    password = request.form.get("password")
+    verify_password = request.form.get("verify_password")
 
     if password != verify_password:
-        flash('Password mismatch!')
-        return redirect(url_for('auth.register'))
+        flash("Password mismatch!")
+        return redirect(url_for("auth.register"))
 
     # if this returns a user, then the email already exists in database
     user = User.query.filter_by(email=email).first()
@@ -92,21 +95,22 @@ def register_post():
     # if a user is found, we want to redirect back to register page so
     # user can try again
     if user:
-        flash('Email address already exists')
-        return redirect(url_for('auth.register'))
-    
+        flash("Email address already exists")
+        return redirect(url_for("auth.register"))
+
     # if this returns a user, then the username already exists in database
     user = User.query.filter_by(username=username).first()
 
     if user:
-        flash('Username already exists')
-        return redirect(url_for('auth.register'))
+        flash("Username already exists")
+        return redirect(url_for("auth.register"))
 
     # create a new user with the form data. Hash the password so the
     # plaintext version isn't saved.
     now = datetime.now()
     new_user = User(
-        email=email, name=name,
+        email=email,
+        name=name,
         password=generate_password_hash(password),
         created_time=now,
         modified_time=now,
@@ -122,7 +126,8 @@ def register_post():
         view_count=0,
         post_view_count=0,
         username=username,
-        post_count=0)
+        post_count=0,
+    )
 
     # add the new user to the database
     db.session.add(new_user)
@@ -132,42 +137,44 @@ def register_post():
         user_id=new_user.id,
         change_code=31337,  # default for now
         change_time=now,
-        change_desc="creating new user {} [{}]".format(
-            new_user.username, new_user.id),
+        change_desc="creating new user {} [{}]".format(new_user.username, new_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
-        endpoint=request.endpoint)
+        endpoint=request.endpoint,
+    )
     db.session.add(new_change)
     new_log = SystemLog(
         event_code=31337,  # default for now
         event_time=now,
-        event_desc="creating new user {} [{}]".format(
-            new_user.username, new_user.id),
+        event_desc="creating new user {} [{}]".format(new_user.username, new_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
-        endpoint=request.endpoint)
+        endpoint=request.endpoint,
+    )
     db.session.add(new_log)
 
     db.session.commit()
 
-    return redirect(url_for('auth.login'))
+    return redirect(url_for("auth.login"))
 
 
-@auth.route('/logout')
+@auth.route("/logout")
 @login_required
 def logout():
     new_log = SystemLog(
         event_code=31337,  # default for now
         event_time=datetime.now(),
         event_desc="user {} [{}] logging out".format(
-            current_user.username, current_user.id),
+            current_user.username, current_user.id
+        ),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
-        endpoint=request.endpoint)
+        endpoint=request.endpoint,
+    )
     db.session.add(new_log)
     db.session.commit()
     logout_user()
-    return redirect(url_for('main.index'))
+    return redirect(url_for("main.index"))

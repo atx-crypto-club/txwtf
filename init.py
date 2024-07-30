@@ -9,58 +9,46 @@ from os.path import abspath, dirname, expanduser, join
 import click
 
 
-# TODO: consider adding a command to drop into the 
+# TODO: consider adding a command to drop into the
 # boostrap environment in case a developer wants to
 # run the ci module directly...
 
 
 def _get_default_environment_root():
-    return os.environ.get(
-        "ENV_ROOT", join(
-            expanduser("~"), "python-runtime"))
+    return os.environ.get("ENV_ROOT", join(expanduser("~"), "python-runtime"))
 
 
-def _get_default_edm_install_prefix(
-        env_root=_get_default_environment_root()):
-    return os.environ.get(
-        "EDM_INSTALL_PREFIX",
-        join(env_root, "edm"))
+def _get_default_edm_install_prefix(env_root=_get_default_environment_root()):
+    return os.environ.get("EDM_INSTALL_PREFIX", join(env_root, "edm"))
 
 
-def _get_default_edm_root(
-        env_root=_get_default_environment_root()):
+def _get_default_edm_root(env_root=_get_default_environment_root()):
     if "EDM_VIRTUAL_ENV" in os.environ:
-        root = os.path.abspath(
-            join(os.environ["EDM_VIRTUAL_ENV"], "..", ".."))
+        root = os.path.abspath(join(os.environ["EDM_VIRTUAL_ENV"], "..", ".."))
     else:
-        root = os.environ.get(
-            "EDM_ROOT",
-            join(env_root, "edm-envs"))
+        root = os.environ.get("EDM_ROOT", join(env_root, "edm-envs"))
     return root
 
 
-def _get_default_edm_bin(
-        env_root=_get_default_environment_root()):
+def _get_default_edm_bin(env_root=_get_default_environment_root()):
     return os.environ.get(
-        "EDM_BIN", join(
-            _get_default_edm_install_prefix(env_root), "bin", "edm"))
+        "EDM_BIN", join(_get_default_edm_install_prefix(env_root), "bin", "edm")
+    )
 
 
-@click.group(
-    context_settings={"help_option_names": ['-h', '--help']})
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
-    "--env-root", default=_get_default_environment_root(),
+    "--env-root",
+    default=_get_default_environment_root(),
     envvar="ENV_ROOT",
-    help="Environment root where edm and project install lives")
+    help="Environment root where edm and project install lives",
+)
 @click.option(
-    "--edm-root", default=None,
-    envvar="EDM_ROOT", help="EDM root environment directory")
-@click.option(
-    "--edm-bin", default=None,
-    envvar="EDM_BIN", help="EDM binary to use")
+    "--edm-root", default=None, envvar="EDM_ROOT", help="EDM root environment directory"
+)
+@click.option("--edm-bin", default=None, envvar="EDM_BIN", help="EDM binary to use")
 @click.pass_context
-def root(
-    context, env_root, edm_root, edm_bin):
+def root(context, env_root, edm_root, edm_bin):
     """
     Project application environment launcher
     """
@@ -90,15 +78,21 @@ def bootstrap_cmds(obj, **kwargs):
         project_xtra_args = ["--replace"]
     return [
         # set up the EDM environment
-        obj.cmd_base + [
-            "envs", "create", obj.bootstrap_env,
-            "--version={}".format(obj.bootstrap_py_ver)] + bootstrap_xtra_args,
+        obj.cmd_base
+        + [
+            "envs",
+            "create",
+            obj.bootstrap_env,
+            "--version={}".format(obj.bootstrap_py_ver),
+        ]
+        + bootstrap_xtra_args,
         # install bootstrap deps
-        obj.cmd_base + [
-            "install", "-e",
-            obj.bootstrap_env, "-y"] + obj.bootstrap_env_deps,
+        obj.cmd_base
+        + ["install", "-e", obj.bootstrap_env, "-y"]
+        + obj.bootstrap_env_deps,
         # bootstrap project dev env
-        obj.proj_ci + ["bootstrap"] + project_xtra_args], kwargs["args"]
+        obj.proj_ci + ["bootstrap"] + project_xtra_args,
+    ], kwargs["args"]
 
 
 def install_cmds(obj, **kwargs):
@@ -106,8 +100,10 @@ def install_cmds(obj, **kwargs):
     install project into dev env
     """
     return [
-        obj.proj_ci + ["install"] + ["--source-dir={}".format(
-            kwargs["install_source_dir"])]], kwargs["args"]
+        obj.proj_ci
+        + ["install"]
+        + ["--source-dir={}".format(kwargs["install_source_dir"])]
+    ], kwargs["args"]
 
 
 def install_dev_cmds(obj, **kwargs):
@@ -115,8 +111,10 @@ def install_dev_cmds(obj, **kwargs):
     install project into dev env as an in place editable install
     """
     return [
-        obj.proj_ci + ["install-dev"] + ["--source-dir={}".format(
-            kwargs["install_source_dir"])]], kwargs["args"]
+        obj.proj_ci
+        + ["install-dev"]
+        + ["--source-dir={}".format(kwargs["install_source_dir"])]
+    ], kwargs["args"]
 
 
 def migrate_cmds(obj, **kwargs):
@@ -131,12 +129,9 @@ def clean_cmds(obj, **kwargs):
     Remove project and bootstrap environments
     """
     return [
-        obj.cmd_base + [
-            "envs", "remove",
-            "--force", "-y", obj.project_env],
-        obj.cmd_base + [
-            "envs", "remove", "--force", "-y",
-            obj.bootstrap_env]], kwargs["args"]
+        obj.cmd_base + ["envs", "remove", "--force", "-y", obj.project_env],
+        obj.cmd_base + ["envs", "remove", "--force", "-y", obj.bootstrap_env],
+    ], kwargs["args"]
 
 
 def nuke_cmds(obj, **kwargs):
@@ -145,11 +140,9 @@ def nuke_cmds(obj, **kwargs):
     """
     # TODO: this should probably be nuking full env root
     return [
-        obj.cmd_run_base + [
-            "python",
-            "-c",
-            "import shutil; shutil.rmtree('{}')".format(obj.edm_root)
-        ]], kwargs["args"]
+        obj.cmd_run_base
+        + ["python", "-c", "import shutil; shutil.rmtree('{}')".format(obj.edm_root)]
+    ], kwargs["args"]
 
 
 def default_cmds(obj, **kwargs):
@@ -208,7 +201,8 @@ _cmd_map = {
     "nuke": nuke_cmds,
     "run": run_cmds,
     "run-app": run_project_cmds,
-    "wsgi": run_wsgi_cmds}
+    "wsgi": run_wsgi_cmds,
+}
 
 
 @contextmanager
@@ -241,57 +235,86 @@ def do_run_cmds(cmds, env, cwd):
 
 @root.command()
 @click.option(
-    "--bootstrap-replace/--no-bootstrap-replace", default=False,
+    "--bootstrap-replace/--no-bootstrap-replace",
+    default=False,
     envvar="BOOTSTRAP_REPLACE",
-    help="Force replace bootstrap environment")
+    help="Force replace bootstrap environment",
+)
 @click.option(
-    "--bootstrap-env", default="bootstrap",
+    "--bootstrap-env",
+    default="bootstrap",
     envvar="BOOTSTRAP_ENV",
-    help="bootstrap environment name")
+    help="bootstrap environment name",
+)
 @click.option(
-    "--bootstrap-py-ver", default="3.8",
+    "--bootstrap-py-ver",
+    default="3.8",
     envvar="BOOTSTRAP_PY_VER",
-    help="bootstrap environment python version")
+    help="bootstrap environment python version",
+)
 @click.option(
-    "--project-replace/--no-project-replace", default=False,
+    "--project-replace/--no-project-replace",
+    default=False,
     envvar="PROJECT_REPLACE",
-    help="Force replace project environment")
+    help="Force replace project environment",
+)
 @click.option(
-    "--project-env", default="prod",
+    "--project-env",
+    default="prod",
     envvar="PROJECT_ENV",
-    help="project environment name")
+    help="project environment name",
+)
 @click.option(
-    "--project-py-ver", default="3.8",
+    "--project-py-ver",
+    default="3.8",
     envvar="PROJECT_PY_VER",
-    help="project environment python version")
+    help="project environment python version",
+)
 @click.option(
-    "--tmpdir/--no-tmpdir", default=False,
+    "--tmpdir/--no-tmpdir",
+    default=False,
     envvar="INIT_TMPDIR",
-    help="Change cwd to a temporary directory before any operations")
+    help="Change cwd to a temporary directory before any operations",
+)
 @click.option(
-    "--install-source-dir", default=abspath(dirname(__file__)),
+    "--install-source-dir",
+    default=abspath(dirname(__file__)),
     envvar="INSTALL_SOURCE_DIR",
-    help="Absolute path to directory where project setup.py lives")
+    help="Absolute path to directory where project setup.py lives",
+)
 @click.option(
-    "--log-file", envvar="LOG_FILE", default="-",
-    help="Log file. Use '-' for stdout.")
+    "--log-file", envvar="LOG_FILE", default="-", help="Log file. Use '-' for stdout."
+)
 @click.option(
-    "--log-level", envvar="LOG_LEVEL", default="warning",
-    help="Log output level.")
+    "--log-level", envvar="LOG_LEVEL", default="warning", help="Log output level."
+)
 @click.option(
-    "--profiling/--no-profiling", 
-    envvar="PROFILING", default=False,
-    help="Enable profiling and print on exit.")
+    "--profiling/--no-profiling",
+    envvar="PROFILING",
+    default=False,
+    help="Enable profiling and print on exit.",
+)
 @click.option(
-    "--bind", envvar="WSGI_BIND", default="127.0.0.1:8086",
-    help="Interface to bind to")
-@click.argument(
-    "args", nargs=-1)
+    "--bind", envvar="WSGI_BIND", default="127.0.0.1:8086", help="Interface to bind to"
+)
+@click.argument("args", nargs=-1)
 @click.pass_obj
 def run(
-    obj, bootstrap_replace, bootstrap_env, bootstrap_py_ver,
-    project_replace, project_env, project_py_ver, tmpdir,
-    install_source_dir, log_file, log_level, profiling, bind, args):
+    obj,
+    bootstrap_replace,
+    bootstrap_env,
+    bootstrap_py_ver,
+    project_replace,
+    project_env,
+    project_py_ver,
+    tmpdir,
+    install_source_dir,
+    log_file,
+    log_level,
+    profiling,
+    bind,
+    args,
+):
     """
     Execute a sequential list of commands related to
     standing up an instance of the project services
@@ -304,14 +327,16 @@ def run(
     obj.project_py_ver = project_py_ver
     obj.tmpdir = tmpdir
     obj.bootstrap_env_deps = ["click", "pyyaml"]
-    obj.cmd_run_base = obj.cmd_base + [
-        "run", "-e", obj.bootstrap_env, "--"]
+    obj.cmd_run_base = obj.cmd_base + ["run", "-e", obj.bootstrap_env, "--"]
     obj.proj_ci = obj.cmd_run_base + [
-        "python", "-m", "ci",
+        "python",
+        "-m",
+        "ci",
         "--edm-bin={}".format(obj.edm_bin),
         "--edm-root={}".format(obj.edm_root),
         "--edm-env={}".format(obj.project_env),
-        "--edm-py-version={}".format(obj.project_py_ver)]
+        "--edm-py-version={}".format(obj.project_py_ver),
+    ]
 
     env = os.environ.copy()
     if "PYTHONPATH" in env:
@@ -334,7 +359,8 @@ def run(
             "profiling": profiling,
             "bind": bind,
             "cmd": cmd,
-            "args": args[1:]}
+            "args": args[1:],
+        }
         if cmd not in _cmd_map:
             cmds, args = default_cmds(obj, **kwargs)
         else:
@@ -343,5 +369,5 @@ def run(
             do_run_cmds(cmds, env, cwd)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     root(prog_name="init")

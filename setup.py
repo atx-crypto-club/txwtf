@@ -9,7 +9,7 @@ def get_version():
     """
     vi = {}
     vf = os.path.join("txwtf", "version.py")
-    with open(vf, 'r') as mod:
+    with open(vf, "r") as mod:
         code = compile(mod.read(), "version.py", "exec")
         exec(code, vi)
     return vi
@@ -28,14 +28,10 @@ setup(
     url="https://github.com/atx-crypto-club/txwtf",
     zip_safe=True,
     package_data={
-        'txwtf': [
-            'webapp/templates/*.html',
-            'webapp/assets/*',
+        "txwtf": [
+            "webapp/templates/*.html",
+            "webapp/assets/*",
         ],
     },
-    entry_points={
-        "console_scripts": [
-            "txwtf = txwtf.__main__:root"
-        ]
-    },
+    entry_points={"console_scripts": ["txwtf = txwtf.__main__:root"]},
 )

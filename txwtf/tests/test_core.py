@@ -1,6 +1,7 @@
 """
 Tests for the txwtf.core module.
 """
+
 import os
 import tempfile
 import unittest
@@ -34,11 +35,9 @@ class TestCore(unittest.TestCase):
         Test valid_identifier
         """
         # with
-        good_values = [
-            "b0llocks", "clownworld", "__test", "_test0", "__test__"]
-        bad_values = [
-            "1clown", "f00.", "#asdf", r"%fff", r"{ff1...}", "fasd^", ""]
-        
+        good_values = ["b0llocks", "clownworld", "__test", "_test0", "__test__"]
+        bad_values = ["1clown", "f00.", "#asdf", r"%fff", r"{ff1...}", "fasd^", ""]
+
         # when
         gv = [txwtf.core.valid_identifier(val) for val in good_values]
         nbv = [not txwtf.core.valid_identifier(val) for val in bad_values]
@@ -46,4 +45,3 @@ class TestCore(unittest.TestCase):
         # then
         self.assertTrue(all(gv))
         self.assertTrue(all(nbv))
-    

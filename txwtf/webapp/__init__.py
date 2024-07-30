@@ -10,7 +10,7 @@ from flask_cors import CORS
 
 from flask_login import LoginManager
 
-#from flask_matomo import Matomo
+# from flask_matomo import Matomo
 
 from flask_migrate import Migrate
 
@@ -29,8 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def gen_secret():
-    return sha256(
-        str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
+    return sha256(str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
 
 
 def create_app(config_class=None, config_filename=None):
@@ -39,12 +38,12 @@ def create_app(config_class=None, config_filename=None):
 
     # app.config["SECRET_KEY"] = gen_secret()
     app.config["SECRET_KEY"] = "clownworld"
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite"
     instance_dir = abspath(join(dirname(__file__), "..", "..", "instance"))
     app.config["UPLOADED_ARCHIVE_DEST"] = join(instance_dir, "uploads")
 
     # Default 128MB max upload size
-    app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024
+    app.config["MAX_CONTENT_LENGTH"] = 128 * 1024 * 1024
 
     if config_class is not None:
         app.config.from_object(config_class)
@@ -53,10 +52,8 @@ def create_app(config_class=None, config_filename=None):
         app.config.from_pyfile(config_filename)
     app.config.from_prefixed_env(prefix="TXWTF")
 
-    logger.debug("upload dir {}".format(
-        app.config["UPLOADED_ARCHIVE_DEST"]))
-    logger.debug("database uri: {}".format(
-        app.config["SQLALCHEMY_DATABASE_URI"]))
+    logger.debug("upload dir {}".format(app.config["UPLOADED_ARCHIVE_DEST"]))
+    logger.debug("database uri: {}".format(app.config["SQLALCHEMY_DATABASE_URI"]))
 
     configure_uploads(app, upload_archive)
     db.init_app(app)
@@ -73,14 +70,16 @@ def create_app(config_class=None, config_filename=None):
 
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint
+
     app.register_blueprint(auth_blueprint)
 
     # blueprint for non-auth parts of app
     from .main import main as main_blueprint
+
     app.register_blueprint(main_blueprint)
 
     login_manager = LoginManager()
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = "auth.login"
     login_manager.init_app(app)
 
     from .models import User
@@ -93,27 +92,35 @@ def create_app(config_class=None, config_filename=None):
 
     @login_manager.unauthorized_handler
     def unauthorized_handler():
-        return render_template('unauthorized.html'), 401
+        return render_template("unauthorized.html"), 401
 
     def handle_bad_request(e):
-        return render_template('error.html', error_msg="Bad request!!"), 400
+        return render_template("error.html", error_msg="Bad request!!"), 400
+
     app.register_error_handler(400, handle_bad_request)
 
     def handle_404(e):
-        return render_template('error.html', error_msg="Not found!"), 404
+        return render_template("error.html", error_msg="Not found!"), 404
+
     app.register_error_handler(404, handle_404)
 
     # add useful functions to jinja2 rendering
     app.jinja_env.globals.update(markdownify=markdownify)
     from .main import (
-        render_post, render_posts, render_post_message, render_user_card,
-        collect_post_ids)
+        render_post,
+        render_posts,
+        render_post_message,
+        render_user_card,
+        collect_post_ids,
+    )
+
     app.jinja_env.globals.update(
         render_post=render_post,
         render_posts=render_posts,
         render_post_message=render_post_message,
         render_user_card=render_user_card,
-        num_posts=lambda posts: len(collect_post_ids(posts)))
+        num_posts=lambda posts: len(collect_post_ids(posts)),
+    )
 
     return app
 
@@ -122,9 +129,8 @@ def create_wsgi_app(config_class=None, config_filename=None):
     """
     Sets up gunicorn logging.
     """
-    app = create_app(
-        config_class=config_class, config_filename=config_filename)
-    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app = create_app(config_class=config_class, config_filename=config_filename)
+    gunicorn_logger = logging.getLogger("gunicorn.error")
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
     return app

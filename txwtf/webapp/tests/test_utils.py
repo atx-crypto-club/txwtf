@@ -10,20 +10,33 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from txwtf.webapp import create_app, db
 from txwtf.webapp.models import User, UserChange, SystemLog, GlobalSettings
 from txwtf.webapp.utils import (
-    get_setting_record, get_setting, set_setting, list_setting,
-    has_setting, get_site_logo, get_default_avatar,
-    get_default_card_image, get_default_header_image,
-    get_password_special_symbols, get_password_min_length,
-    get_password_max_length, get_password_special_symbols_enabled,
+    get_setting_record,
+    get_setting,
+    set_setting,
+    list_setting,
+    has_setting,
+    get_site_logo,
+    get_default_avatar,
+    get_default_card_image,
+    get_default_header_image,
+    get_password_special_symbols,
+    get_password_min_length,
+    get_password_max_length,
+    get_password_special_symbols_enabled,
     get_password_min_length_enabled,
     get_password_max_length_enabled,
     get_password_digit_enabled,
     get_password_upper_enabled,
     get_password_lower_enabled,
     get_email_validate_deliverability_enabled,
-    password_check, register_user, execute_login, execute_logout,
-    SITE_LOGO, AVATAR,
-    CARD_IMAGE, HEADER_IMAGE,
+    password_check,
+    register_user,
+    execute_login,
+    execute_logout,
+    SITE_LOGO,
+    AVATAR,
+    CARD_IMAGE,
+    HEADER_IMAGE,
     PASSWORD_SPECIAL_SYMBOLS,
     PASSWORD_MINIMUM_LENGTH,
     PASSWORD_MAXIMUM_LENGTH,
@@ -34,9 +47,15 @@ from txwtf.webapp.utils import (
     PASSWORD_UPPER_ENABLED,
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
-    UserChangeEventCode, RegistrationError, LoginError,
-    LogoutError, PasswordError, SettingsError, ErrorCode,
-    SystemLogEventCode)
+    UserChangeEventCode,
+    RegistrationError,
+    LoginError,
+    LogoutError,
+    PasswordError,
+    SettingsError,
+    ErrorCode,
+    SystemLogEventCode,
+)
 
 
 # Turn off DNS validation for tests
@@ -116,7 +135,8 @@ class TestWebappUtils(TestCase):
             parent_id=None,
             created_time=now0,
             modified_time=now0,
-            accessed_time=now0)
+            accessed_time=now0,
+        )
         db.session.add(setting0)
         db.session.commit()
         now1 = datetime.now()
@@ -126,13 +146,13 @@ class TestWebappUtils(TestCase):
             parent_id=setting0.id,
             created_time=now1,
             modified_time=now1,
-            accessed_time=now1)
+            accessed_time=now1,
+        )
         db.session.add(setting1)
         db.session.commit()
 
         # then
-        self.assertEqual(
-            setting0, get_setting_record(var0))
+        self.assertEqual(setting0, get_setting_record(var0))
 
         code = None
         try:
@@ -141,9 +161,7 @@ class TestWebappUtils(TestCase):
             self.assertIsInstance(e, SettingsError)
             code, _ = e.args
         self.assertEqual(code, ErrorCode.SettingDoesntExist)
-        self.assertEqual(
-            setting1,
-            get_setting_record(var1, parent_id=setting0.id))
+        self.assertEqual(setting1, get_setting_record(var1, parent_id=setting0.id))
         self.assertEqual(setting1, get_setting_record(var0, var1))
 
     def test_get_setting_record_recursive_create(self):
@@ -165,14 +183,13 @@ class TestWebappUtils(TestCase):
             parent_id=None,
             created_time=now0,
             modified_time=now0,
-            accessed_time=now0)
+            accessed_time=now0,
+        )
         db.session.add(setting0)
         db.session.commit()
 
         # then
-        setting1 = get_setting_record(
-            var0, var1, create=True, default=val1,
-            now=now0)
+        setting1 = get_setting_record(var0, var1, create=True, default=val1, now=now0)
         self.assertIsNotNone(setting1)
         self.assertEqual(setting1.parent_id, setting0.id)
         self.assertEqual(setting1.val, val1)
@@ -190,7 +207,7 @@ class TestWebappUtils(TestCase):
 
         # when
         now = datetime.now()
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         set_setting(var0, val0)
         set_setting(var0, var1, val1)
 
@@ -242,7 +259,7 @@ class TestWebappUtils(TestCase):
         """
         Test default site logo setting.
         """
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         self.assertEqual(get_site_logo(), SITE_LOGO)
 
     def test_site_logo_change(self):
@@ -319,8 +336,7 @@ class TestWebappUtils(TestCase):
         """
         Test default password special symbols setting.
         """
-        self.assertEqual(
-            get_password_special_symbols(), PASSWORD_SPECIAL_SYMBOLS)
+        self.assertEqual(get_password_special_symbols(), PASSWORD_SPECIAL_SYMBOLS)
 
     def test_password_special_symbols_change(self):
         """
@@ -339,8 +355,7 @@ class TestWebappUtils(TestCase):
         """
         Test default password minimumm length.
         """
-        self.assertEqual(
-            get_password_min_length(), PASSWORD_MINIMUM_LENGTH)
+        self.assertEqual(get_password_min_length(), PASSWORD_MINIMUM_LENGTH)
 
     def test_password_min_length_change(self):
         """
@@ -359,8 +374,7 @@ class TestWebappUtils(TestCase):
         """
         Test default password maximum length.
         """
-        self.assertEqual(
-            get_password_max_length(), PASSWORD_MAXIMUM_LENGTH)
+        self.assertEqual(get_password_max_length(), PASSWORD_MAXIMUM_LENGTH)
 
     def test_password_max_length_change(self):
         """
@@ -380,8 +394,8 @@ class TestWebappUtils(TestCase):
         Test default password special symbols enabled flag.
         """
         self.assertEqual(
-            get_password_special_symbols_enabled(),
-            PASSWORD_SPECIAL_SYMBOLS_ENABLED)
+            get_password_special_symbols_enabled(), PASSWORD_SPECIAL_SYMBOLS_ENABLED
+        )
 
     def test_password_special_symbols_enabled_change(self):
         """
@@ -391,22 +405,20 @@ class TestWebappUtils(TestCase):
         special_symbols_enabled = 0
 
         # when
-        set_setting(
-            "password_special_symbols_enabled",
-            special_symbols_enabled)
+        set_setting("password_special_symbols_enabled", special_symbols_enabled)
 
         # then
         self.assertEqual(
-            get_password_special_symbols_enabled(),
-            special_symbols_enabled)
+            get_password_special_symbols_enabled(), special_symbols_enabled
+        )
 
     def test_password_min_length_enabled(self):
         """
         Test default password min length enabled flag.
         """
         self.assertEqual(
-            get_password_min_length_enabled(),
-            PASSWORD_MINIMUM_LENGTH_ENABLED)
+            get_password_min_length_enabled(), PASSWORD_MINIMUM_LENGTH_ENABLED
+        )
 
     def test_password_min_length_enabled_change(self):
         """
@@ -416,22 +428,18 @@ class TestWebappUtils(TestCase):
         min_length_enabled = 0
 
         # when
-        set_setting(
-            "password_minimum_length_enabled", 
-            min_length_enabled)
+        set_setting("password_minimum_length_enabled", min_length_enabled)
 
         # then
-        self.assertEqual(
-            get_password_min_length_enabled(),
-            min_length_enabled)
+        self.assertEqual(get_password_min_length_enabled(), min_length_enabled)
 
     def test_password_max_length_enabled(self):
         """
         Test default password max length enabled flag.
         """
         self.assertEqual(
-            get_password_max_length_enabled(),
-            PASSWORD_MAXIMUM_LENGTH_ENABLED)
+            get_password_max_length_enabled(), PASSWORD_MAXIMUM_LENGTH_ENABLED
+        )
 
     def test_password_max_length_enabled_change(self):
         """
@@ -441,22 +449,16 @@ class TestWebappUtils(TestCase):
         max_length_enabled = 0
 
         # when
-        set_setting(
-            "password_maximum_length_enabled",
-            max_length_enabled)
+        set_setting("password_maximum_length_enabled", max_length_enabled)
 
         # then
-        self.assertEqual(
-            get_password_max_length_enabled(),
-            max_length_enabled)
+        self.assertEqual(get_password_max_length_enabled(), max_length_enabled)
 
     def test_password_digit_enabled(self):
         """
         Test default password digit enabled flag.
         """
-        self.assertEqual(
-            get_password_digit_enabled(),
-            PASSWORD_DIGIT_ENABLED)
+        self.assertEqual(get_password_digit_enabled(), PASSWORD_DIGIT_ENABLED)
 
     def test_password_digit_enabled_change(self):
         """
@@ -475,9 +477,7 @@ class TestWebappUtils(TestCase):
         """
         Test default password upper enabled flag.
         """
-        self.assertEqual(
-            get_password_upper_enabled(),
-            PASSWORD_UPPER_ENABLED)
+        self.assertEqual(get_password_upper_enabled(), PASSWORD_UPPER_ENABLED)
 
     def test_password_uppper_enabled_change(self):
         """
@@ -496,9 +496,7 @@ class TestWebappUtils(TestCase):
         """
         Test default password lower enabled flag.
         """
-        self.assertEqual(
-            get_password_lower_enabled(),
-            PASSWORD_LOWER_ENABLED)
+        self.assertEqual(get_password_lower_enabled(), PASSWORD_LOWER_ENABLED)
 
     def test_password_lower_enabled_change(self):
         """
@@ -519,7 +517,8 @@ class TestWebappUtils(TestCase):
         """
         self.assertEqual(
             get_email_validate_deliverability_enabled(),
-            EMAIL_VALIDATE_DELIVERABILITY_ENABLED)
+            EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
+        )
 
     def test_email_validate_deliverability_enabled_change(self):
         """
@@ -532,8 +531,7 @@ class TestWebappUtils(TestCase):
         set_setting("email_validate_deliverability_enabled", enabled)
 
         # then
-        self.assertEqual(
-            get_email_validate_deliverability_enabled(), enabled)
+        self.assertEqual(get_email_validate_deliverability_enabled(), enabled)
 
     def test_password_check(self):
         """
@@ -804,38 +802,33 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
-        register_user(
-            username, password, password, name, email,
-            request, cur_time)
-        
+        register_user(username, password, password, name, email, request, cur_time)
+
         # then
         ## check user
         user = db.session.query(User).first()
         self.assertEqual(user.email, email)
         self.assertEqual(user.name, name)
-        self.assertTrue(
-            check_password_hash(user.password, password))
+        self.assertTrue(check_password_hash(user.password, password))
         self.assertEqual(user.created_time, cur_time)
         self.assertEqual(user.modified_time, cur_time)
-        self.assertEqual(
-            user.avatar_url,get_default_avatar())
-        self.assertEqual(
-            user.card_image_url, get_default_card_image())
-        self.assertEqual(
-            user.header_image_url, get_default_header_image())
+        self.assertEqual(user.avatar_url, get_default_avatar())
+        self.assertEqual(user.card_image_url, get_default_card_image())
+        self.assertEqual(user.header_image_url, get_default_header_image())
         self.assertEqual(user.header_text, name)
-        self.assertEqual(
-            user.description, "{} is on the scene".format(name))
+        self.assertEqual(user.description, "{} is on the scene".format(name))
         self.assertEqual(user.email_verified, False)
         self.assertEqual(user.is_admin, False)
         self.assertEqual(user.last_login, None)
@@ -848,31 +841,27 @@ class TestWebappUtils(TestCase):
         ## check logs
         new_change = db.session.query(UserChange).first()
         self.assertEqual(new_change.user_id, user.id)
-        self.assertEqual(
-            new_change.change_code, UserChangeEventCode.UserCreate)
+        self.assertEqual(new_change.change_code, UserChangeEventCode.UserCreate)
         self.assertEqual(new_change.change_time, cur_time)
         self.assertEqual(
             new_change.change_desc,
-            "creating new user {} [{}]".format(
-                user.username, user.id))
+            "creating new user {} [{}]".format(user.username, user.id),
+        )
         self.assertEqual(new_change.referrer, request.referrer)
         self.assertEqual(new_change.user_agent, request.user_agent)
-        self.assertEqual(
-            new_change.remote_addr, request.headers.get("X-Forwarded-For"))
+        self.assertEqual(new_change.remote_addr, request.headers.get("X-Forwarded-For"))
         self.assertEqual(new_change.endpoint, request.endpoint)
 
         new_log = db.session.query(SystemLog).first()
-        self.assertEqual(
-            new_log.event_code, SystemLogEventCode.UserCreate)
+        self.assertEqual(new_log.event_code, SystemLogEventCode.UserCreate)
         self.assertEqual(new_log.event_time, cur_time)
         self.assertEqual(
             new_log.event_desc,
-            "creating new user {} [{}]".format(
-                user.username, user.id))
+            "creating new user {} [{}]".format(user.username, user.id),
+        )
         self.assertEqual(new_log.referrer, request.referrer)
         self.assertEqual(new_log.user_agent, request.user_agent)
-        self.assertEqual(
-            new_log.remote_addr, request.headers.get("X-Forwarded-For"))
+        self.assertEqual(new_log.remote_addr, request.headers.get("X-Forwarded-For"))
         self.assertEqual(new_log.endpoint, request.endpoint)
 
     def test_register_email_exists(self):
@@ -888,29 +877,27 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
-        register_user(
-            username, password, password, name, email,
-            request, cur_time)
-        
+        register_user(username, password, password, name, email, request, cur_time)
+
         code = None
         try:
-            register_user(
-                username, password, password, name,
-                email, request, cur_time)
+            register_user(username, password, password, name, email, request, cur_time)
         except Exception as e:
             self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
-        
+
         self.assertEqual(code, ErrorCode.EmailExists)
 
     def test_register_username_exists(self):
@@ -926,31 +913,29 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
-        register_user(
-            username, password, password, name, email,
-            request, cur_time)
-        
+        register_user(username, password, password, name, email, request, cur_time)
+
         code = None
         try:
             # change the email to trigger a username error instead
             email = email + ".net"
-            register_user(
-                username, password, password, name, email,
-                request, cur_time)
+            register_user(username, password, password, name, email, request, cur_time)
         except Exception as e:
             self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
-        
+
         self.assertEqual(code, ErrorCode.UsernameExists)
 
     def test_register_invalid_email(self):
@@ -967,25 +952,25 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
         code = None
         try:
-            register_user(
-                username, password, password, name, email,
-                request, cur_time)
+            register_user(username, password, password, name, email, request, cur_time)
         except Exception as e:
             self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
-        
+
         self.assertEqual(code, ErrorCode.InvalidEmail)
 
     def test_register_invalid_email_2(self):
@@ -1002,25 +987,25 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
         code = None
         try:
-            register_user(
-                username, password, password, name, email,
-                request, cur_time)
+            register_user(username, password, password, name, email, request, cur_time)
         except Exception as e:
             self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
-        
+
         self.assertEqual(code, ErrorCode.InvalidEmail)
 
     def test_register_password_mismatch(self):
@@ -1037,25 +1022,27 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
         code = None
         try:
             register_user(
-                username, password, password+"foo", name, email,
-                request, cur_time)
+                username, password, password + "foo", name, email, request, cur_time
+            )
         except Exception as e:
             self.assertIsInstance(e, RegistrationError)
             code, _ = e.args
-        
+
         self.assertEqual(code, ErrorCode.PasswordMismatch)
 
     def test_register_password_check_fail(self):
@@ -1072,25 +1059,25 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
         code = None
         try:
-            register_user(
-                username, password, password, name, email,
-                request, cur_time)
+            register_user(username, password, password, name, email, request, cur_time)
         except Exception as e:
             self.assertIsInstance(e, PasswordError)
             code, _ = e.args
-        
+
         self.assertIsNotNone(code)
 
     def test_execute_login(self):
@@ -1106,64 +1093,53 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
-        register_user(
-            username, password, password, name, email,
-            request, cur_time)
-        
+        register_user(username, password, password, name, email, request, cur_time)
+
         request.endpoint = "/login"
-        user = execute_login(
-            username, password, request, cur_time=cur_time)
+        user = execute_login(username, password, request, cur_time=cur_time)
 
         # then
         ## check logs
-        user_changes = db.session.query(UserChange).order_by(
-            UserChange.id.desc())
+        user_changes = db.session.query(UserChange).order_by(UserChange.id.desc())
         self.assertEqual(user_changes.count(), 2)
         last_user_change = user_changes.first()
         self.assertEqual(last_user_change.user_id, user.id)
-        self.assertEqual(
-            last_user_change.change_code,
-            UserChangeEventCode.UserLogin)
-        self.assertEqual(
-            last_user_change.change_time, cur_time)
+        self.assertEqual(last_user_change.change_code, UserChangeEventCode.UserLogin)
+        self.assertEqual(last_user_change.change_time, cur_time)
         self.assertEqual(
             last_user_change.change_desc,
-            "logging in from {}".format(headers["X-Forwarded-For"]))
+            "logging in from {}".format(headers["X-Forwarded-For"]),
+        )
+        self.assertEqual(last_user_change.referrer, request.referrer)
+        self.assertEqual(last_user_change.user_agent, request.user_agent)
         self.assertEqual(
-            last_user_change.referrer, request.referrer)
-        self.assertEqual(
-            last_user_change.user_agent, request.user_agent)
-        self.assertEqual(
-            last_user_change.remote_addr,
-            request.headers.get("X-Forwarded-For"))
-        self.assertEqual(
-            last_user_change.endpoint, request.endpoint)
-        
-        system_logs = db.session.query(SystemLog).order_by(
-            SystemLog.id.desc())
+            last_user_change.remote_addr, request.headers.get("X-Forwarded-For")
+        )
+        self.assertEqual(last_user_change.endpoint, request.endpoint)
+
+        system_logs = db.session.query(SystemLog).order_by(SystemLog.id.desc())
         self.assertEqual(system_logs.count(), 2)
         last_log = system_logs.first()
-        self.assertEqual(
-            last_log.event_code, SystemLogEventCode.UserLogin)
+        self.assertEqual(last_log.event_code, SystemLogEventCode.UserLogin)
         self.assertEqual(last_log.event_time, cur_time)
         self.assertEqual(
-            last_log.event_desc,
-            "user {} [{}] logged in".format(
-                user.username, user.id))
+            last_log.event_desc, "user {} [{}] logged in".format(user.username, user.id)
+        )
         self.assertEqual(last_log.referrer, request.referrer)
         self.assertEqual(last_log.user_agent, request.user_agent)
-        self.assertEqual(
-            last_log.remote_addr, request.headers.get("X-Forwarded-For"))
+        self.assertEqual(last_log.remote_addr, request.headers.get("X-Forwarded-For"))
         self.assertEqual(last_log.endpoint, request.endpoint)
 
     def test_execute_login_user_doesnt_exist(self):
@@ -1177,20 +1153,21 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/login"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
         code = None
         try:
-            execute_login(
-                username, password, request, cur_time=cur_time)
+            execute_login(username, password, request, cur_time=cur_time)
         except Exception as e:
             self.assertIsInstance(e, LoginError)
             code, msg = e.args
@@ -1213,25 +1190,24 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
         cur_time = datetime.now()
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
-        register_user(
-            username, password, password, name, email,
-            request, cur_time)
-        
+        register_user(username, password, password, name, email, request, cur_time)
+
         request.endpoint = "/login"
         code = None
         try:
-            execute_login(
-                username, password+"foo", request, cur_time=cur_time)
+            execute_login(username, password + "foo", request, cur_time=cur_time)
         except Exception as e:
             self.assertIsInstance(e, LoginError)
             code, msg = e.args
@@ -1269,26 +1245,32 @@ class TestWebappUtils(TestCase):
         user_agent = "mozkillah 420.69"
         endpoint = "/register"
         remote_addr = "127.0.0.1"
-        headers = {
-            "X-Forwarded-For": "192.168.0.1"}
+        headers = {"X-Forwarded-For": "192.168.0.1"}
 
         request = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint=endpoint, remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint=endpoint,
+            remote_addr=remote_addr,
+            headers=headers,
+        )
         request_login = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint="/login", remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint="/login",
+            remote_addr=remote_addr,
+            headers=headers,
+        )
         request_logout = FakeRequest(
-            referrer=referrer, user_agent=user_agent,
-            endpoint="/logout", remote_addr=remote_addr,
-            headers=headers)
+            referrer=referrer,
+            user_agent=user_agent,
+            endpoint="/logout",
+            remote_addr=remote_addr,
+            headers=headers,
+        )
 
         # when
-        register_user(
-            username, password, password, name, email,
-            request)
+        register_user(username, password, password, name, email, request)
         user = execute_login(username, password, request_login)
 
         code = None
@@ -1296,44 +1278,37 @@ class TestWebappUtils(TestCase):
         execute_logout(request_logout, user, cur_time)
 
         # then
-        user_changes = db.session.query(UserChange).order_by(
-            UserChange.id.desc())
+        user_changes = db.session.query(UserChange).order_by(UserChange.id.desc())
         last_user_change = user_changes.first()
         self.assertEqual(last_user_change.user_id, user.id)
-        self.assertEqual(
-            last_user_change.change_code,
-            UserChangeEventCode.UserLogout)
-        self.assertEqual(
-            last_user_change.change_time, cur_time)
+        self.assertEqual(last_user_change.change_code, UserChangeEventCode.UserLogout)
+        self.assertEqual(last_user_change.change_time, cur_time)
         self.assertEqual(
             last_user_change.change_desc,
-            "logging out from {}".format(headers["X-Forwarded-For"]))
+            "logging out from {}".format(headers["X-Forwarded-For"]),
+        )
+        self.assertEqual(last_user_change.referrer, request_logout.referrer)
+        self.assertEqual(last_user_change.user_agent, request_logout.user_agent)
         self.assertEqual(
-            last_user_change.referrer, request_logout.referrer)
-        self.assertEqual(
-            last_user_change.user_agent, request_logout.user_agent)
-        self.assertEqual(
-            last_user_change.remote_addr,
-            request_logout.headers.get("X-Forwarded-For"))
-        self.assertEqual(
-            last_user_change.endpoint, request_logout.endpoint)
-        
-        system_logs = db.session.query(SystemLog).order_by(
-            SystemLog.id.desc())
+            last_user_change.remote_addr, request_logout.headers.get("X-Forwarded-For")
+        )
+        self.assertEqual(last_user_change.endpoint, request_logout.endpoint)
+
+        system_logs = db.session.query(SystemLog).order_by(SystemLog.id.desc())
         last_log = system_logs.first()
-        self.assertEqual(
-            last_log.event_code, SystemLogEventCode.UserLogout)
+        self.assertEqual(last_log.event_code, SystemLogEventCode.UserLogout)
         self.assertEqual(last_log.event_time, cur_time)
         self.assertEqual(
             last_log.event_desc,
-            "user {} [{}] logging out".format(
-                user.username, user.id))
+            "user {} [{}] logging out".format(user.username, user.id),
+        )
         self.assertEqual(last_log.referrer, request_logout.referrer)
         self.assertEqual(last_log.user_agent, request_logout.user_agent)
         self.assertEqual(
-            last_log.remote_addr,
-            request_logout.headers.get("X-Forwarded-For"))
+            last_log.remote_addr, request_logout.headers.get("X-Forwarded-For")
+        )
         self.assertEqual(last_log.endpoint, request_logout.endpoint)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

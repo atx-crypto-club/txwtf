@@ -7,11 +7,10 @@ from contextlib import contextmanager
 
 
 logger = logging.getLogger(__name__)
-LOG_FORMAT = '%(asctime)s %(levelname)-8.8s [%(name)s:%(lineno)s] %(message)s'
+LOG_FORMAT = "%(asctime)s %(levelname)-8.8s [%(name)s:%(lineno)s] %(message)s"
 
 
-def setup_logging(
-        log="-", log_level=logging.DEBUG, log_format=LOG_FORMAT):
+def setup_logging(log="-", log_level=logging.DEBUG, log_format=LOG_FORMAT):
     """
     Initialize logging for the app.
     """
@@ -24,7 +23,7 @@ def setup_logging(
         sh.setFormatter(formatter)
         root.addHandler(sh)
     elif log:
-        fh = logging.FileHandler(filename=log, mode='w')
+        fh = logging.FileHandler(filename=log, mode="w")
         fh.setLevel(log_level)
         fh.setFormatter(formatter)
         root.addHandler(fh)
@@ -47,7 +46,7 @@ def cli_context(obj):
     if obj.profiling:
         pr.disable()
         prof = pstats.Stats(pr, stream=sys.stdout)
-        ps = prof.sort_stats('cumulative')
+        ps = prof.sort_stats("cumulative")
         ps.print_stats(300)
 
 
