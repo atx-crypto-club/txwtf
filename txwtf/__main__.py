@@ -278,7 +278,14 @@ def list_posts(obj, config, hashtag):
         print(
             tabulate(
                 table,
-                headers=["ID", "reply_to", "repost_id", "deleted", "post_time", "content"],
+                headers=[
+                    "ID",
+                    "reply_to",
+                    "repost_id",
+                    "deleted",
+                    "post_time",
+                    "content",
+                ],
             )
         )
 
@@ -345,8 +352,22 @@ def gen_secret(obj):
 
 
 @root.command()
-@click.option("--host", "-h", type=click.STRING, envvar="TXWTF_BACKEND_HOSTNAME", default="localhost", help="host interface to bind to")
-@click.option("--port", "-p", type=click.INT, envvar="TXWTF_BACKEND_PORT", default=8086, help="service port")
+@click.option(
+    "--host",
+    "-h",
+    type=click.STRING,
+    envvar="TXWTF_BACKEND_HOSTNAME",
+    default="localhost",
+    help="host interface to bind to",
+)
+@click.option(
+    "--port",
+    "-p",
+    type=click.INT,
+    envvar="TXWTF_BACKEND_PORT",
+    default=8086,
+    help="service port",
+)
 @click.pass_obj
 def backend(obj, host, port):
     """

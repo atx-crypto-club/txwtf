@@ -7,13 +7,7 @@ from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema
 app = FastAPI()
 
 
-posts = [
-    {
-        "id": 1,
-        "title": "Pancake",
-        "content": "Lorem Ipsum ..."
-    }
-]
+posts = [{"id": 1, "title": "Pancake", "content": "Lorem Ipsum ..."}]
 
 users = []
 
@@ -25,35 +19,29 @@ async def read_root() -> dict:
 
 @app.get("/posts", tags=["posts"])
 async def get_posts() -> dict:
-    return { "data": posts }
+    return {"data": posts}
 
 
 @app.get("/posts/{id}", tags=["posts"])
 async def get_single_post(id: int) -> dict:
     if id > len(posts):
-        return {
-            "error": "No such post with the supplied ID."
-        }
+        return {"error": "No such post with the supplied ID."}
 
     for post in posts:
         if post["id"] == id:
-            return {
-                "data": post
-            }
+            return {"data": post}
 
 
 @app.post("/posts", dependencies=[Depends(JWTBearer())], tags=["posts"])
 async def add_post(post: PostSchema) -> dict:
     post.id = len(posts) + 1
     posts.append(post.dict())
-    return {
-        "data": "post added."
-    }
+    return {"data": "post added."}
 
 
 @app.post("/user/signup", tags=["user"])
 async def create_user(user: UserSchema = Body(...)):
-    users.append(user) # replace with db call, making sure to hash the password first
+    users.append(user)  # replace with db call, making sure to hash the password first
     return sign_jwt(user.email)
 
 
@@ -68,8 +56,4 @@ def check_user(data: UserLoginSchema):
 async def user_login(user: UserLoginSchema = Body(...)):
     if check_user(user):
         return sign_jwt(user.email)
-    return {
-        "error": "Wrong login details!"
-    }
-
-
+    return {"error": "Wrong login details!"}
