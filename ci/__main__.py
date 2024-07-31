@@ -159,16 +159,13 @@ def migrate(obj):
 
 @root.command()
 @click.option(
-    "--root-cmd", envvar="ROOT_CMD", default="txwtf", help="Application root command."
-)
-@click.option(
     "--log-file", envvar="LOG_FILE", default="-", help="Log file. Use '-' for stdout."
 )
 @click.option(
     "--log-level", envvar="LOG_LEVEL", default="WARNING", help="Log output level."
 )
 @click.pass_obj
-def test(obj, root_cmd, log_file, log_level):
+def test(obj, log_file, log_level):
     """
     Run application tests in project environment
     """
@@ -176,7 +173,8 @@ def test(obj, root_cmd, log_file, log_level):
     subprocess.check_call(
         edm_run_cmd
         + [
-            root_cmd,
+            "python",
+            "run.py",
             "--log-file={}".format(log_file),
             "--log-level={}".format(log_level),
         ]

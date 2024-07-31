@@ -124,6 +124,13 @@ def migrate_cmds(obj, **kwargs):
     return [obj.proj_ci + ["migrate"]], kwargs["args"]
 
 
+def test_cmds(obj, **kwargs):
+    """
+    Run project tests
+    """
+    return [obj.proj_ci + ["test"]], kwargs["args"]
+
+
 def clean_cmds(obj, **kwargs):
     """
     Remove project and bootstrap environments
@@ -197,6 +204,7 @@ _cmd_map = {
     "install": install_cmds,
     "install-dev": install_dev_cmds,
     "migrate": migrate_cmds,
+    "test": test_cmds,
     "clean": clean_cmds,
     "nuke": nuke_cmds,
     "run": run_cmds,
