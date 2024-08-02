@@ -14,8 +14,8 @@ class PostSchema(SQLModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "title": "Securing FastAPI applications with JWT.",
-                "content": "In this tutorial, you'll learn how to secure your application by enabling authentication using JWT. We'll be using PyJWT to sign, encode and decode JWT tokens....",
+                "title": "Hello, World",
+                "content": "Test post",
             }
         }
 
@@ -28,9 +28,9 @@ class UserSchema(SQLModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "fullname": "Abdulazeez Abdulazeez Adeshina",
-                "email": "abdulazeez@x.com",
-                "password": "weakpassword",
+                "fullname": "Joe Rivera",
+                "email": "j@jriv.us",
+                "password": "password1234",
             }
         }
 
@@ -41,5 +41,5 @@ class UserLoginSchema(SQLModel):
 
     class Config:
         json_schema_extra = {
-            "example": {"email": "abdulazeez@x.com", "password": "weakpassword"}
+            "example": {"email": "j@jriv.us", "password": "password1234"}
         }
