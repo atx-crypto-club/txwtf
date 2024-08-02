@@ -12,24 +12,41 @@ JWT_SECRET = config("secret")
 JWT_ALGORITHM = config("algorithm")
 
 
+def init_config():
+    global JWT_SECRET
+    global JWT_ALGORITHM
+    JWT_SECRET = config("secret") if JWT_SECRET is None else JWT_SECRET
+    JWT_ALGORITHM = config("algorithm") if JWT_ALGORITHM is None else JWT_ALGORITHM
+
+
 def token_response(token: str):
     return {"access_token": token}
 
 
 def sign_jwt(
     user_id: str,
-    jwt_secret: str = JWT_SECRET,
-    jwt_algorithm: str = JWT_ALGORITHM,
+    jwt_secret: str = None,
+    jwt_algorithm: str = None,
     expire_time: float = 600.0,
 ) -> Dict[str, str]:
+    if jwt_secret is None:
+        jwt_secret = JWT_SECRET
+    if jwt_algorithm is None:
+        jwt_algorithm = JWT_ALGORITHM
     payload = {"user_id": user_id, "expires": time.time() + expire_time}
     token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
     return token_response(token)
 
 
 def decode_jwt(
-    token: str, jwt_secret: str = JWT_SECRET, jwt_algorithm: str = JWT_ALGORITHM
+    token: str,
+    jwt_secret: str = None,
+    jwt_algorithm: str = None
 ) -> dict:
+    if jwt_secret is None:
+        jwt_secret = JWT_SECRET
+    if jwt_algorithm is None:
+        jwt_algorithm = JWT_ALGORITHM
     try:
         decoded_token = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
         return decoded_token if decoded_token["expires"] >= time.time() else None

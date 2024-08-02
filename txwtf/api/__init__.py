@@ -1,10 +1,18 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Body, Depends
 
-from txwtf.api.auth import sign_jwt, JWTBearer
+from txwtf.api.auth import init_config, sign_jwt, JWTBearer
 from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_config()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 posts = [{"id": 1, "title": "Pancake", "content": "Lorem Ipsum ..."}]
