@@ -4,6 +4,7 @@ from fastapi import FastAPI, Body, Depends
 
 from txwtf.api.auth import init_config, sign_jwt, JWTBearer
 from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema
+from txwtf.version import version
 
 
 @asynccontextmanager
@@ -22,7 +23,7 @@ users = []
 
 @app.get("/", tags=["root"])
 async def read_root() -> dict:
-    return {"message": "Welcome to your blog!"}
+    return {"message": "txwtf v{}".format(version)}
 
 
 @app.get("/posts", tags=["posts"])
