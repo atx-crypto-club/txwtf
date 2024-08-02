@@ -252,7 +252,13 @@ def run_app(obj, root_cmd, log_file, log_level, profiling, cmd_args):
     "--app",
     envvar="WSGI_APP",
     default="txwtf.webapp",
-    help="The webapp for gunicorn to launch",
+    help="The app for gunicorn to launch",
+)
+@click.option(
+    "--app-entry-point",
+    envvar="WSGI_APP_ENTRY_POINT",
+    default="create_wsgi_app",
+    help="The entry point for the app",
 )
 @click.option(
     "--access-logfile",
@@ -286,7 +292,7 @@ def run_app(obj, root_cmd, log_file, log_level, profiling, cmd_args):
 )
 @click.pass_obj
 def run_wsgi(
-    obj, app, access_logfile, access_logformat, error_logfile, log_level, bind, workers
+    obj, app, app_entry_point, access_logfile, access_logformat, error_logfile, log_level, bind, workers
 ):
     """
     Run gunicorn wsgi for the webapp in project environment
@@ -309,7 +315,7 @@ def run_wsgi(
             "--workers",
             str(workers),
             "--capture-output",
-            "{}:create_wsgi_app()".format(app),
+            "{}:{}()".format(app, app_entry_point),
         ]
     )
 
