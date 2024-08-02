@@ -1,7 +1,12 @@
-from pydantic import BaseModel, Field, EmailStr
+from typing import Optional
+
+#from pydantic import BaseModel, Field, EmailStr
+from pydantic import EmailStr
+
+from sqlmodel import SQLModel, Field
 
 
-class PostSchema(BaseModel):
+class PostSchema(SQLModel):
     id: int = Field(default=None)
     title: str = Field(...)
     content: str = Field(...)
@@ -15,7 +20,7 @@ class PostSchema(BaseModel):
         }
 
 
-class UserSchema(BaseModel):
+class UserSchema(SQLModel):
     fullname: str = Field(...)
     email: EmailStr = Field(...)
     password: str = Field(...)
@@ -30,7 +35,7 @@ class UserSchema(BaseModel):
         }
 
 
-class UserLoginSchema(BaseModel):
+class UserLoginSchema(SQLModel):
     email: EmailStr = Field(...)
     password: str = Field(...)
 
