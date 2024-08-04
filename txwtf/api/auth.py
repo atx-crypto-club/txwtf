@@ -38,11 +38,7 @@ def sign_jwt(
     return token_response(token)
 
 
-def decode_jwt(
-    token: str,
-    jwt_secret: str = None,
-    jwt_algorithm: str = None
-) -> dict:
+def decode_jwt(token: str, jwt_secret: str = None, jwt_algorithm: str = None) -> dict:
     if jwt_secret is None:
         jwt_secret = JWT_SECRET
     if jwt_algorithm is None:

@@ -376,7 +376,9 @@ def backend(obj, host, port):
     import uvicorn
 
     with txwtf.core.cli_context(obj):
-        uvicorn.run("txwtf.api:app", host=host, port=port, reload=True)
+        uvicorn.run(
+            "txwtf.api:create_app", host=host, port=port, reload=True, factory=True
+        )
 
 
 if __name__ == "__main__":

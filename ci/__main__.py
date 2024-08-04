@@ -292,7 +292,15 @@ def run_app(obj, root_cmd, log_file, log_level, profiling, cmd_args):
 )
 @click.pass_obj
 def run_wsgi(
-    obj, app, app_entry_point, access_logfile, access_logformat, error_logfile, log_level, bind, workers
+    obj,
+    app,
+    app_entry_point,
+    access_logfile,
+    access_logformat,
+    error_logfile,
+    log_level,
+    bind,
+    workers,
 ):
     """
     Run gunicorn wsgi for the webapp in project environment
