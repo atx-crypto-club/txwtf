@@ -290,6 +290,12 @@ def run_app(obj, root_cmd, log_file, log_level, profiling, cmd_args):
     default=2,
     help="Number of worker processes to handle requests.",
 )
+@click.option(
+    "--worker-class",
+    envvar="WSGI_WORKER_CLASS",
+    default="",
+    help="Worker class to import with application",
+)
 @click.pass_obj
 def run_wsgi(
     obj,
@@ -301,31 +307,35 @@ def run_wsgi(
     log_level,
     bind,
     workers,
+    worker_class
 ):
     """
     Run gunicorn wsgi for the webapp in project environment
     """
     edm_run_cmd = [obj.edm_bin, "-r", obj.edm_root, "run", "-e", obj.edm_env, "--"]
-    subprocess.check_call(
-        edm_run_cmd
-        + [
-            "gunicorn",
-            "--access-logfile",
-            access_logfile,
-            "--access-logformat",
-            access_logformat,
-            "--error-logfile",
-            error_logfile,
-            "--log-level",
-            log_level,
-            "--bind",
-            bind,
-            "--workers",
-            str(workers),
-            "--capture-output",
-            "{}:{}()".format(app, app_entry_point),
-        ]
-    )
+    
+    # note: use string uvicorn.workers.UvicornWorker for uvicorn fastapi
+    worker_class_args = []
+    if worker_class != "":
+        worker_class_args = ["--worker-class", worker_class]
+    gunicorn_call = edm_run_cmd + [
+        "gunicorn",
+        "--access-logfile",
+        access_logfile,
+        "--access-logformat",
+        access_logformat,
+        "--error-logfile",
+        error_logfile,
+        "--log-level",
+        log_level,
+        "--bind",
+        bind,
+        "--workers",
+        str(workers),
+        "--capture-output",
+    ] + worker_class_args + ["{}:{}()".format(app, app_entry_point)]
+
+    subprocess.check_call(gunicorn_call)
 
 
 @root.command()
