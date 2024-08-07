@@ -2,7 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Body, Depends
 
-from txwtf.api.auth import init_config, sign_jwt, JWTBearer
+from txwtf.api.auth import init_auth_config, sign_jwt, JWTBearer
+from txwtf.api.db import get_engine, init_db, get_session
 from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema
 from txwtf.version import version
 
@@ -12,13 +13,12 @@ posts = [{"id": 1, "title": "Pancake", "content": "Lorem Ipsum ..."}]
 users = []
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    init_config()
-    yield
+def create_app(db_url: str = None) -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        init_auth_config()
+        yield
 
-
-def create_app():
     app = FastAPI(lifespan=lifespan)
 
     @app.get("/", tags=["root"])
