@@ -11,12 +11,15 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 JWT_SECRET = None
 JWT_ALGORITHM = None
 
+DEFAULT_JWT_ALGORITHM = "HS256"
 
-def init_config():
+
+def init_auth_config():
     global JWT_SECRET
     global JWT_ALGORITHM
     JWT_SECRET = config("secret") if JWT_SECRET is None else JWT_SECRET
-    JWT_ALGORITHM = config("algorithm") if JWT_ALGORITHM is None else JWT_ALGORITHM
+    JWT_ALGORITHM = config("algorithm", default=DEFAULT_JWT_ALGORITHM) if JWT_ALGORITHM is None else JWT_ALGORITHM
+
 
 
 def token_response(token: str):
