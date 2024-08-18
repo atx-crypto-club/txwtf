@@ -121,10 +121,14 @@ You can also run the backend from the production environment using the `backend`
 
 This is equvalent to running `python -m txwtf.api`.
 
-Make sure that in the working directory from where you launch the backend, there is a `.env` file that contains secret and algorithm information for the JWT token authentication.
+To control JWT token acess, either create an `.env` file that contains secret and algorithm information for the JWT token authentication or set the appropriate environment variables. Here's an example `.env` file:
 
-    (prod) root@aspire:~/txwtf# cat .env
-    secret=...
-    algorithm=HS256
+    $ cat .env
+    TXWTF_API_JWT_SECRET=...
+    TXWTF_API_JWT_ALGO=HS256
 
-A good value for the secret key can be generated with the `txwtf gen-secret` command that you can run from the production environment.
+By default, the `TXWTF_API_JWT_ALGO` is set internally to `HS256`. If the secret isn't set in `TXWTF_API_JWT_SECRET` then `txwtf.api.gen_secret` is used to generate a secret. The equivalent on the command line is:
+
+    $ export TXWTF_API_JWT_SECRET=`txwtf gen-secret`
+
+A good value for the secret key based on a random sha256 hash can be generated with the `txwtf gen-secret` command that you can run from the production environment.
