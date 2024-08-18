@@ -347,6 +347,7 @@ def gen_secret(obj):
     Convenience for generating a random SECRET_KEY.
     """
     from txwtf.core import gen_secret
+
     print(gen_secret())
 
 
@@ -373,6 +374,7 @@ def backend(obj, host, port):
     Launch the fastapi backend.
     """
     from txwtf.api import launch
+
     with txwtf.core.cli_context(obj):
         launch(host=host, port=port)
 

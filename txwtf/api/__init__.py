@@ -25,7 +25,8 @@ users = []
 
 
 def create_app(
-        jwt_secret: str = None, jwt_algorithm: str = None, db_url: str = None) -> FastAPI:
+    jwt_secret: str = None, jwt_algorithm: str = None, db_url: str = None
+) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("Launching API")
@@ -56,7 +57,11 @@ def create_app(
             if post["id"] == id:
                 return {"data": post}
 
-    @app.post("/posts", dependencies=[Depends(JWTBearer(jwt_secret, jwt_algorithm))], tags=["posts"])
+    @app.post(
+        "/posts",
+        dependencies=[Depends(JWTBearer(jwt_secret, jwt_algorithm))],
+        tags=["posts"],
+    )
     async def add_post(post: PostSchema) -> dict:
         post.id = len(posts) + 1
         posts.append(post.dict())
@@ -88,6 +93,4 @@ def launch(host="0.0.0.0", port=8081):
     """
     Launch the txwtf.api backend using uvicorn.
     """
-    uvicorn.run(
-        "txwtf.api:create_app", host=host, port=port, reload=True, factory=True
-    )
+    uvicorn.run("txwtf.api:create_app", host=host, port=port, reload=True, factory=True)

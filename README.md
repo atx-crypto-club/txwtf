@@ -127,8 +127,8 @@ To control JWT token acess, either create an `.env` file that contains secret an
     TXWTF_API_JWT_SECRET=...
     TXWTF_API_JWT_ALGO=HS256
 
-By default, the `TXWTF_API_JWT_ALGO` is set internally to `HS256`. If the secret isn't set in `TXWTF_API_JWT_SECRET` then `txwtf.api.gen_secret` is used to generate a secret. The equivalent on the command line is:
+By default, the `TXWTF_API_JWT_ALGO` is set internally to `HS256`. If the secret isn't set in `TXWTF_API_JWT_SECRET` then `txwtf.core.gen_secret` is used to generate a secret. The equivalent on the command line is:
 
     $ export TXWTF_API_JWT_SECRET=`txwtf gen-secret`
 
-A good value for the secret key based on a random sha256 hash can be generated with the `txwtf gen-secret` command that you can run from the production environment.
+A good value for the secret key based on a random sha256 hash can be generated with the `txwtf gen-secret` command that you can run from the production environment. Remember that every time you use a new secret, all previously generated tokens are invalid.

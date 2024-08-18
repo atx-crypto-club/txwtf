@@ -28,10 +28,7 @@ def sign_jwt(
     return token_response(token)
 
 
-def decode_jwt(
-        token: str,
-        jwt_secret: str,
-        jwt_algorithm: str) -> dict:
+def decode_jwt(token: str, jwt_secret: str, jwt_algorithm: str) -> dict:
     try:
         decoded_token = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
         return decoded_token if decoded_token["expires"] >= time.time() else None
@@ -41,11 +38,11 @@ def decode_jwt(
 
 class JWTBearer(HTTPBearer):
     def __init__(
-            self,
-            jwt_secret: str,
-            jwt_algorithm: str = DEFAULT_JWT_ALGORITHM,
-            auto_error: bool = True,
-        ):
+        self,
+        jwt_secret: str,
+        jwt_algorithm: str = DEFAULT_JWT_ALGORITHM,
+        auto_error: bool = True,
+    ):
         super(JWTBearer, self).__init__(auto_error=auto_error)
         self.jwt_secret = jwt_secret
         self.jwt_algorithm = jwt_algorithm
@@ -71,8 +68,7 @@ class JWTBearer(HTTPBearer):
         valid: bool = False
 
         try:
-            payload = decode_jwt(
-                jwtoken, self.jwt_secret, self.jwt_algorithm)
+            payload = decode_jwt(jwtoken, self.jwt_secret, self.jwt_algorithm)
         except:
             payload = None
         if payload:
