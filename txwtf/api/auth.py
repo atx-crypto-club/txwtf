@@ -7,19 +7,10 @@ from decouple import config
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from txwtf.core import gen_secret
 
-JWT_SECRET = None
-JWT_ALGORITHM = None
 
 DEFAULT_JWT_ALGORITHM = "HS256"
-
-
-def init_auth_config():
-    global JWT_SECRET
-    global JWT_ALGORITHM
-    JWT_SECRET = config("secret") if JWT_SECRET is None else JWT_SECRET
-    JWT_ALGORITHM = config("algorithm", default=DEFAULT_JWT_ALGORITHM) if JWT_ALGORITHM is None else JWT_ALGORITHM
-
 
 
 def token_response(token: str):
@@ -28,24 +19,19 @@ def token_response(token: str):
 
 def sign_jwt(
     user_id: str,
-    jwt_secret: str = None,
-    jwt_algorithm: str = None,
+    jwt_secret: str,
+    jwt_algorithm: str,
     expire_time: float = 600.0,
 ) -> Dict[str, str]:
-    if jwt_secret is None:
-        jwt_secret = JWT_SECRET
-    if jwt_algorithm is None:
-        jwt_algorithm = JWT_ALGORITHM
     payload = {"user_id": user_id, "expires": time.time() + expire_time}
     token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
     return token_response(token)
 
 
-def decode_jwt(token: str, jwt_secret: str = None, jwt_algorithm: str = None) -> dict:
-    if jwt_secret is None:
-        jwt_secret = JWT_SECRET
-    if jwt_algorithm is None:
-        jwt_algorithm = JWT_ALGORITHM
+def decode_jwt(
+        token: str,
+        jwt_secret: str,
+        jwt_algorithm: str) -> dict:
     try:
         decoded_token = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
         return decoded_token if decoded_token["expires"] >= time.time() else None
@@ -54,8 +40,15 @@ def decode_jwt(token: str, jwt_secret: str = None, jwt_algorithm: str = None) ->
 
 
 class JWTBearer(HTTPBearer):
-    def __init__(self, auto_error: bool = True):
+    def __init__(
+            self,
+            jwt_secret: str,
+            jwt_algorithm: str = DEFAULT_JWT_ALGORITHM,
+            auto_error: bool = True,
+        ):
         super(JWTBearer, self).__init__(auto_error=auto_error)
+        self.jwt_secret = jwt_secret
+        self.jwt_algorithm = jwt_algorithm
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(
@@ -75,13 +68,14 @@ class JWTBearer(HTTPBearer):
             raise HTTPException(status_code=403, detail="Invalid authorization code.")
 
     def verify_jwt(self, jwtoken: str) -> bool:
-        isTokenValid: bool = False
+        valid: bool = False
 
         try:
-            payload = decode_jwt(jwtoken)
+            payload = decode_jwt(
+                jwtoken, self.jwt_secret, self.jwt_algorithm)
         except:
             payload = None
         if payload:
-            isTokenValid = True
+            valid = True
 
-        return isTokenValid
+        return valid
