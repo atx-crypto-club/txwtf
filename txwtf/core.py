@@ -1,7 +1,9 @@
 import cProfile
 import logging
+from hashlib import sha256
 import pstats
 import re
+import secrets
 import sys
 from contextlib import contextmanager
 
@@ -29,6 +31,10 @@ def setup_logging(log="-", log_level=logging.DEBUG, log_format=LOG_FORMAT):
         root.addHandler(fh)
 
     root.setLevel(logging.DEBUG)
+
+
+def gen_secret():
+    return sha256(str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
 
 
 @contextmanager

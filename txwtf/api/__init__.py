@@ -7,6 +7,8 @@ from txwtf.api.db import get_engine, init_db, get_session
 from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema
 from txwtf.version import version
 
+import uvicorn
+
 
 posts = [{"id": 1, "title": "Pancake", "content": "Lorem Ipsum ..."}]
 
@@ -64,3 +66,12 @@ def create_app(db_url: str = None) -> FastAPI:
         return {"error": "Wrong login details!"}
 
     return app
+
+
+def launch(host="0.0.0.0", port=8081):
+    """
+    Launch the txwtf.api backend using uvicorn.
+    """
+    uvicorn.run(
+        "txwtf.api:create_app", host=host, port=port, reload=True, factory=True
+    )

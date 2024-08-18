@@ -105,3 +105,26 @@ The flask app is configured to use prefixed environment variable names. For inst
 To access special system information and change critical settings through the app interface, you can flag a user as an `admin`. Be extremely careful with this as an `admin` user can do anything and is effectively in god mode. But during testing you will likely need at least one admin user to test things, especially if you need to view system logs. To upgrade a user to `admin` status, you can use the following command in the project environment:
 
     $ txwtf set-admin --admin --user t@tx.wtf
+
+## API
+
+This is a module evolving along side the webapp. It has a module intended to be run using gunicorn -> uvicorn. You can launch it using the following in the shell to install python, download dependencies and run the server in an isolated environment:
+
+    $ WSGI_BIND="0.0.0.0:31337" WSGI_APP="txwtf.api" WSGI_WORKER_CLASS="uvicorn.workers.UvicornWorker" WSGI_APP_ENTRY_POINT="create_app" bash init.sh -e /tmp/test-install -r "run-wsgi"
+
+This is for interacting with the backend. All applications including the webapp middleware should be able to work with this without connecting to the database directly. This API uses JWT token based authentication. There is swagger documentation available for the API at `0.0.0.0:31337/docs` on your running instance above.
+
+You can also run the backend from the production environment using the `backend` command.
+
+    $ bash init.sh -e /tmp/test-install -r "shell"
+    $ txwtf backend
+
+This is equvalent to running `python -m txwtf.api`.
+
+Make sure that in the working directory from where you launch the backend, there is a `.env` file that contains secret and algorithm information for the JWT token authentication.
+
+    (prod) root@aspire:~/txwtf# cat .env
+    secret=...
+    algorithm=HS256
+
+A good value for the secret key can be generated with the `txwtf gen-secret` command that you can run from the production environment.

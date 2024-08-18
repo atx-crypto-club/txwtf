@@ -1,4 +1,6 @@
 import uvicorn
+from txwtf.api import launch
+
 
 if __name__ == "__main__":
-    uvicorn.run("txwtf.api:app", host="0.0.0.0", port=8081, reload=True)
+    launch()

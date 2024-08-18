@@ -1,6 +1,4 @@
 import logging
-from hashlib import sha256
-import secrets
 import tempfile
 from os.path import abspath, dirname, join
 
@@ -20,16 +18,14 @@ from flask_uploads import ALL, UploadSet, configure_uploads
 
 from markdownify import markdownify
 
+from txwtf.core import gen_secret
+
 
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 migrate = Migrate()
 upload_archive = UploadSet("archive", ALL)
 logger = logging.getLogger(__name__)
-
-
-def gen_secret():
-    return sha256(str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
 
 
 def create_app(config_class=None, config_filename=None):

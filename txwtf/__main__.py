@@ -346,8 +346,7 @@ def gen_secret(obj):
     """
     Convenience for generating a random SECRET_KEY.
     """
-    from txwtf.webapp import gen_secret
-
+    from txwtf.core import gen_secret
     print(gen_secret())
 
 
@@ -373,12 +372,9 @@ def backend(obj, host, port):
     """
     Launch the fastapi backend.
     """
-    import uvicorn
-
+    from txwtf.api import launch
     with txwtf.core.cli_context(obj):
-        uvicorn.run(
-            "txwtf.api:create_app", host=host, port=port, reload=True, factory=True
-        )
+        launch(host=host, port=port)
 
 
 if __name__ == "__main__":
