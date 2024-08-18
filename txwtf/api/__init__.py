@@ -6,8 +6,9 @@ from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException
 
 from txwtf.core import gen_secret
 from txwtf.api.auth import sign_jwt, JWTBearer
+from txwtf.api.core import ErrorCode
 from txwtf.api.db import get_engine, init_db, get_session
-from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema
+from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema, ResponseSchema
 from txwtf.version import version
 
 import uvicorn
@@ -28,39 +29,42 @@ def get_test_router(
         jwt_secret: str = None, jwt_algorithm: str = None
 ) -> APIRouter:
     router = APIRouter(
-        tags=["test"],
+        #tags=["test"],
         responses={404: {"description": "Not found"}},
     )
 
     @router.get("/posts", tags=["posts"])
-    async def get_posts() -> dict:
-        return {"data": posts}
+    async def get_posts() -> ResponseSchema:
+        return ResponseSchema(data={"posts":posts})
 
     @router.get("/posts/{id}", tags=["posts"])
-    async def get_single_post(id: int) -> dict:
+    async def get_single_post(id: int) -> ResponseSchema:
         if id > len(posts):
-            return {"error": "No such post with the supplied ID."}
+            return ResponseSchema(
+                message="No such post with the supplied ID.",
+                error=ErrorCode.GenericError)
 
         for post in posts:
             if post["id"] == id:
-                return {"data": post}
+                return ResponseSchema(data={"post": post})
 
     @router.post(
         "/posts",
         dependencies=[Depends(JWTBearer(jwt_secret, jwt_algorithm))],
         tags=["posts"],
     )
-    async def add_post(post: PostSchema) -> dict:
+    async def add_post(post: PostSchema) -> ResponseSchema:
         post.id = len(posts) + 1
         posts.append(post.dict())
-        return {"data": "post added."}
+        return ResponseSchema(message="post added.")
 
     @router.post("/user/signup", tags=["user"])
     async def create_user(user: UserSchema = Body(...)):
         users.append(
             user
         )  # replace with db call, making sure to hash the password first
-        return sign_jwt(user.email, jwt_secret, jwt_algorithm)
+        return ResponseSchema(
+            data={"token": sign_jwt(user.email, jwt_secret, jwt_algorithm)})
 
     def check_user(data: UserLoginSchema):
         for user in users:
@@ -71,8 +75,11 @@ def get_test_router(
     @router.post("/user/login", tags=["user"])
     async def user_login(user: UserLoginSchema = Body(...)):
         if check_user(user):
-            return sign_jwt(user.email, jwt_secret, jwt_algorithm)
-        return {"error": "Wrong login details!"}
+            return ResponseSchema(
+                data={"token": sign_jwt(user.email, jwt_secret, jwt_algorithm)})
+        return ResponseSchema(
+            message="Wrong login details!",
+            error=ErrorCode.GenericError)
 
     return router
 

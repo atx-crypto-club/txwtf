@@ -13,10 +13,6 @@ from txwtf.core import gen_secret
 DEFAULT_JWT_ALGORITHM = "HS256"
 
 
-def token_response(token: str):
-    return {"access_token": token}
-
-
 def sign_jwt(
     user_id: str,
     jwt_secret: str,
@@ -25,7 +21,7 @@ def sign_jwt(
 ) -> Dict[str, str]:
     payload = {"user_id": user_id, "expires": time.time() + expire_time}
     token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
-    return token_response(token)
+    return token
 
 
 def decode_jwt(token: str, jwt_secret: str, jwt_algorithm: str) -> dict:

@@ -12,6 +12,8 @@ UserChangeEventCode = IntEnum(
 ErrorCode = IntEnum(
     "ErrorCode",
     [
+        "NoError",
+        "GenericError",
         "EmailExists",
         "UsernameExists",
         "InvalidEmail",
