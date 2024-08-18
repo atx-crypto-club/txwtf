@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from decouple import config
-from fastapi import FastAPI, Body, Depends
+from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException
 
 from txwtf.core import gen_secret
 from txwtf.api.auth import sign_jwt, JWTBearer
@@ -24,6 +24,59 @@ posts = [{"id": 1, "title": "Pancake", "content": "Lorem Ipsum ..."}]
 users = []
 
 
+def get_test_router(
+        jwt_secret: str = None, jwt_algorithm: str = None
+) -> APIRouter:
+    router = APIRouter(
+        tags=["test"],
+        responses={404: {"description": "Not found"}},
+    )
+
+    @router.get("/posts", tags=["posts"])
+    async def get_posts() -> dict:
+        return {"data": posts}
+
+    @router.get("/posts/{id}", tags=["posts"])
+    async def get_single_post(id: int) -> dict:
+        if id > len(posts):
+            return {"error": "No such post with the supplied ID."}
+
+        for post in posts:
+            if post["id"] == id:
+                return {"data": post}
+
+    @router.post(
+        "/posts",
+        dependencies=[Depends(JWTBearer(jwt_secret, jwt_algorithm))],
+        tags=["posts"],
+    )
+    async def add_post(post: PostSchema) -> dict:
+        post.id = len(posts) + 1
+        posts.append(post.dict())
+        return {"data": "post added."}
+
+    @router.post("/user/signup", tags=["user"])
+    async def create_user(user: UserSchema = Body(...)):
+        users.append(
+            user
+        )  # replace with db call, making sure to hash the password first
+        return sign_jwt(user.email, jwt_secret, jwt_algorithm)
+
+    def check_user(data: UserLoginSchema):
+        for user in users:
+            if user.email == data.email and user.password == data.password:
+                return True
+        return False
+
+    @router.post("/user/login", tags=["user"])
+    async def user_login(user: UserLoginSchema = Body(...)):
+        if check_user(user):
+            return sign_jwt(user.email, jwt_secret, jwt_algorithm)
+        return {"error": "Wrong login details!"}
+
+    return router
+
+
 def create_app(
     jwt_secret: str = None, jwt_algorithm: str = None, db_url: str = None
 ) -> FastAPI:
@@ -43,48 +96,12 @@ def create_app(
     @app.get("/", tags=["root"])
     async def read_root() -> dict:
         return {"message": "txwtf v{}".format(version)}
+    
+    app.include_router(
+        get_test_router(),
+        prefix="/test",
+        tags=["jwt demo"])
 
-    @app.get("/posts", tags=["posts"])
-    async def get_posts() -> dict:
-        return {"data": posts}
-
-    @app.get("/posts/{id}", tags=["posts"])
-    async def get_single_post(id: int) -> dict:
-        if id > len(posts):
-            return {"error": "No such post with the supplied ID."}
-
-        for post in posts:
-            if post["id"] == id:
-                return {"data": post}
-
-    @app.post(
-        "/posts",
-        dependencies=[Depends(JWTBearer(jwt_secret, jwt_algorithm))],
-        tags=["posts"],
-    )
-    async def add_post(post: PostSchema) -> dict:
-        post.id = len(posts) + 1
-        posts.append(post.dict())
-        return {"data": "post added."}
-
-    @app.post("/user/signup", tags=["user"])
-    async def create_user(user: UserSchema = Body(...)):
-        users.append(
-            user
-        )  # replace with db call, making sure to hash the password first
-        return sign_jwt(user.email, jwt_secret, jwt_algorithm)
-
-    def check_user(data: UserLoginSchema):
-        for user in users:
-            if user.email == data.email and user.password == data.password:
-                return True
-        return False
-
-    @app.post("/user/login", tags=["user"])
-    async def user_login(user: UserLoginSchema = Body(...)):
-        if check_user(user):
-            return sign_jwt(user.email, jwt_secret, jwt_algorithm)
-        return {"error": "Wrong login details!"}
 
     return app
 
