@@ -7,7 +7,7 @@ from sqlmodel import create_engine, SQLModel, Session
 
 def get_engine(db_url: str = None, echo: bool = False):
     if db_url is None:
-        db_url = config("DATABASE_URL", default="sqlite://")
+        db_url = config("TXWTF_API_DATABASE_URL", default="sqlite://")
     return create_engine(db_url, echo=echo)
 
 

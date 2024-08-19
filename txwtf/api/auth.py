@@ -1,5 +1,6 @@
 import time
 from typing import Dict
+import uuid
 
 import jwt
 from decouple import config
@@ -18,16 +19,22 @@ def sign_jwt(
     jwt_secret: str,
     jwt_algorithm: str,
     expire_time: float = 600.0,
+) -> str:
+    payload = {
+        "user_id": user_id,
+        "expires": time.time() + expire_time,
+        "session_id": uuid.uuid4()
+    }
+    return jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
+
+
+def decode_jwt(
+    token: str,
+    jwt_secret: str,
+    jwt_algorithm: str
 ) -> Dict[str, str]:
-    payload = {"user_id": user_id, "expires": time.time() + expire_time}
-    token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
-    return token
-
-
-def decode_jwt(token: str, jwt_secret: str, jwt_algorithm: str) -> dict:
     try:
-        decoded_token = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
-        return decoded_token if decoded_token["expires"] >= time.time() else None
+        return jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
     except:
         return {}
 
@@ -65,9 +72,10 @@ class JWTBearer(HTTPBearer):
 
         try:
             payload = decode_jwt(jwtoken, self.jwt_secret, self.jwt_algorithm)
+            payload = payload if payload["expires"] >= time.time() else None
         except:
             payload = None
-        if payload:
+        if payload is not None:
             valid = True
 
         return valid

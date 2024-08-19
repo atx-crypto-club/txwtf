@@ -8,9 +8,6 @@ from sqlmodel import SQLModel, Column, Field
 from sqlalchemy import DateTime, func
 
 
-from txwtf.api.core import ErrorCode
-
-
 class PostSchema(SQLModel):
     id: int = Field(default=None)
     title: str = Field(...)
@@ -52,7 +49,7 @@ class UserLoginSchema(SQLModel):
 
 class ResponseSchema(SQLModel):
     message: Optional[str] = None
-    error: Optional[int] = ErrorCode.NoError
+    error: Optional[int] = 1 #ErrorCode.NoError
     data: dict = Field(...)
 
 
