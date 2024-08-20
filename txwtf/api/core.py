@@ -2,9 +2,14 @@ from datetime import datetime
 from enum import IntEnum
 from typing import Any, List, Optional
 
-from sqlmodel import Session
+from sqlmodel import Session, select
+from sqlalchemy.exc import NoResultFound
 
-from txwtf.api.model import GlobalSettings
+from email_validator import validate_email, EmailNotValidError
+
+from werkzeug.security import generate_password_hash, check_password_hash
+
+from txwtf.api.model import GlobalSettings, User, UserChange, SystemLog
 
 
 SITE_LOGO = "/assets/img/atxcf_logo_small.jpg"
@@ -377,3 +382,220 @@ def get_email_validate_deliverability_enabled(
 ):
     return int(get_setting(
         session, "email_validate_deliverability_enabled", default=default))
+
+
+def register_user(
+        session: Session,
+        username: str,
+        password: str, 
+        verify_password: str,
+        name: str,
+        email: str,
+        request: Any,
+        cur_time: Optional[datetime] = None
+):
+    """
+    Perform user registration.
+    """
+    if password != verify_password:
+        raise RegistrationError(ErrorCode.PasswordMismatch, "Password mismatch!")
+
+    # make sure the password passes system checks
+    password_check(session, password)
+
+    # if this returns a user, then the email already exists in database
+    statement = select(User).where(User.email == email)
+    results = session.exec(statement)
+    user = None
+    try:
+        user = results.one()
+    except NoResultFound:
+        pass
+
+    # if a user is found by email, throw an error
+    if user is not None:
+        raise RegistrationError(ErrorCode.EmailExists, "Email address already exists")
+
+    # if this returns a user, then the username already exists in database
+    statement = select(User).where(User.username == username)
+    results = session.exec(statement)
+    user = None
+    try:
+        user = results.one()
+    except NoResultFound:
+        pass
+
+    if user is not None:
+        raise RegistrationError(ErrorCode.UsernameExists, "Username already exists")
+
+    # check email validity
+    check_deliverability = get_email_validate_deliverability_enabled(session)
+    try:
+        emailinfo = validate_email(email, check_deliverability=check_deliverability)
+        email = emailinfo.normalized
+    except EmailNotValidError as e:
+        raise RegistrationError(ErrorCode.InvalidEmail, str(e))
+
+    if cur_time is None:
+        now = datetime.now()
+    else:
+        now = cur_time
+
+    # create a new user with the form data. Hash the password so the
+    # plaintext version isn't saved.
+    new_user = User(
+        email=email,
+        name=name,
+        password=generate_password_hash(password),
+        created_time=now,
+        modified_time=now,
+        avatar_url=get_default_avatar(session),
+        card_image_url=get_default_card_image(session),
+        header_image_url=get_default_header_image(session),
+        header_text=name,
+        description="{} is on the scene".format(name),
+        email_verified=False,
+        is_admin=False,
+        last_login=None,
+        last_login_addr=None,
+        view_count=0,
+        post_view_count=0,
+        username=username,
+        post_count=0,
+    )
+
+    # add the new user to the database
+    session.add(new_user)
+    session.commit()  # commit now to create new user id
+
+    new_change = UserChange(
+        user_id=new_user.id,
+        change_code=UserChangeEventCode.UserCreate,
+        change_time=now,
+        change_desc="creating new user {} [{}]".format(new_user.username, new_user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint,
+    )
+    session.add(new_change)
+    new_log = SystemLog(
+        event_code=SystemLogEventCode.UserCreate,
+        event_time=now,
+        event_desc="creating new user {} [{}]".format(new_user.username, new_user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint,
+    )
+    session.add(new_log)
+    session.commit()
+
+
+def execute_login(
+        session: Session,
+        username: str,
+        password: str,
+        request: Any, 
+        cur_time: Optional[datetime] = None,
+) -> User:
+    """
+    Record a login and execute a provided login function if the supplied
+    credentials are correct.
+    """
+    statement = select(User).where(User.username == username)
+    results = session.exec(statement)
+    user = None
+    try:
+        user = results.one()
+    except NoResultFound:
+        pass
+
+    # check if the user exists
+    if user is None:
+        raise LoginError(ErrorCode.UserDoesNotExist, "Access denied!")
+
+    # take the user-supplied password, hash it, and compare it
+    # to the hashed password in the database
+    if not check_password_hash(user.password, password):
+        raise LoginError(ErrorCode.UserPasswordIncorrect, "Access denied!")
+
+    #if login_function is not None:
+    #    login_function(user, remember=remember)
+    # TODO: generate jwt token and create session record then return the signed token
+    # at the end 
+
+    if cur_time is None:
+        cur_time = datetime.now()
+
+    now = cur_time
+    user.last_login = now
+    user.last_login_addr = remote_addr(request)
+    new_log = SystemLog(
+        event_code=SystemLogEventCode.UserLogin,
+        event_time=now,
+        event_desc="user {} [{}] logged in".format(user.username, user.id),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint,
+    )
+    session.add(new_log)
+    new_change = UserChange(
+        user_id=user.id,
+        change_code=UserChangeEventCode.UserLogin,
+        change_time=now,
+        change_desc="logging in from {}".format(remote_addr(request)),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint,
+    )
+    session.add(new_change)
+    session.commit()
+
+    return user
+
+# TODO: invalidate a token without logging all out at once
+
+def execute_logout(
+        session: Session,
+        request: Any,
+        current_user: Optional[User] = None, 
+        cur_time: Optional[datetime] = None):
+    """
+    Record a logout and execute logout by invalidating all a
+    users tokens.
+    """
+    if current_user is None:
+        raise LogoutError(ErrorCode.UserNull, "Null user")
+
+    if cur_time is None:
+        cur_time = datetime.now()
+
+    new_log = SystemLog(
+        event_code=SystemLogEventCode.UserLogout,
+        event_time=cur_time,
+        event_desc="user {} [{}] logging out".format(
+            current_user.username, current_user.id
+        ),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint,
+    )
+    session.add(new_log)
+    new_change = UserChange(
+        user_id=current_user.id,
+        change_code=UserChangeEventCode.UserLogout,
+        change_time=cur_time,
+        change_desc="logging out from {}".format(remote_addr(request)),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint,
+    )
+    session.add(new_change)
+    session.commit()
+
+    # TODO: invalidate all current active tokens.

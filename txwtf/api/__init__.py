@@ -2,7 +2,9 @@ from contextlib import asynccontextmanager
 import logging
 
 from decouple import config
+
 from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from txwtf.core import gen_secret
 from txwtf.api.auth import sign_jwt, JWTBearer
@@ -99,6 +101,18 @@ def create_app(
         jwt_secret = config("TXWTF_API_JWT_SECRET", default=gen_secret())
 
     app = FastAPI(lifespan=lifespan)
+
+    origins = [
+        "http://localhost",
+        "http://localhost:8080",
+    ]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.get("/", tags=["root"])
     async def read_root() -> dict:

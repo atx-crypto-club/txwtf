@@ -4,10 +4,13 @@ Tests for the txwtf.api module.
 from datetime import datetime
 import unittest
 
-from sqlmodel import SQLModel, Session
+import email_validator
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from sqlmodel import SQLModel, Session, select
 
 from txwtf.api.core import (
-    ErrorCode, 
+    ErrorCode, UserChangeEventCode, SystemLogEventCode,
     get_setting,
     get_setting_record,
     has_setting,
@@ -28,6 +31,7 @@ from txwtf.api.core import (
     get_password_upper_enabled,
     get_email_validate_deliverability_enabled,
     password_check,
+    register_user, execute_login, execute_logout,
     SITE_LOGO,
     AVATAR,
     CARD_IMAGE,
@@ -39,10 +43,23 @@ from txwtf.api.core import (
     PASSWORD_DIGIT_ENABLED, PASSWORD_UPPER_ENABLED,
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
-    SettingsError, PasswordError
+    SettingsError, PasswordError, RegistrationError,
+    LoginError, LogoutError
 )
 from txwtf.api.db import get_engine
-from txwtf.api.model import GlobalSettings
+from txwtf.api.model import GlobalSettings, User, UserChange, SystemLog
+
+
+# Turn off DNS validation for tests
+email_validator.TEST_ENVIRONMENT = True
+
+class FakeRequest(object):
+    def __init__(self, **kwargs):
+        self.referrer = kwargs["referrer"]
+        self.user_agent = kwargs["user_agent"]
+        self.endpoint = kwargs["endpoint"]
+        self.remote_addr = kwargs["remote_addr"]
+        self.headers = kwargs["headers"]
 
 
 class TestAPI(unittest.TestCase):
@@ -803,3 +820,562 @@ class TestAPI(unittest.TestCase):
 
             # then
             self.assertTrue(success)
+
+    def test_register_user(self):
+        """
+        Test registering a user.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            register_user(
+                session, username, password, password, name, email, request, cur_time)
+
+            # then
+            ## check user
+            user = session.exec(select(User)).first()
+            self.assertEqual(user.email, email)
+            self.assertEqual(user.name, name)
+            self.assertTrue(check_password_hash(user.password, password))
+            self.assertEqual(user.created_time, cur_time)
+            self.assertEqual(user.modified_time, cur_time)
+            self.assertEqual(user.avatar_url, get_default_avatar(session))
+            self.assertEqual(user.card_image_url, get_default_card_image(session))
+            self.assertEqual(user.header_image_url, get_default_header_image(session))
+            self.assertEqual(user.header_text, name)
+            self.assertEqual(user.description, "{} is on the scene".format(name))
+            self.assertEqual(user.email_verified, False)
+            self.assertEqual(user.is_admin, False)
+            self.assertEqual(user.last_login, None)
+            self.assertEqual(user.last_login_addr, None)
+            self.assertEqual(user.view_count, 0)
+            self.assertEqual(user.post_view_count, 0)
+            self.assertEqual(user.username, username)
+            self.assertEqual(user.post_count, 0)
+
+            ## check logs
+            new_change = session.exec(select(UserChange)).first()
+            self.assertEqual(new_change.user_id, user.id)
+            self.assertEqual(new_change.change_code, UserChangeEventCode.UserCreate)
+            self.assertEqual(new_change.change_time, cur_time)
+            self.assertEqual(
+                new_change.change_desc,
+                "creating new user {} [{}]".format(user.username, user.id),
+            )
+            self.assertEqual(new_change.referrer, request.referrer)
+            self.assertEqual(new_change.user_agent, request.user_agent)
+            self.assertEqual(new_change.remote_addr, request.headers.get("X-Forwarded-For"))
+            self.assertEqual(new_change.endpoint, request.endpoint)
+
+            new_log = session.exec(select(SystemLog)).first()
+            self.assertEqual(new_log.event_code, SystemLogEventCode.UserCreate)
+            self.assertEqual(new_log.event_time, cur_time)
+            self.assertEqual(
+                new_log.event_desc,
+                "creating new user {} [{}]".format(user.username, user.id),
+            )
+            self.assertEqual(new_log.referrer, request.referrer)
+            self.assertEqual(new_log.user_agent, request.user_agent)
+            self.assertEqual(new_log.remote_addr, request.headers.get("X-Forwarded-For"))
+            self.assertEqual(new_log.endpoint, request.endpoint)
+
+    def test_register_email_exists(self):
+        """
+        Test that there is an error if an email already exists.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            register_user(
+                session, username, password, password, name, email, request, cur_time)
+
+            code = None
+            try:
+                register_user(
+                    session, username, password, password, name, email, request, cur_time)
+            except Exception as e:
+                self.assertIsInstance(e, RegistrationError)
+                code, _ = e.args
+
+            self.assertEqual(code, ErrorCode.EmailExists)
+
+    def test_register_username_exists(self):
+        """
+        Test that there is an error if a username already exists.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            register_user(
+                session, username, password, password, name, email, request, cur_time)
+
+            code = None
+            try:
+                # change the email to trigger a username error instead
+                email = email + ".net"
+                register_user(
+                    session, username, password, password, name, email, request, cur_time)
+            except Exception as e:
+                self.assertIsInstance(e, RegistrationError)
+                code, _ = e.args
+
+            self.assertEqual(code, ErrorCode.UsernameExists)
+
+    def test_register_invalid_email(self):
+        """
+        Test that there is an error if an unallowed test email is used
+        for registration.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@localhost"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            code = None
+            try:
+                register_user(
+                    session, username, password, password, name, email, request, cur_time)
+            except Exception as e:
+                self.assertIsInstance(e, RegistrationError)
+                code, _ = e.args
+
+            self.assertEqual(code, ErrorCode.InvalidEmail)
+
+    def test_register_invalid_email_2(self):
+        """
+        Test that there is an error if a malformed email is used
+        for registration.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@localhost .com"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            code = None
+            try:
+                register_user(
+                    session, username, password, password, name, email, request, cur_time)
+            except Exception as e:
+                self.assertIsInstance(e, RegistrationError)
+                code, _ = e.args
+
+            self.assertEqual(code, ErrorCode.InvalidEmail)
+
+    def test_register_password_mismatch(self):
+        """
+        Test that there is an error if the password and
+        verify_password don't match.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            code = None
+            try:
+                register_user(
+                    session, username, password, password + "foo", name, email, request, cur_time
+                )
+            except Exception as e:
+                self.assertIsInstance(e, RegistrationError)
+                code, _ = e.args
+
+            self.assertEqual(code, ErrorCode.PasswordMismatch)
+
+    def test_register_password_check_fail(self):
+        """
+        Test that there is an error if the password fails the password
+        check.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "password"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            code = None
+            try:
+                register_user(
+                    session, username, password, password, name, email, request, cur_time)
+            except Exception as e:
+                self.assertIsInstance(e, PasswordError)
+                code, _ = e.args
+
+            self.assertIsNotNone(code)
+
+    def test_execute_login(self):
+        """
+        Test registering then loggin in a user.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            register_user(
+                session, username, password, password, name, email, request, cur_time)
+
+            request.endpoint = "/login"
+            user = execute_login(
+                session, username, password, request, cur_time=cur_time)
+
+            # then
+            ## check logs
+            user_changes = session.exec(
+                select(UserChange).order_by(UserChange.id.desc()))
+            last_changes = user_changes.all()
+            self.assertEqual(len(last_changes), 2)
+            last_user_change = last_changes[0]
+            self.assertEqual(last_user_change.user_id, user.id)
+            self.assertEqual(last_user_change.change_code, UserChangeEventCode.UserLogin)
+            self.assertEqual(last_user_change.change_time, cur_time)
+            self.assertEqual(
+                last_user_change.change_desc,
+                "logging in from {}".format(headers["X-Forwarded-For"]),
+            )
+            self.assertEqual(last_user_change.referrer, request.referrer)
+            self.assertEqual(last_user_change.user_agent, request.user_agent)
+            self.assertEqual(
+                last_user_change.remote_addr, request.headers.get("X-Forwarded-For")
+            )
+            self.assertEqual(last_user_change.endpoint, request.endpoint)
+
+            system_logs = session.exec(
+                select(SystemLog).order_by(SystemLog.id.desc()))
+            last_logs = system_logs.all()
+            self.assertEqual(len(last_logs), 2)
+            last_log = last_logs[0]
+            self.assertEqual(last_log.event_code, SystemLogEventCode.UserLogin)
+            self.assertEqual(last_log.event_time, cur_time)
+            self.assertEqual(
+                last_log.event_desc, "user {} [{}] logged in".format(user.username, user.id)
+            )
+            self.assertEqual(last_log.referrer, request.referrer)
+            self.assertEqual(last_log.user_agent, request.user_agent)
+            self.assertEqual(last_log.remote_addr, request.headers.get("X-Forwarded-For"))
+            self.assertEqual(last_log.endpoint, request.endpoint)
+
+    def test_execute_login_user_doesnt_exist(self):
+        """
+        Test logging in when user doesn't exist, triggering an error.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/login"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            code = None
+            try:
+                execute_login(
+                    session, username, password, request, cur_time=cur_time)
+            except Exception as e:
+                self.assertIsInstance(e, LoginError)
+                code, msg = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.UserDoesNotExist)
+            self.assertEqual(msg, "Access denied!")
+
+    def test_execute_login_password_error(self):
+        """
+        Test registering then logging in a user with a wrong password
+        triggering an error.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            register_user(
+                session, username, password, password, name, email, request, cur_time)
+
+            request.endpoint = "/login"
+            code = None
+            try:
+                execute_login(
+                    session, username, password + "foo", request, cur_time=cur_time)
+            except Exception as e:
+                self.assertIsInstance(e, LoginError)
+                code, msg = e.args
+
+            self.assertEqual(code, ErrorCode.UserPasswordIncorrect)
+            self.assertEqual(msg, "Access denied!")
+
+    def test_execute_logout_with_null_current_user(self):
+        """
+        Test that we get an error when passing a null current user
+        """
+        with Session(self._engine) as session:
+            # when
+            code = None
+            try:
+                execute_logout(
+                    session, None, None)
+            except Exception as e:
+                self.assertIsInstance(e, LogoutError)
+                code, msg = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.UserNull)
+            self.assertEqual(msg, "Null user")
+
+    def test_execute_logout(self):
+        """
+        Test that calling execute_logout writes the expected
+        records to database.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+            request_login = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint="/login",
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+            request_logout = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint="/logout",
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            register_user(
+                session, username, password, password, name, email, request)
+            user = execute_login(
+                session, username, password, request_login)
+
+            code = None
+            cur_time = datetime.now()
+            execute_logout(
+                session, request_logout, user, cur_time)
+
+            # then
+            user_changes = session.exec(
+                select(UserChange).order_by(UserChange.id.desc()))
+            last_user_change = user_changes.first()
+            self.assertEqual(last_user_change.user_id, user.id)
+            self.assertEqual(last_user_change.change_code, UserChangeEventCode.UserLogout)
+            self.assertEqual(last_user_change.change_time, cur_time)
+            self.assertEqual(
+                last_user_change.change_desc,
+                "logging out from {}".format(headers["X-Forwarded-For"]),
+            )
+            self.assertEqual(last_user_change.referrer, request_logout.referrer)
+            self.assertEqual(last_user_change.user_agent, request_logout.user_agent)
+            self.assertEqual(
+                last_user_change.remote_addr, request_logout.headers.get("X-Forwarded-For")
+            )
+            self.assertEqual(last_user_change.endpoint, request_logout.endpoint)
+
+            system_logs = system_logs = session.exec(
+                select(SystemLog).order_by(SystemLog.id.desc()))
+            last_log = system_logs.first()
+            self.assertEqual(last_log.event_code, SystemLogEventCode.UserLogout)
+            self.assertEqual(last_log.event_time, cur_time)
+            self.assertEqual(
+                last_log.event_desc,
+                "user {} [{}] logging out".format(user.username, user.id),
+            )
+            self.assertEqual(last_log.referrer, request_logout.referrer)
+            self.assertEqual(last_log.user_agent, request_logout.user_agent)
+            self.assertEqual(
+                last_log.remote_addr, request_logout.headers.get("X-Forwarded-For")
+            )
+            self.assertEqual(last_log.endpoint, request_logout.endpoint)
+
+
+if __name__ == "__main__":
+    unittest.main()
