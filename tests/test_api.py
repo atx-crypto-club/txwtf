@@ -17,11 +17,29 @@ from txwtf.api.core import (
     get_default_avatar,
     get_default_card_image,
     get_default_header_image,
+    get_password_lower_enabled,
+    get_password_max_length,
+    get_password_max_length_enabled,
+    get_password_min_length,
+    get_password_min_length_enabled,
+    get_password_special_symbols,
+    get_password_special_symbols_enabled,
+    get_password_digit_enabled,
+    get_password_upper_enabled,
+    get_email_validate_deliverability_enabled,
+    password_check,
     SITE_LOGO,
     AVATAR,
     CARD_IMAGE,
     HEADER_IMAGE,
-    SettingsError
+    PASSWORD_SPECIAL_SYMBOLS, PASSWORD_MINIMUM_LENGTH,
+    PASSWORD_MAXIMUM_LENGTH, PASSWORD_SPECIAL_SYMBOLS_ENABLED,
+    PASSWORD_MINIMUM_LENGTH_ENABLED,
+    PASSWORD_MAXIMUM_LENGTH_ENABLED,
+    PASSWORD_DIGIT_ENABLED, PASSWORD_UPPER_ENABLED,
+    PASSWORD_LOWER_ENABLED,
+    EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
+    SettingsError, PasswordError
 )
 from txwtf.api.db import get_engine
 from txwtf.api.model import GlobalSettings
@@ -294,3 +312,494 @@ class TestAPI(unittest.TestCase):
 
             # then
             self.assertEqual(get_default_header_image(session), default_header)
+
+    def test_password_special_symbols(self):
+        """
+        Test default password special symbols setting.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_password_special_symbols(session), PASSWORD_SPECIAL_SYMBOLS)
+
+    def test_password_special_symbols_change(self):
+        """
+        Test changing password special symbols setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            special_sym = "$%^&"
+
+            # when
+            set_setting(session, "password_special_symbols", special_sym)
+
+            # then
+            self.assertEqual(get_password_special_symbols(session), special_sym)
+
+    def test_password_min_length(self):
+        """
+        Test default password minimumm length.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_password_min_length(session), PASSWORD_MINIMUM_LENGTH)
+
+    def test_password_min_length_change(self):
+        """
+        Test changing password minimum length setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            min_length = 10
+
+            # when
+            set_setting(session, "password_minimum_length", min_length)
+
+            # then
+            self.assertEqual(get_password_min_length(session), min_length)
+
+    def test_password_max_length(self):
+        """
+        Test default password maximum length.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_password_max_length(session), PASSWORD_MAXIMUM_LENGTH)
+
+    def test_password_max_length_change(self):
+        """
+        Test changing password maximum length setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            max_length = 128
+
+            # when
+            set_setting(session, "password_maximum_length", max_length)
+
+            # then
+            self.assertEqual(get_password_max_length(session), max_length)
+
+    def test_password_special_symbols_enabled(self):
+        """
+        Test default password special symbols enabled flag.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(
+                get_password_special_symbols_enabled(session), PASSWORD_SPECIAL_SYMBOLS_ENABLED
+            )
+
+    def test_password_special_symbols_enabled_change(self):
+        """
+        Test changing password special symbols enabled flag setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            special_symbols_enabled = 0
+
+            # when
+            set_setting(session, "password_special_symbols_enabled", special_symbols_enabled)
+
+            # then
+            self.assertEqual(
+                get_password_special_symbols_enabled(session), special_symbols_enabled
+            )
+
+    def test_password_min_length_enabled(self):
+        """
+        Test default password min length enabled flag.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(
+                get_password_min_length_enabled(session), PASSWORD_MINIMUM_LENGTH_ENABLED
+            )
+
+    def test_password_min_length_enabled_change(self):
+        """
+        Test changing password min length enabled flag setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            min_length_enabled = 0
+
+            # when
+            set_setting(session, "password_minimum_length_enabled", min_length_enabled)
+
+            # then
+            self.assertEqual(get_password_min_length_enabled(session), min_length_enabled)
+
+    def test_password_max_length_enabled(self):
+        """
+        Test default password max length enabled flag.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(
+                get_password_max_length_enabled(session), PASSWORD_MAXIMUM_LENGTH_ENABLED
+            )
+
+    def test_password_max_length_enabled_change(self):
+        """
+        Test changing password max length enabled flag setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            max_length_enabled = 0
+
+            # when
+            set_setting(session, "password_maximum_length_enabled", max_length_enabled)
+
+            # then
+            self.assertEqual(get_password_max_length_enabled(session), max_length_enabled)
+
+    def test_password_digit_enabled(self):
+        """
+        Test default password digit enabled flag.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_password_digit_enabled(session), PASSWORD_DIGIT_ENABLED)
+
+    def test_password_digit_enabled_change(self):
+        """
+        Test changing password digit enabled flag setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            digit_enabled = 0
+
+            # when
+            set_setting(session, "password_digit_enabled", digit_enabled)
+
+            # then
+            self.assertEqual(get_password_digit_enabled(session), digit_enabled)
+
+    def test_password_upper_enabled(self):
+        """
+        Test default password upper enabled flag.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_password_upper_enabled(session), PASSWORD_UPPER_ENABLED)
+
+    def test_password_uppper_enabled_change(self):
+        """
+        Test changing password upper enabled flag setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            upper_enabled = 0
+
+            # when
+            set_setting(session, "password_upper_enabled", upper_enabled)
+
+            # then
+            self.assertEqual(get_password_upper_enabled(session), upper_enabled)
+
+    def test_password_lower_enabled(self):
+        """
+        Test default password lower enabled flag.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_password_lower_enabled(session), PASSWORD_LOWER_ENABLED)
+
+    def test_password_lower_enabled_change(self):
+        """
+        Test changing password lower enabled flag setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            lower_enabled = 0
+
+            # when
+            set_setting(session, "password_lower_enabled", lower_enabled)
+
+            # then
+            self.assertEqual(get_password_lower_enabled(session), lower_enabled)
+
+    def test_email_validate_deliverability_enabled(self):
+        """
+        Test default email validate deliverability enabled flag.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(
+                get_email_validate_deliverability_enabled(session),
+                EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
+            )
+
+    def test_email_validate_deliverability_enabled_change(self):
+        """
+        Test email validate deliverability enabled flag setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            enabled = 0
+
+            # when
+            set_setting(session, "email_validate_deliverability_enabled", enabled)
+
+            # then
+            self.assertEqual(get_email_validate_deliverability_enabled(session), enabled)
+
+    def test_password_check(self):
+        """
+        Test that password checking works as expected with default flags.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asDf1234#!1"
+
+            # when
+            success = True
+            try:
+                password_check(session, password)
+            except:
+                success = False
+
+            # then
+            self.assertTrue(success)
+
+    def test_password_check_error_min_length(self):
+        """
+        Test that password checking fails on default min length.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "aD1#!1"
+
+            # when
+            code = None
+            try:
+                password_check(session, password)
+            except Exception as e:
+                self.assertIsInstance(e, PasswordError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.PasswordTooShort)
+
+    def test_password_check_error_max_length(self):
+        """
+        Test that password checking fails on default max length.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asDf1234#!1"
+            set_setting(session, "password_maximum_length", 8)
+
+            # when
+            code = None
+            try:
+                password_check(session, password)
+            except Exception as e:
+                self.assertIsInstance(e, PasswordError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.PasswordTooLong)
+
+    def test_password_check_error_missing_digit(self):
+        """
+        Test that password checking fails on missing digit.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asDfFDSA#!!"
+
+            # when
+            code = None
+            try:
+                password_check(session, password)
+            except Exception as e:
+                self.assertIsInstance(e, PasswordError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.PasswordMissingDigit)
+
+    def test_password_check_error_missing_upper(self):
+        """
+        Test that password checking fails on missing upper case character.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asdf1234#!1"
+
+            # when
+            code = None
+            try:
+                password_check(session, password)
+            except Exception as e:
+                self.assertIsInstance(e, PasswordError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.PasswordMissingUpper)
+
+    def test_password_check_error_missing_lower(self):
+        """
+        Test that password checking fails on missing lower case character.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "ASDF1234#!1"
+
+            # when
+            code = None
+            try:
+                password_check(session, password)
+            except Exception as e:
+                self.assertIsInstance(e, PasswordError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.PasswordMissingLower)
+
+    def test_password_check_error_missing_symbol(self):
+        """
+        Test that password checking fails on missing symbol.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asDf1234131"
+
+            # when
+            code = None
+            try:
+                password_check(session, password)
+            except Exception as e:
+                self.assertIsInstance(e, PasswordError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.PasswordMissingSymbol)
+
+    def test_password_check_symbol_disabled(self):
+        """
+        Test that password checking works with symbol flag disabled.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asDf1234!1"
+            set_setting(session, "password_special_symbols_enabled", 0)
+
+            # when
+            success = True
+            try:
+                password_check(session, password)
+            except:
+                success = False
+
+            # then
+            self.assertTrue(success)
+
+    def test_password_check_symbol_disabled_when_empty(self):
+        """
+        Test that password checking works when no special
+        symbols are specified.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asDf1234!1"
+            set_setting(session, "password_special_symbols", "")
+
+            # when
+            success = True
+            try:
+                password_check(session, password)
+            except:
+                success = False
+
+            # then
+            self.assertTrue(success)
+
+    def test_password_check_min_length_disabled(self):
+        """
+        Test that password checking works with min length flag disabled.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "Aa#4!1"
+            set_setting(session, "password_minimum_length", 10)
+            set_setting(session, "password_minimum_length_enabled", 0)
+
+            # when
+            success = True
+            try:
+                password_check(session, password)
+            except:
+                success = False
+
+            # then
+            self.assertTrue(success)
+
+    def test_password_check_max_length_disabled(self):
+        """
+        Test that password checking works with max length flag disabled.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "Aa#4!1"
+            set_setting(session, "password_minimum_length", 1)
+            set_setting(session, "password_maximum_length", 4)
+            set_setting(session, "password_maximum_length_enabled", 0)
+
+            # when
+            success = True
+            try:
+                password_check(session, password)
+            except:
+                success = False
+
+            # then
+            self.assertTrue(success)
+
+    def test_password_check_digit_disabled(self):
+        """
+        Test that password checking works with digit flag disabled.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asDffdsa#!1"
+            set_setting(session, "password_digit_enabled", 0)
+
+            # when
+            success = True
+            try:
+                password_check(session, password)
+            except:
+                success = False
+
+            # then
+            self.assertTrue(success)
+
+    def test_password_check_upper_disabled(self):
+        """
+        Test that password checking works with upper flag disabled.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "asdffdsa#!1"
+            set_setting(session, "password_upper_enabled", 0)
+
+            # when
+            success = True
+            try:
+                password_check(session, password)
+            except:
+                success = False
+
+            # then
+            self.assertTrue(success)
+
+    def test_password_check_lower_disabled(self):
+        """
+        Test that password checking works with lower flag disabled.
+        """
+        with Session(self._engine) as session:
+            # with
+            password = "ASDFFDSA#!1"
+            set_setting(session, "password_lower_enabled", 0)
+
+            # when
+            success = True
+            try:
+                password_check(session, password)
+            except:
+                success = False
+
+            # then
+            self.assertTrue(success)

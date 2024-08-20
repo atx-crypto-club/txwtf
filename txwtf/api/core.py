@@ -232,3 +232,148 @@ def get_default_header_image(
         default: Optional[Any] = HEADER_IMAGE):
     return get_setting(
         session, "default_header", default=default)
+
+
+def remote_addr(request):
+    """
+    Get the client address through the proxy if it exists.
+    """
+    return request.headers.get(
+        "X-Forwarded-For", request.headers.get("X-Real-IP", request.remote_addr)
+    )
+
+
+def get_password_special_symbols(session: Session,
+        default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS):
+    return get_setting(
+        session, "password_special_symbols", default=default)
+
+
+def get_password_min_length(
+        session: Session,
+        default: Optional[Any] = PASSWORD_MINIMUM_LENGTH):
+    return int(get_setting(
+        session, "password_minimum_length", default=default))
+
+
+def get_password_max_length(
+        session: Session,
+        default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH):
+    return int(get_setting(
+        session, "password_maximum_length", default=default))
+
+
+def get_password_special_symbols_enabled(
+        session: Session,
+        default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS_ENABLED):
+    return int(get_setting(
+        session, "password_special_symbols_enabled", default=default))
+
+
+def get_password_min_length_enabled(
+        session: Session,
+        default: Optional[Any] = PASSWORD_MINIMUM_LENGTH_ENABLED):
+    return int(get_setting(
+        session, "password_minimum_length_enabled", default=default))
+
+
+def get_password_max_length_enabled(
+        session: Session,
+        default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH_ENABLED):
+    return int(get_setting(
+        session, "password_maximum_length_enabled", default=default))
+
+
+def get_password_digit_enabled(
+        session: Session,
+        default: Optional[Any] = PASSWORD_DIGIT_ENABLED):
+    return int(get_setting(
+        session, "password_digit_enabled", default=default))
+
+
+def get_password_upper_enabled(
+        session: Session,
+        default: Optional[Any] = PASSWORD_UPPER_ENABLED):
+    return int(get_setting(
+        session, "password_upper_enabled", default=default))
+
+
+def get_password_lower_enabled(
+        session: Session,
+        default: Optional[Any] = PASSWORD_LOWER_ENABLED):
+    return int(get_setting(
+        session, "password_lower_enabled", default=default))
+
+
+def password_check(session: Session, passwd: str):
+    """
+    Check password for validity and throw an error if invalid
+    based on global flags and settings.
+    """
+    password_min_length_enabled = get_password_min_length_enabled(session)
+    password_max_length_enabled = get_password_max_length_enabled(session)
+    password_digit_enabled = get_password_digit_enabled(session)
+    password_upper_enabled = get_password_upper_enabled(session)
+    password_lower_enabled = get_password_lower_enabled(session)
+    password_special_symbols_enabled = get_password_special_symbols_enabled(session)
+
+    special_sym = get_password_special_symbols(session)
+    min_length = get_password_min_length(session)
+    max_length = get_password_max_length(session)
+
+    if len(special_sym) == 0:
+        password_special_symbols_enabled = False
+
+    if password_min_length_enabled and len(passwd) < min_length:
+        raise PasswordError(
+            ErrorCode.PasswordTooShort,
+            "length should be at least {}".format(min_length),
+        )
+    if password_max_length_enabled and len(passwd) > max_length:
+        raise PasswordError(
+            ErrorCode.PasswordTooLong,
+            "length should be not be greater than {}".format(max_length),
+        )
+
+    # Check if password contains at least one digit, uppercase letter, lowercase letter, and special symbol
+    has_digit = False
+    has_upper = False
+    has_lower = False
+    has_sym = False
+    for char in passwd:
+        if ord(char) >= 48 and ord(char) <= 57:
+            has_digit = True
+        elif ord(char) >= 65 and ord(char) <= 90:
+            has_upper = True
+        elif ord(char) >= 97 and ord(char) <= 122:
+            has_lower = True
+        elif char in special_sym:
+            has_sym = True
+
+    if password_digit_enabled and not has_digit:
+        raise PasswordError(
+            ErrorCode.PasswordMissingDigit, "Password should have at least one numeral"
+        )
+    if password_upper_enabled and not has_upper:
+        raise PasswordError(
+            ErrorCode.PasswordMissingUpper,
+            "Password should have at least one uppercase letter",
+        )
+    if password_lower_enabled and not has_lower:
+        raise PasswordError(
+            ErrorCode.PasswordMissingLower,
+            "Password should have at least one lowercase letter",
+        )
+    if password_special_symbols_enabled and not has_sym:
+        raise PasswordError(
+            ErrorCode.PasswordMissingSymbol,
+            "Password should have at least one of the symbols {}".format(special_sym),
+        )
+
+
+def get_email_validate_deliverability_enabled(
+        session: Session,
+        default: Optional[Any] = EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
+):
+    return int(get_setting(
+        session, "email_validate_deliverability_enabled", default=default))
