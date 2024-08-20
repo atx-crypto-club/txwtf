@@ -13,6 +13,14 @@ from txwtf.api.core import (
     has_setting,
     list_setting,
     set_setting,
+    get_site_logo,
+    get_default_avatar,
+    get_default_card_image,
+    get_default_header_image,
+    SITE_LOGO,
+    AVATAR,
+    CARD_IMAGE,
+    HEADER_IMAGE,
     SettingsError
 )
 from txwtf.api.db import get_engine
@@ -201,3 +209,88 @@ class TestAPI(unittest.TestCase):
             self.assertEqual(get_setting(session, var0), val0)
             self.assertEqual(get_setting(session, var0, var1), val1)
             self.assertTrue(has_setting(session, var0, var1))
+
+    def test_site_logo(self):
+        """
+        Test default site logo setting.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_site_logo(session), SITE_LOGO)
+
+    def test_site_logo_change(self):
+        """
+        Test changing site logo setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            site_logo = "test.png"
+
+            # when
+            set_setting(session, "site_logo", site_logo)
+
+            # then
+            self.assertEqual(get_site_logo(session), site_logo)
+
+    def test_default_avatar(self):
+        """
+        Test default avatar setting.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_default_avatar(session), AVATAR)
+
+    def test_default_avatar_change(self):
+        """
+        Test changing default avatar setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            avatar = "test.png"
+
+            # when
+            set_setting(session, "default_avatar", avatar)
+
+            # then
+            self.assertEqual(get_default_avatar(session), avatar)
+
+    def test_default_card_image(self):
+        """
+        Test default card image setting.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(
+                get_default_card_image(session), CARD_IMAGE)
+
+    def test_default_card_image_change(self):
+        """
+        Test changing card image setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            default_card = "test.png"
+
+            # when
+            set_setting(session, "default_card", default_card)
+
+            # then
+            self.assertEqual(get_default_card_image(session), default_card)
+
+    def test_default_header_image(self):
+        """
+        Test default header image setting.
+        """
+        with Session(self._engine) as session:
+            self.assertEqual(get_default_header_image(session), HEADER_IMAGE)
+
+    def test_default_header_image_change(self):
+        """
+        Test changing header image setting.
+        """
+        with Session(self._engine) as session:
+            # with
+            default_header = "test.png"
+
+            # when
+            set_setting(session, "default_header", default_header)
+
+            # then
+            self.assertEqual(get_default_header_image(session), default_header)

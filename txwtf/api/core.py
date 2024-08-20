@@ -7,6 +7,22 @@ from sqlmodel import Session
 from txwtf.api.model import GlobalSettings
 
 
+SITE_LOGO = "/assets/img/atxcf_logo_small.jpg"
+AVATAR = "/assets/img/atxcf_logo_small.jpg"
+CARD_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
+HEADER_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
+PASSWORD_SPECIAL_SYMBOLS = "$@#%"
+PASSWORD_MINIMUM_LENGTH = 8
+PASSWORD_MAXIMUM_LENGTH = 64
+PASSWORD_SPECIAL_SYMBOLS_ENABLED = 1
+PASSWORD_MINIMUM_LENGTH_ENABLED = 1
+PASSWORD_MAXIMUM_LENGTH_ENABLED = 1
+PASSWORD_DIGIT_ENABLED = 1
+PASSWORD_UPPER_ENABLED = 1
+PASSWORD_LOWER_ENABLED = 1
+EMAIL_VALIDATE_DELIVERABILITY_ENABLED = 1
+
+
 SystemLogEventCode = IntEnum(
     "SystemLogEventCode", ["UserLogin", "UserCreate", "UserLogout", "SettingChange"]
 )
@@ -188,3 +204,31 @@ def get_setting(
     if setting is not None:
         return setting.val
     return None
+
+
+def get_site_logo(
+        session: Session,
+        default: Optional[Any] = SITE_LOGO):
+    return get_setting(
+        session, "site_logo", default=default)
+
+
+def get_default_avatar(
+        session: Session,
+        default: Optional[Any] = AVATAR):
+    return get_setting(
+        session, "default_avatar", default=default)
+
+
+def get_default_card_image(
+        session: Session,
+        default: Optional[Any] = CARD_IMAGE):
+    return get_setting(
+        session, "default_card", default=default)
+
+
+def get_default_header_image(
+        session: Session,
+        default: Optional[Any] = HEADER_IMAGE):
+    return get_setting(
+        session, "default_header", default=default)
