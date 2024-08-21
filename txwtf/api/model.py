@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
+import uuid
 
 # from pydantic import BaseModel, Field, EmailStr
 from pydantic import EmailStr
@@ -110,6 +111,19 @@ class SystemLog(SQLModel, table=True):
     event_code: int
     event_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
     event_desc: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
+    referrer: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
+    user_agent: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
+    remote_addr: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
+    endpoint: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
+
+
+class AuthorizedSession(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    uuid: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), sa_type=String(48), max_length=48, unique=True, index=True)
+    user_id: int = Field(foreign_key="user.id")
+    active: Optional[bool] = True
+    created_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    expires_time: Optional[datetime] = Field(default_factory=lambda: datetime.utcnow() + timedelta(hours=2))
     referrer: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
     user_agent: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
     remote_addr: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)

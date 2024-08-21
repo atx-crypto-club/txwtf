@@ -1,6 +1,5 @@
 from datetime import datetime
-from enum import IntEnum
-from typing import Any, List, Optional
+from typing import Dict, Any, List, Optional
 
 from sqlmodel import Session, select
 from sqlalchemy.exc import NoResultFound
@@ -9,74 +8,39 @@ from email_validator import validate_email, EmailNotValidError
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from txwtf.api.model import GlobalSettings, User, UserChange, SystemLog
-
-
-SITE_LOGO = "/assets/img/atxcf_logo_small.jpg"
-AVATAR = "/assets/img/atxcf_logo_small.jpg"
-CARD_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
-HEADER_IMAGE = "/assets/img/20200126_atxcf_bg_sq-1.png"
-PASSWORD_SPECIAL_SYMBOLS = "$@#%"
-PASSWORD_MINIMUM_LENGTH = 8
-PASSWORD_MAXIMUM_LENGTH = 64
-PASSWORD_SPECIAL_SYMBOLS_ENABLED = 1
-PASSWORD_MINIMUM_LENGTH_ENABLED = 1
-PASSWORD_MAXIMUM_LENGTH_ENABLED = 1
-PASSWORD_DIGIT_ENABLED = 1
-PASSWORD_UPPER_ENABLED = 1
-PASSWORD_LOWER_ENABLED = 1
-EMAIL_VALIDATE_DELIVERABILITY_ENABLED = 1
-
-
-SystemLogEventCode = IntEnum(
-    "SystemLogEventCode", ["UserLogin", "UserCreate", "UserLogout", "SettingChange"]
+from txwtf.api.model import (
+    GlobalSettings, User, UserChange, SystemLog
 )
 
-UserChangeEventCode = IntEnum(
-    "UserChangeEventCode", ["UserLogin", "UserCreate", "UserLogout"]
+from txwtf.core import remote_addr
+from txwtf.codes import (
+    SystemLogEventCode,
+    UserChangeEventCode,
+    ErrorCode
 )
-
-ErrorCode = IntEnum(
-    "ErrorCode",
-    [
-        "NoError",
-        "GenericError",
-        "EmailExists",
-        "UsernameExists",
-        "InvalidEmail",
-        "PasswordMismatch",
-        "PasswordTooShort",
-        "PasswordTooLong",
-        "PasswordMissingDigit",
-        "PasswordMissingUpper",
-        "PasswordMissingLower",
-        "PasswordMissingSymbol",
-        "UserDoesNotExist",
-        "UserPasswordIncorrect",
-        "SettingDoesntExist",
-        "UserNull",
-    ],
+from txwtf.defaults import (
+    SITE_LOGO,
+    AVATAR,
+    CARD_IMAGE,
+    HEADER_IMAGE,
+    PASSWORD_SPECIAL_SYMBOLS,
+    PASSWORD_MINIMUM_LENGTH,
+    PASSWORD_MAXIMUM_LENGTH,
+    PASSWORD_SPECIAL_SYMBOLS_ENABLED,
+    PASSWORD_MINIMUM_LENGTH_ENABLED,
+    PASSWORD_MAXIMUM_LENGTH_ENABLED,
+    PASSWORD_DIGIT_ENABLED,
+    PASSWORD_UPPER_ENABLED,
+    PASSWORD_LOWER_ENABLED,
+    EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
 )
-
-
-class PasswordError(Exception):
-    pass
-
-
-class RegistrationError(Exception):
-    pass
-
-
-class LoginError(Exception):
-    pass
-
-
-class LogoutError(Exception):
-    pass
-
-
-class SettingsError(Exception):
-    pass
+from txwtf.errors import (
+    PasswordError,
+    RegistrationError,
+    LoginError,
+    LogoutError,
+    SettingsError,
+)
 
 
 def get_setting_record(
@@ -88,7 +52,7 @@ def get_setting_record(
         now: Optional[datetime] = None) -> GlobalSettings:
 
     if now is None:
-        now = datetime.now()
+        now = datetime.utcnow()
 
     setting = None
     for idx, var in enumerate(args):
@@ -187,7 +151,7 @@ def set_setting(
     )
     if setting is not None and setting.val != value:
         setting.val = value
-        setting.modified_time = datetime.now()
+        setting.modified_time = datetime.utcnow()
         if do_commit:
             session.commit()
         return setting
@@ -237,15 +201,6 @@ def get_default_header_image(
         default: Optional[Any] = HEADER_IMAGE):
     return get_setting(
         session, "default_header", default=default)
-
-
-def remote_addr(request):
-    """
-    Get the client address through the proxy if it exists.
-    """
-    return request.headers.get(
-        "X-Forwarded-For", request.headers.get("X-Real-IP", request.remote_addr)
-    )
 
 
 def get_password_special_symbols(session: Session,
@@ -437,7 +392,7 @@ def register_user(
         raise RegistrationError(ErrorCode.InvalidEmail, str(e))
 
     if cur_time is None:
-        now = datetime.now()
+        now = datetime.utcnow()
     else:
         now = cur_time
 
@@ -497,7 +452,7 @@ def execute_login(
         username: str,
         password: str,
         request: Any, 
-        cur_time: Optional[datetime] = None,
+        cur_time: Optional[datetime] = None
 ) -> User:
     """
     Record a login and execute a provided login function if the supplied
@@ -526,7 +481,7 @@ def execute_login(
     # at the end 
 
     if cur_time is None:
-        cur_time = datetime.now()
+        cur_time = datetime.utcnow()
 
     now = cur_time
     user.last_login = now
@@ -571,7 +526,7 @@ def execute_logout(
         raise LogoutError(ErrorCode.UserNull, "Null user")
 
     if cur_time is None:
-        cur_time = datetime.now()
+        cur_time = datetime.utcnow()
 
     new_log = SystemLog(
         event_code=SystemLogEventCode.UserLogout,

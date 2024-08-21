@@ -37,6 +37,15 @@ def gen_secret():
     return sha256(str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
 
 
+def remote_addr(request):
+    """
+    Get the client address through the proxy if it exists.
+    """
+    return request.headers.get(
+        "X-Forwarded-For", request.headers.get("X-Real-IP", request.remote_addr)
+    )
+
+
 @contextmanager
 def cli_context(obj):
     """

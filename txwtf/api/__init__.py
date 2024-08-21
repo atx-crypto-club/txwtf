@@ -66,7 +66,7 @@ def get_test_router(
             user
         )  # replace with db call, making sure to hash the password first
         return ResponseSchema(
-            data={"token": sign_jwt(user.email, jwt_secret, jwt_algorithm)})
+            data=sign_jwt(jwt_secret, jwt_algorithm, user.email))
 
     def check_user(data: UserLoginSchema):
         for user in users:
@@ -78,7 +78,7 @@ def get_test_router(
     async def user_login(user: UserLoginSchema = Body(...)):
         if check_user(user):
             return ResponseSchema(
-                data={"token": sign_jwt(user.email, jwt_secret, jwt_algorithm)})
+                data=sign_jwt(jwt_secret, jwt_algorithm, user.email))
         return ResponseSchema(
             message="Wrong login details!",
             error=ErrorCode.GenericError)
@@ -119,7 +119,7 @@ def create_app(
         return {"message": "txwtf v{}".format(version)}
     
     app.include_router(
-        get_test_router(),
+        get_test_router(jwt_secret, jwt_secret),
         prefix="/test",
         tags=["jwt demo"])
 
