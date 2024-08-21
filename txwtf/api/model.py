@@ -79,6 +79,7 @@ class User(SQLModel, table=True):
     view_count: Optional[int] = 0
     post_view_count: Optional[int] = 0
     post_count: Optional[int] = 0
+    enabled: bool = True
 
 
 class GlobalSettings(SQLModel, table=True):

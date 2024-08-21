@@ -7,6 +7,7 @@ from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from txwtf.core import gen_secret
+from txwtf.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS
 from txwtf.api.auth import sign_jwt, JWTBearer
 from txwtf.api.core import ErrorCode
 from txwtf.api.db import get_engine, init_db, get_session
@@ -17,9 +18,6 @@ import uvicorn
 
 
 logger = logging.getLogger(__name__)
-
-
-DEFAULT_JWT_ALGORITHM = "HS256"
 
 
 posts = [{"id": 1, "title": "Pancake", "content": "Lorem Ipsum ..."}]
@@ -87,7 +85,10 @@ def get_test_router(
 
 
 def create_app(
-    jwt_secret: str = None, jwt_algorithm: str = None, db_url: str = None
+    jwt_secret: str = None,
+    jwt_algorithm: str = None,
+    db_url: str = None,
+    origins: list = []
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -99,13 +100,9 @@ def create_app(
         jwt_algorithm = config("TXWTF_API_JWT_ALGO", default=DEFAULT_JWT_ALGORITHM)
     if jwt_secret is None:
         jwt_secret = config("TXWTF_API_JWT_SECRET", default=gen_secret())
+    origins.extend(CORS_ORIGINS)
 
     app = FastAPI(lifespan=lifespan)
-
-    origins = [
-        "http://localhost",
-        "http://localhost:8080",
-    ]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
