@@ -12,11 +12,11 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, select
 from sqlalchemy.exc import NoResultFound
 
-from txwtf.codes import ErrorCode, UserChangeEventCode
+from txwtf.core.codes import ErrorCode, UserChangeEventCode
 from txwtf.core import gen_secret, remote_addr
 from txwtf.api.model import AuthorizedSession, User, UserChange
-from txwtf.defaults import DEFAULT_JWT_ALGORITHM
-from txwtf.errors import AuthorizedSessionError
+from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM
+from txwtf.core.errors import AuthorizedSessionError
 
 
 def sign_jwt(

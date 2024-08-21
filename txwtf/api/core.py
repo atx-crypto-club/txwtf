@@ -13,12 +13,12 @@ from txwtf.api.model import (
 )
 
 from txwtf.core import remote_addr
-from txwtf.codes import (
+from txwtf.core.codes import (
     SystemLogEventCode,
     UserChangeEventCode,
     ErrorCode
 )
-from txwtf.defaults import (
+from txwtf.core.defaults import (
     SITE_LOGO,
     AVATAR,
     CARD_IMAGE,
@@ -34,7 +34,7 @@ from txwtf.defaults import (
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
 )
-from txwtf.errors import (
+from txwtf.core.errors import (
     PasswordError,
     RegistrationError,
     LoginError,
