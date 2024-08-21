@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from txwtf.core import gen_secret
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS
-from txwtf.api.auth import sign_jwt, JWTBearer
+from txwtf.core.auth import sign_jwt, JWTBearer
 from txwtf.core.codes import ErrorCode
 from txwtf.core.model import PostSchema, UserSchema, UserLoginSchema, ResponseSchema
 from txwtf.version import version
