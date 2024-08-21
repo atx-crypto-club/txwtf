@@ -9,7 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from sqlmodel import SQLModel, Session, select
 
-from txwtf.api.core import (
+from txwtf.core import (
     ErrorCode, UserChangeEventCode, SystemLogEventCode,
     get_setting,
     get_setting_record,
@@ -52,6 +52,7 @@ from txwtf.core.model import GlobalSettings, User, UserChange, SystemLog
 
 # Turn off DNS validation for tests
 email_validator.TEST_ENVIRONMENT = True
+
 
 class FakeRequest(object):
     def __init__(self, **kwargs):
