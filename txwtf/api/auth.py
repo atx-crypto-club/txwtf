@@ -14,7 +14,7 @@ from sqlalchemy.exc import NoResultFound
 
 from txwtf.core.codes import ErrorCode, UserChangeEventCode
 from txwtf.core import gen_secret, remote_addr
-from txwtf.api.model import AuthorizedSession, User, UserChange
+from txwtf.core.model import AuthorizedSession, User, UserChange
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM
 from txwtf.core.errors import AuthorizedSessionError
 

@@ -47,7 +47,7 @@ from txwtf.api.core import (
     LoginError, LogoutError
 )
 from txwtf.api.db import get_engine
-from txwtf.api.model import GlobalSettings, User, UserChange, SystemLog
+from txwtf.core.model import GlobalSettings, User, UserChange, SystemLog
 
 
 # Turn off DNS validation for tests

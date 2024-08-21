@@ -8,7 +8,7 @@ from email_validator import validate_email, EmailNotValidError
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from txwtf.api.model import (
+from txwtf.core.model import (
     GlobalSettings, User, UserChange, SystemLog
 )
 
