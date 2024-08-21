@@ -5,13 +5,22 @@ from datetime import datetime
 import unittest
 
 import email_validator
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 
 from sqlmodel import SQLModel, Session, select
 
+from txwtf.core.auth import (
+    sign_jwt,
+    decode_jwt, 
+    authorized_session_launch,
+    authorized_session_deactivate,
+    authorized_session_valid
+)
 import txwtf.core
 from txwtf.core.codes import (
-    ErrorCode, UserChangeEventCode, SystemLogEventCode
+    ErrorCode,
+    UserChangeEventCode,
+    SystemLogEventCode
 )
 from txwtf.core import (
     get_setting,
@@ -48,6 +57,7 @@ from txwtf.core.defaults import (
     PASSWORD_DIGIT_ENABLED, PASSWORD_UPPER_ENABLED,
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
+    DEFAULT_JWT_ALGORITHM
 )
 from txwtf.core.errors import (
     SettingsError, PasswordError, RegistrationError,
@@ -1399,6 +1409,24 @@ class TestCore(unittest.TestCase):
                 last_log.remote_addr, request_logout.headers.get("X-Forwarded-For")
             )
             self.assertEqual(last_log.endpoint, request_logout.endpoint)
+
+    def test_auth_jwt(self):
+        """
+        Test signing and decoding a JWT.
+        """
+        # with
+        secret = txwtf.core.gen_secret()
+        algo = DEFAULT_JWT_ALGORITHM
+        user_id = 42
+
+        # when
+        payload = sign_jwt(secret, algo, user_id)
+        token = payload["token"]
+        payload_decoded = decode_jwt(secret, algo, token)
+        del payload["token"]
+
+        # then
+        self.assertEqual(payload, payload_decoded)
 
 
 if __name__ == "__main__":

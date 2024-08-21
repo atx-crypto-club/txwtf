@@ -12,14 +12,13 @@ from sqlalchemy.exc import NoResultFound
 from txwtf.core.codes import ErrorCode, UserChangeEventCode
 from txwtf.core import gen_secret, remote_addr
 from txwtf.core.model import AuthorizedSession, User, UserChange
-from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM
 from txwtf.core.errors import AuthorizedSessionError
 
 
 def sign_jwt(
     jwt_secret: str,
     jwt_algorithm: str,
-    user_id: str,
+    user_id: int,
     expires: Optional[timedelta] = timedelta(hours=2),
     cur_time: Optional[datetime] = None
 ) -> Dict[str, Any]:
@@ -29,7 +28,7 @@ def sign_jwt(
     payload = {
         "user_id": user_id,
         "expires": time.mktime(expire_time.timetuple()),
-        "uuid": uuid.uuid4()
+        "uuid": str(uuid.uuid4())
     }
     token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
     payload.update({"token": token})
