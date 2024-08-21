@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import time
-from typing import Dict, Any, Optional
+from typing import List, Dict, Any, Optional
 import uuid
 
 import jwt
@@ -40,15 +40,12 @@ def decode_jwt(
     jwt_algorithm: str,
     token: str
 ) -> Dict[str, str]:
-    try:
-        return jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
-    except:
-        return {}
+    return jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
     
 
 def authorized_session_launch(
         session: Session,
-        user: User,
+        user_id: int,
         jwt_secret: str,
         jwt_algorithm: str,
         request: Any = None,
@@ -66,10 +63,10 @@ def authorized_session_launch(
         cur_time = datetime.utcnow()
     expires = cur_time + expire_delta
     session_payload = sign_jwt(
-        jwt_secret, jwt_algorithm, user.id, expires, cur_time)
+        jwt_secret, jwt_algorithm, user_id, expires, cur_time)
     session_uuid = session_payload["uuid"]
     new_as = AuthorizedSession(
-        user_id=user.id,
+        user_id=user_id,
         uuid=session_uuid,
         created_time=cur_time,
         expires_time=expires,
@@ -79,8 +76,35 @@ def authorized_session_launch(
         endpoint=request.endpoint,
     )
     session.add(new_as)
+    new_change = UserChange(
+        user_id=user_id,
+        change_code=UserChangeEventCode.LaunchSession,
+        change_time=cur_time,
+        change_desc="launching session {}".format(session_uuid),
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=request.endpoint,
+    )
+    session.add(new_change)
     session.commit()
     return session_payload
+
+
+def authorized_sessions(
+        session: Session,
+        user_id: int,
+        active_only: bool = True
+) -> List[AuthorizedSession]:
+    """
+    Returns all authorized sessions that match the user_id.
+    """
+    statement = select(AuthorizedSession).where(
+        AuthorizedSession.user_id == user_id)
+    if active_only:
+        statement = statement.where(
+            AuthorizedSession.active == True)
+    return session.exec(statement).all()
 
 
 def authorized_session_valid(

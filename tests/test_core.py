@@ -7,6 +7,8 @@ import unittest
 import email_validator
 from werkzeug.security import check_password_hash
 
+from jwt.exceptions import InvalidSignatureError
+
 from sqlmodel import SQLModel, Session, select
 
 from txwtf.core.auth import (
@@ -1427,6 +1429,28 @@ class TestCore(unittest.TestCase):
 
         # then
         self.assertEqual(payload, payload_decoded)
+
+    def test_auth_jwt_new_secret(self):
+        """
+        Test signing and decoding a JWT fails when using a new secret.
+        """
+        # with
+        secret = txwtf.core.gen_secret()
+        algo = DEFAULT_JWT_ALGORITHM
+        user_id = 42
+
+        # when
+        payload = sign_jwt(secret, algo, user_id)
+        token = payload["token"]
+        secret = txwtf.core.gen_secret()  # secret refresh invalidates token
+        error = None
+        try:
+            payload_decoded = decode_jwt(secret, algo, token)
+        except Exception as e:
+            # then
+            error = e
+            self.assertIsInstance(e, InvalidSignatureError)
+        self.assertIsNotNone(error)
 
 
 if __name__ == "__main__":

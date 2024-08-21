@@ -17,7 +17,8 @@ UserChangeEventCode = IntEnum(
         "UserLogin",
         "UserCreate",
         "UserLogout",
-        "DeactivateSession"
+        "DeactivateSession",
+        "LaunchSession"
     ]
 )
 
