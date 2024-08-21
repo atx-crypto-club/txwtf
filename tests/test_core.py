@@ -370,7 +370,7 @@ class TestCore(unittest.TestCase):
             special_sym = "$%^&"
 
             # when
-            set_setting(session, "password_special_symbols", special_sym)
+            set_setting(session, "passwd_special_symbols", special_sym)
 
             # then
             self.assertEqual(get_password_special_symbols(session), special_sym)
@@ -391,7 +391,7 @@ class TestCore(unittest.TestCase):
             min_length = 10
 
             # when
-            set_setting(session, "password_minimum_length", min_length)
+            set_setting(session, "passwd_minimum_length", min_length)
 
             # then
             self.assertEqual(get_password_min_length(session), min_length)
@@ -412,7 +412,7 @@ class TestCore(unittest.TestCase):
             max_length = 128
 
             # when
-            set_setting(session, "password_maximum_length", max_length)
+            set_setting(session, "passwd_maximum_length", max_length)
 
             # then
             self.assertEqual(get_password_max_length(session), max_length)
@@ -435,7 +435,7 @@ class TestCore(unittest.TestCase):
             special_symbols_enabled = 0
 
             # when
-            set_setting(session, "password_special_symbols_enabled", special_symbols_enabled)
+            set_setting(session, "passwd_special_sym_enabled", special_symbols_enabled)
 
             # then
             self.assertEqual(
@@ -460,7 +460,7 @@ class TestCore(unittest.TestCase):
             min_length_enabled = 0
 
             # when
-            set_setting(session, "password_minimum_length_enabled", min_length_enabled)
+            set_setting(session, "passwd_minimum_len_enabled", min_length_enabled)
 
             # then
             self.assertEqual(get_password_min_length_enabled(session), min_length_enabled)
@@ -483,7 +483,7 @@ class TestCore(unittest.TestCase):
             max_length_enabled = 0
 
             # when
-            set_setting(session, "password_maximum_length_enabled", max_length_enabled)
+            set_setting(session, "passwd_maximum_len_enabled", max_length_enabled)
 
             # then
             self.assertEqual(get_password_max_length_enabled(session), max_length_enabled)
@@ -504,7 +504,7 @@ class TestCore(unittest.TestCase):
             digit_enabled = 0
 
             # when
-            set_setting(session, "password_digit_enabled", digit_enabled)
+            set_setting(session, "passwd_digit_enabled", digit_enabled)
 
             # then
             self.assertEqual(get_password_digit_enabled(session), digit_enabled)
@@ -525,7 +525,7 @@ class TestCore(unittest.TestCase):
             upper_enabled = 0
 
             # when
-            set_setting(session, "password_upper_enabled", upper_enabled)
+            set_setting(session, "passwd_upper_enabled", upper_enabled)
 
             # then
             self.assertEqual(get_password_upper_enabled(session), upper_enabled)
@@ -546,7 +546,7 @@ class TestCore(unittest.TestCase):
             lower_enabled = 0
 
             # when
-            set_setting(session, "password_lower_enabled", lower_enabled)
+            set_setting(session, "passwd_lower_enabled", lower_enabled)
 
             # then
             self.assertEqual(get_password_lower_enabled(session), lower_enabled)
@@ -570,7 +570,7 @@ class TestCore(unittest.TestCase):
             enabled = 0
 
             # when
-            set_setting(session, "email_validate_deliverability_enabled", enabled)
+            set_setting(session, "email_validate_deliv_enabled", enabled)
 
             # then
             self.assertEqual(get_email_validate_deliverability_enabled(session), enabled)
@@ -619,7 +619,7 @@ class TestCore(unittest.TestCase):
         with Session(self._engine) as session:
             # with
             password = "asDf1234#!1"
-            set_setting(session, "password_maximum_length", 8)
+            set_setting(session, "passwd_maximum_length", 8)
 
             # when
             code = None
@@ -715,7 +715,7 @@ class TestCore(unittest.TestCase):
         with Session(self._engine) as session:
             # with
             password = "asDf1234!1"
-            set_setting(session, "password_special_symbols_enabled", 0)
+            set_setting(session, "passwd_special_sym_enabled", 0)
 
             # when
             success = True
@@ -735,7 +735,7 @@ class TestCore(unittest.TestCase):
         with Session(self._engine) as session:
             # with
             password = "asDf1234!1"
-            set_setting(session, "password_special_symbols", "")
+            set_setting(session, "passwd_special_symbols", "")
 
             # when
             success = True
@@ -754,8 +754,8 @@ class TestCore(unittest.TestCase):
         with Session(self._engine) as session:
             # with
             password = "Aa#4!1"
-            set_setting(session, "password_minimum_length", 10)
-            set_setting(session, "password_minimum_length_enabled", 0)
+            set_setting(session, "passwd_minimum_length", 10)
+            set_setting(session, "passwd_minimum_len_enabled", 0)
 
             # when
             success = True
@@ -774,9 +774,9 @@ class TestCore(unittest.TestCase):
         with Session(self._engine) as session:
             # with
             password = "Aa#4!1"
-            set_setting(session, "password_minimum_length", 1)
-            set_setting(session, "password_maximum_length", 4)
-            set_setting(session, "password_maximum_length_enabled", 0)
+            set_setting(session, "passwd_minimum_length", 1)
+            set_setting(session, "passwd_maximum_length", 4)
+            set_setting(session, "passwd_maximum_len_enabled", 0)
 
             # when
             success = True
@@ -795,7 +795,7 @@ class TestCore(unittest.TestCase):
         with Session(self._engine) as session:
             # with
             password = "asDffdsa#!1"
-            set_setting(session, "password_digit_enabled", 0)
+            set_setting(session, "passwd_digit_enabled", 0)
 
             # when
             success = True
@@ -814,7 +814,7 @@ class TestCore(unittest.TestCase):
         with Session(self._engine) as session:
             # with
             password = "asdffdsa#!1"
-            set_setting(session, "password_upper_enabled", 0)
+            set_setting(session, "passwd_upper_enabled", 0)
 
             # when
             success = True
@@ -833,7 +833,7 @@ class TestCore(unittest.TestCase):
         with Session(self._engine) as session:
             # with
             password = "ASDFFDSA#!1"
-            set_setting(session, "password_lower_enabled", 0)
+            set_setting(session, "passwd_lower_enabled", 0)
 
             # when
             success = True

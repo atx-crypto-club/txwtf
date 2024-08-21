@@ -135,6 +135,11 @@ def get_setting_record(
 
     setting = None
     for idx, var in enumerate(args):
+        if not valid_identifier(var):
+            raise SettingsError(
+                ErrorCode.InvalidIdentifier,
+                "Invalid indentifier " + var
+            )
         val = None
         if idx == len(args) - 1:
             val = default
@@ -285,63 +290,63 @@ def get_default_header_image(
 def get_password_special_symbols(session: Session,
         default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS):
     return get_setting(
-        session, "password_special_symbols", default=default)
+        session, "passwd_special_symbols", default=default)
 
 
 def get_password_min_length(
         session: Session,
         default: Optional[Any] = PASSWORD_MINIMUM_LENGTH):
     return int(get_setting(
-        session, "password_minimum_length", default=default))
+        session, "passwd_minimum_length", default=default))
 
 
 def get_password_max_length(
         session: Session,
         default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH):
     return int(get_setting(
-        session, "password_maximum_length", default=default))
+        session, "passwd_maximum_length", default=default))
 
 
 def get_password_special_symbols_enabled(
         session: Session,
         default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS_ENABLED):
     return int(get_setting(
-        session, "password_special_symbols_enabled", default=default))
+        session, "passwd_special_sym_enabled", default=default))
 
 
 def get_password_min_length_enabled(
         session: Session,
         default: Optional[Any] = PASSWORD_MINIMUM_LENGTH_ENABLED):
     return int(get_setting(
-        session, "password_minimum_length_enabled", default=default))
+        session, "passwd_minimum_len_enabled", default=default))
 
 
 def get_password_max_length_enabled(
         session: Session,
         default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH_ENABLED):
     return int(get_setting(
-        session, "password_maximum_length_enabled", default=default))
+        session, "passwd_maximum_len_enabled", default=default))
 
 
 def get_password_digit_enabled(
         session: Session,
         default: Optional[Any] = PASSWORD_DIGIT_ENABLED):
     return int(get_setting(
-        session, "password_digit_enabled", default=default))
+        session, "passwd_digit_enabled", default=default))
 
 
 def get_password_upper_enabled(
         session: Session,
         default: Optional[Any] = PASSWORD_UPPER_ENABLED):
     return int(get_setting(
-        session, "password_upper_enabled", default=default))
+        session, "passwd_upper_enabled", default=default))
 
 
 def get_password_lower_enabled(
         session: Session,
         default: Optional[Any] = PASSWORD_LOWER_ENABLED):
     return int(get_setting(
-        session, "password_lower_enabled", default=default))
+        session, "passwd_lower_enabled", default=default))
 
 
 def password_check(session: Session, passwd: str):
@@ -415,7 +420,7 @@ def get_email_validate_deliverability_enabled(
         default: Optional[Any] = EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
 ):
     return int(get_setting(
-        session, "email_validate_deliverability_enabled", default=default))
+        session, "email_validate_deliv_enabled", default=default))
 
 
 def register_user(

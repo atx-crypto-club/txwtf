@@ -26,6 +26,7 @@ ErrorCode = IntEnum(
     [
         "NoError",
         "GenericError",
+        "InvalidIdentifier",
         "EmailExists",
         "UsernameExists",
         "InvalidEmail",
