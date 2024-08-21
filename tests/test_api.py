@@ -46,7 +46,7 @@ from txwtf.api.core import (
     SettingsError, PasswordError, RegistrationError,
     LoginError, LogoutError
 )
-from txwtf.api.db import get_engine
+from txwtf.core.db import get_engine
 from txwtf.core.model import GlobalSettings, User, UserChange, SystemLog
 
 
