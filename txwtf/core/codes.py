@@ -43,5 +43,9 @@ ErrorCode = IntEnum(
         "SettingDoesntExist",
         "UknownSession",
         "UserNull",
+        "ExpiredSession",
+        "InvalidUser",
+        "DisabledUser",
+        "DeactivatedSession",
     ],
 )

@@ -58,15 +58,27 @@ def authorized_session_launch(
     with the token itself included in the payload dict.
     """
     if expire_delta is None:
-        expire_delta = timedelta(hours=2)
+        expire_delta = timedelta(hours=1)
     if cur_time is None:
         cur_time = datetime.utcnow()
     expires = cur_time + expire_delta
+
+    statement = select(User).where(User.id == user_id)
+    results = session.exec(statement)
+    user = None
+    try:
+        user = results.one()
+    except NoResultFound:
+        raise AuthorizedSessionError(
+            ErrorCode.InvalidUser,
+            "Invalid user id {}".format(user_id)
+        )
+
     session_payload = sign_jwt(
-        jwt_secret, jwt_algorithm, user_id, expires, cur_time)
+        jwt_secret, jwt_algorithm, user.id, expire_delta, cur_time)
     session_uuid = session_payload["uuid"]
     new_as = AuthorizedSession(
-        user_id=user_id,
+        user_id=user.id,
         uuid=session_uuid,
         created_time=cur_time,
         expires_time=expires,
@@ -76,8 +88,9 @@ def authorized_session_launch(
         endpoint=request.endpoint,
     )
     session.add(new_as)
+
     new_change = UserChange(
-        user_id=user_id,
+        user_id=user.id,
         change_code=UserChangeEventCode.LaunchSession,
         change_time=cur_time,
         change_desc="launching session {}".format(session_uuid),
@@ -88,36 +101,44 @@ def authorized_session_launch(
     )
     session.add(new_change)
     session.commit()
+
     return session_payload
 
 
 def authorized_sessions(
         session: Session,
-        user_id: int,
-        active_only: bool = True
+        user_id: Optional[int] = None,
+        active_only: bool = False
 ) -> List[AuthorizedSession]:
     """
     Returns all authorized sessions that match the user_id.
     """
-    statement = select(AuthorizedSession).where(
-        AuthorizedSession.user_id == user_id)
+    statement = select(AuthorizedSession)
+    if user_id is not None:
+        statement = statement.where(
+            AuthorizedSession.user_id == user_id)
     if active_only:
         statement = statement.where(
             AuthorizedSession.active == True)
-    return session.exec(statement).all()
+    statement = statement.order_by(
+        AuthorizedSession.created_time.desc())
+    result = session.exec(statement)
+    return result.all()
 
 
-def authorized_session_valid(
+def authorized_session_verify(
         session: Session,
         session_uuid: str,
-) -> bool:
+):
     """
-    Return whether the session pointed to by uuid is
-    active and valid
+    Raises an exception if there is a problem with the
+    session or if it has been deactivated.
     """
     statement = select(AuthorizedSession).where(
         AuthorizedSession.uuid == session_uuid)
     results = session.exec(statement)
+
+    # get the session
     auth_sess = None
     try:
         auth_sess = results.one()
@@ -126,7 +147,39 @@ def authorized_session_valid(
             ErrorCode.UknownSession,
             "Cannot find session {}".format(session_uuid)
         )
-    return auth_sess.active
+    
+    # check if it is expired
+    if auth_sess.expires_time <= datetime.utcnow():
+        raise AuthorizedSessionError(
+            ErrorCode.ExpiredSession,
+            "Session {} is expired since {}".format(
+                session_uuid, auth_sess.expires_time)
+        )
+    
+    # get the user and check if the account is still enabled
+    statement = select(User).where(User.id == auth_sess.user_id)
+    results = session.exec(statement)
+    user = None
+    try:
+        user = results.one()
+    except NoResultFound:
+        raise AuthorizedSessionError(
+            ErrorCode.InvalidUser,
+            "Invalid user id {}".format(auth_sess.user_id)
+        )
+    
+    if not user.enabled:
+        raise AuthorizedSessionError(
+            ErrorCode.DisabledUser,
+            "Disabled user {}({})".format(user.username, user.id)
+        )
+
+    # check if the session was deactivated.
+    if not auth_sess.active:
+        raise AuthorizedSessionError(
+            ErrorCode.DeactivatedSession,
+            "Deactivated session {}".format(session_uuid)
+        )
 
 
 def authorized_session_deactivate(

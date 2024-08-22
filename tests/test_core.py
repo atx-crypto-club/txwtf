@@ -1,7 +1,7 @@
 """
 Tests for the txwtf.core module.
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 import unittest
 
 import email_validator
@@ -15,8 +15,9 @@ from txwtf.core.auth import (
     sign_jwt,
     decode_jwt, 
     authorized_session_launch,
+    authorized_sessions,
     authorized_session_deactivate,
-    authorized_session_valid
+    authorized_session_verify
 )
 import txwtf.core
 from txwtf.core.codes import (
@@ -25,6 +26,7 @@ from txwtf.core.codes import (
     SystemLogEventCode
 )
 from txwtf.core import (
+    gen_secret,
     get_setting,
     get_setting_record,
     has_setting,
@@ -86,6 +88,9 @@ class TestCore(unittest.TestCase):
     def setUp(self):
         self._engine = get_engine("sqlite://")
         SQLModel.metadata.create_all(self._engine)
+
+        self._jwt_secret = txwtf.core.gen_secret()
+        self._jwt_algorithm = DEFAULT_JWT_ALGORITHM
 
     def tearDown(self):
         SQLModel.metadata.drop_all(self._engine)
@@ -1193,7 +1198,7 @@ class TestCore(unittest.TestCase):
                 session, username, password, password, name, email, request, cur_time)
 
             request.endpoint = "/login"
-            user = execute_login(
+            user, _ = execute_login(
                 session, username, password, request, cur_time=cur_time)
 
             # then
@@ -1370,7 +1375,7 @@ class TestCore(unittest.TestCase):
             # when
             register_user(
                 session, username, password, password, name, email, request)
-            user = execute_login(
+            user, _ = execute_login(
                 session, username, password, request_login)
 
             code = None
@@ -1451,6 +1456,86 @@ class TestCore(unittest.TestCase):
             error = e
             self.assertIsInstance(e, InvalidSignatureError)
         self.assertIsNotNone(error)
+
+    def test_authorized_sessions_default(self):
+        """
+        There should be no authorized sessions on startup.
+        """
+        with Session(self._engine) as session:
+            # when
+            sess = authorized_sessions(session)
+
+            # then
+            self.assertEqual(len(sess), 0)
+
+    def test_authorized_session_launch(self):
+        """
+        Do a spot check of an authorized session launch
+        happy path.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            expire_delta = timedelta(hours=1)
+            cur_time = datetime.utcnow()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = register_user(
+                session, username, password, password, name, email, request, cur_time)
+            request.endpoint="/login"
+
+            session_payload = authorized_session_launch(
+                session,
+                user.id,
+                self._jwt_secret,
+                self._jwt_algorithm,
+                request,
+                expire_delta,
+                cur_time
+            )
+
+            sessions = authorized_sessions(session)
+
+            # then
+            self.assertEqual(len(sessions), 1)
+            self.assertEqual(sessions[0].user_id, user.id)
+            self.assertEqual(sessions[0].user_id, session_payload["user_id"])
+            self.assertEqual(sessions[0].expires_time, cur_time + expire_delta)
+            self.assertEqual(sessions[0].uuid, session_payload["uuid"])
+
+            user_changes = session.exec(
+                select(UserChange).order_by(UserChange.id.desc()))
+            last_user_change = user_changes.first()
+            self.assertEqual(last_user_change.user_id, user.id)
+            self.assertEqual(last_user_change.change_code, UserChangeEventCode.LaunchSession)
+            self.assertEqual(last_user_change.change_time, cur_time)
+            self.assertEqual(
+                last_user_change.change_desc,
+                "launching session {}".format(session_payload["uuid"]),
+            )
+            self.assertEqual(last_user_change.referrer, request.referrer)
+            self.assertEqual(last_user_change.user_agent, request.user_agent)
+            self.assertEqual(
+                last_user_change.remote_addr, request.headers.get("X-Forwarded-For")
+            )
+            self.assertEqual(last_user_change.endpoint, request.endpoint)
+
 
 
 if __name__ == "__main__":

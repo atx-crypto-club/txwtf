@@ -7,7 +7,7 @@ import secrets
 import sys
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Tuple, Any, List, Optional
 
 from sqlmodel import Session, select
 from sqlalchemy.exc import NoResultFound
@@ -432,7 +432,7 @@ def register_user(
         email: str,
         request: Any,
         cur_time: Optional[datetime] = None
-):
+) -> User:
     """
     Perform user registration.
     """
@@ -530,6 +530,8 @@ def register_user(
     session.add(new_log)
     session.commit()
 
+    return new_user
+
 
 def execute_login(
         session: Session,
@@ -537,10 +539,11 @@ def execute_login(
         password: str,
         request: Any, 
         cur_time: Optional[datetime] = None
-) -> User:
+) -> Tuple[User, str]:
     """
     Record a login and execute a provided login function if the supplied
-    credentials are correct.
+    credentials are correct. Returns a tuple of the User record and
+    a signed token.
     """
     statement = select(User).where(User.username == username)
     results = session.exec(statement)
@@ -593,7 +596,7 @@ def execute_login(
     session.add(new_change)
     session.commit()
 
-    return user
+    return user, None
 
 # TODO: invalidate a token without logging all out at once
 
