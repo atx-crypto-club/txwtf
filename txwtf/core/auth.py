@@ -136,6 +136,7 @@ def authorized_sessions(
 def authorized_session_verify(
         session: Session,
         session_uuid: str,
+        jwt_secret: str
 ):
     """
     Raises an exception if there is a problem with the
@@ -153,6 +154,13 @@ def authorized_session_verify(
         raise AuthorizedSessionError(
             ErrorCode.UknownSession,
             "Cannot find session {}".format(session_uuid)
+        )
+    
+    # check if this session matches the secret
+    if hash(jwt_secret) != auth_sess.hashed_secret:
+        raise AuthorizedSessionError(
+            ErrorCode.InvalidSession,
+            "Secret mismatch"
         )
     
     # check if it is expired

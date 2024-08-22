@@ -2,7 +2,9 @@
 Tests for the txwtf.core module.
 """
 from datetime import datetime, timedelta
+import time
 import unittest
+import uuid
 
 import email_validator
 from werkzeug.security import check_password_hash
@@ -1565,6 +1567,7 @@ class TestCore(unittest.TestCase):
             )
 
             # when
+            code = None
             try:
                 authorized_session_launch(
                     session,
@@ -1617,6 +1620,7 @@ class TestCore(unittest.TestCase):
             user.enabled = False
             session.commit()
 
+            code = None
             try:
                 authorized_session_launch(
                     session,
@@ -1633,6 +1637,303 @@ class TestCore(unittest.TestCase):
 
             # then
             self.assertEqual(code, ErrorCode.DisabledUser)
+
+    def test_authorized_session_verify_fail_unknown_session(self):
+        """
+        Try verifying a session that is unknown and failing.
+        """
+        with Session(self._engine) as session:
+            # when
+            code = None
+            try:
+                authorized_session_verify(
+                    session, str(uuid.uuid4()),
+                    self._jwt_secret)
+            except Exception as e:
+                self.assertIsInstance(e, AuthorizedSessionError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.UknownSession)
+
+    def test_authorized_session_verify(self):
+        """
+        Do a spot check of an authorized session launch and verify
+        happy path.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            expire_delta = timedelta(hours=1)
+            cur_time = datetime.utcnow()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = register_user(
+                session, username, password, password, name, email, request, cur_time)
+            request.endpoint="/login"
+
+            session_payload = authorized_session_launch(
+                session,
+                user.id,
+                self._jwt_secret,
+                self._jwt_algorithm,
+                request,
+                expire_delta,
+                cur_time
+            )
+
+            code = None
+            try:
+                authorized_session_verify(
+                    session,
+                    session_payload["uuid"],
+                    self._jwt_secret)
+            except Exception as e:
+                code, _ = e.args
+
+            self.assertIsNone(code)
+
+    def test_authorized_session_verify_expiry_fail(self):
+        """
+        Fail verifying an authorized session that expired.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            expire_delta = timedelta(seconds=1)
+            cur_time = datetime.utcnow()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = register_user(
+                session, username, password, password, name, email, request, cur_time)
+            request.endpoint="/login"
+
+            session_payload = authorized_session_launch(
+                session,
+                user.id,
+                self._jwt_secret,
+                self._jwt_algorithm,
+                request,
+                expire_delta,
+                cur_time
+            )
+
+            time.sleep(1)
+            code = None
+            try:
+                authorized_session_verify(
+                    session,
+                    session_payload["uuid"],
+                    self._jwt_secret)
+            except Exception as e:
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.ExpiredSession)
+
+    def test_authorized_session_verify_secret_mismatch(self):
+        """
+        Fail verifying an authorized session generated from a
+        different secret.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            expire_delta = timedelta(hours=1)
+            cur_time = datetime.utcnow()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = register_user(
+                session, username, password, password, name, email, request, cur_time)
+            request.endpoint="/login"
+
+            session_payload = authorized_session_launch(
+                session,
+                user.id,
+                self._jwt_secret,
+                self._jwt_algorithm,
+                request,
+                expire_delta,
+                cur_time
+            )
+
+            code = None
+            try:
+                authorized_session_verify(
+                    session,
+                    session_payload["uuid"],
+                    txwtf.core.gen_secret())
+            except Exception as e:
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.InvalidSession)
+
+    def test_authorized_session_verify_disabled_user(self):
+        """
+        Fail verifying an authorized session generated from a
+        disabled user.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            expire_delta = timedelta(hours=1)
+            cur_time = datetime.utcnow()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = register_user(
+                session, username, password, password, name, email, request, cur_time)
+            request.endpoint="/login"
+
+            session_payload = authorized_session_launch(
+                session,
+                user.id,
+                self._jwt_secret,
+                self._jwt_algorithm,
+                request,
+                expire_delta,
+                cur_time
+            )
+
+            user.enabled = False
+            session.commit()
+
+            code = None
+            try:
+                authorized_session_verify(
+                    session,
+                    session_payload["uuid"],
+                    self._jwt_secret)
+            except Exception as e:
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.DisabledUser)
+
+    def test_authorized_session_verify_deactivated_session(self):
+        """
+        Fail verifying an authorized session that has been
+        deactivated.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            expire_delta = timedelta(hours=1)
+            cur_time = datetime.utcnow()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = register_user(
+                session, username, password, password, name, email, request, cur_time)
+            request.endpoint="/login"
+
+            session_payload = authorized_session_launch(
+                session,
+                user.id,
+                self._jwt_secret,
+                self._jwt_algorithm,
+                request,
+                expire_delta,
+                cur_time
+            )
+
+            request.endpoint="/logout"
+            authorized_session_deactivate(
+                session,
+                session_payload["uuid"],
+                request,
+                cur_time)
+
+            code = None
+            try:
+                authorized_session_verify(
+                    session,
+                    session_payload["uuid"],
+                    self._jwt_secret)
+            except Exception as e:
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.DeactivatedSession)
 
 
 if __name__ == "__main__":
