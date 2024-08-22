@@ -1540,8 +1540,7 @@ class TestCore(unittest.TestCase):
 
     def test_authorized_session_launch_invalid_user(self):
         """
-        Do a spot check of an authorized session launch
-        happy path.
+        Try authorizing a session with an invalid user id.
         """
         with Session(self._engine) as session:
             # with
@@ -1582,6 +1581,58 @@ class TestCore(unittest.TestCase):
 
             # then
             self.assertEqual(code, ErrorCode.InvalidUser)
+
+    def test_authorized_session_launch_disabled_user(self):
+        """
+        Try authorizing a session with a valid user but one
+        that has been disabled.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            expire_delta = timedelta(hours=1)
+            cur_time = datetime.utcnow()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = register_user(
+                session, username, password, password, name, email, request, cur_time)
+            request.endpoint="/login"
+
+            user.enabled = False
+            session.commit()
+
+            try:
+                authorized_session_launch(
+                    session,
+                    user.id,
+                    self._jwt_secret,
+                    self._jwt_algorithm,
+                    request,
+                    expire_delta,
+                    cur_time
+                )
+            except Exception as e:
+                self.assertIsInstance(e, AuthorizedSessionError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.DisabledUser)
 
 
 if __name__ == "__main__":
