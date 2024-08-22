@@ -1916,6 +1916,18 @@ class TestCore(unittest.TestCase):
                 cur_time
             )
 
+            code = None
+            try:
+                authorized_session_verify(
+                    session,
+                    session_payload["uuid"],
+                    self._jwt_secret)
+            except Exception as e:
+                code, _ = e.args
+
+            # then
+            self.assertIsNone(code)
+
             request.endpoint="/logout"
             authorized_session_deactivate(
                 session,
