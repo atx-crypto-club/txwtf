@@ -75,9 +75,13 @@ def setup_logging(log="-", log_level=logging.DEBUG, log_format=LOG_FORMAT):
     root.setLevel(logging.DEBUG)
 
 
-def gen_secret():
-    return sha256(str(secrets.SystemRandom().getrandbits(128)).encode()).hexdigest()
+def hash(val: str) -> str:
+    return sha256(val.encode()).hexdigest()
 
+
+def gen_secret() -> str:
+    return hash(str(secrets.SystemRandom().getrandbits(128)))
+    
 
 def remote_addr(request):
     """

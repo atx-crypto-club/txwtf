@@ -122,9 +122,10 @@ class AuthorizedSession(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     uuid: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), sa_type=String(48), max_length=48, unique=True, index=True)
     user_id: int = Field(foreign_key="user.id")
+    hashed_secret: str = Field(sa_type=String(32), max_length=32)
     active: Optional[bool] = True
     created_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
-    expires_time: Optional[datetime] = Field(default_factory=lambda: datetime.utcnow() + timedelta(hours=2))
+    expires_time: Optional[datetime] = Field(default_factory=lambda: datetime.utcnow() + timedelta(hours=1))
     referrer: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
     user_agent: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
     remote_addr: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)

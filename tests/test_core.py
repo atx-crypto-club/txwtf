@@ -26,6 +26,7 @@ from txwtf.core.codes import (
     SystemLogEventCode
 )
 from txwtf.core import (
+    hash,
     gen_secret,
     get_setting,
     get_setting_record,
@@ -65,7 +66,7 @@ from txwtf.core.defaults import (
 )
 from txwtf.core.errors import (
     SettingsError, PasswordError, RegistrationError,
-    LoginError, LogoutError
+    LoginError, LogoutError, AuthorizedSessionError
 )
 from txwtf.core.db import get_engine
 from txwtf.core.model import GlobalSettings, User, UserChange, SystemLog
@@ -89,7 +90,7 @@ class TestCore(unittest.TestCase):
         self._engine = get_engine("sqlite://")
         SQLModel.metadata.create_all(self._engine)
 
-        self._jwt_secret = txwtf.core.gen_secret()
+        self._jwt_secret = gen_secret()
         self._jwt_algorithm = DEFAULT_JWT_ALGORITHM
 
     def tearDown(self):
@@ -1518,6 +1519,7 @@ class TestCore(unittest.TestCase):
             self.assertEqual(sessions[0].user_id, session_payload["user_id"])
             self.assertEqual(sessions[0].expires_time, cur_time + expire_delta)
             self.assertEqual(sessions[0].uuid, session_payload["uuid"])
+            self.assertEqual(sessions[0].hashed_secret, hash(self._jwt_secret))
 
             user_changes = session.exec(
                 select(UserChange).order_by(UserChange.id.desc()))
@@ -1536,6 +1538,50 @@ class TestCore(unittest.TestCase):
             )
             self.assertEqual(last_user_change.endpoint, request.endpoint)
 
+    def test_authorized_session_launch_invalid_user(self):
+        """
+        Do a spot check of an authorized session launch
+        happy path.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            expire_delta = timedelta(hours=1)
+            cur_time = datetime.utcnow()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            try:
+                authorized_session_launch(
+                    session,
+                    31337,
+                    self._jwt_secret,
+                    self._jwt_algorithm,
+                    request,
+                    expire_delta,
+                    cur_time
+                )
+            except Exception as e:
+                self.assertIsInstance(e, AuthorizedSessionError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.InvalidUser)
 
 
 if __name__ == "__main__":

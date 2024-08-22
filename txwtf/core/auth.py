@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 from sqlalchemy.exc import NoResultFound
 
 from txwtf.core.codes import ErrorCode, UserChangeEventCode
-from txwtf.core import gen_secret, remote_addr
+from txwtf.core import hash, remote_addr
 from txwtf.core.model import AuthorizedSession, User, UserChange
 from txwtf.core.errors import AuthorizedSessionError
 
@@ -73,6 +73,12 @@ def authorized_session_launch(
             ErrorCode.InvalidUser,
             "Invalid user id {}".format(user_id)
         )
+    
+    if not user.enabled:
+        raise AuthorizedSessionError(
+            ErrorCode.DisabledUser,
+            "Disabled user {}".format(user_id)
+        )
 
     session_payload = sign_jwt(
         jwt_secret, jwt_algorithm, user.id, expire_delta, cur_time)
@@ -80,6 +86,7 @@ def authorized_session_launch(
     new_as = AuthorizedSession(
         user_id=user.id,
         uuid=session_uuid,
+        hashed_secret=hash(jwt_secret),
         created_time=cur_time,
         expires_time=expires,
         referrer=request.referrer,
