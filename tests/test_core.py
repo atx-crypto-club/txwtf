@@ -13,14 +13,6 @@ from jwt.exceptions import InvalidSignatureError
 
 from sqlmodel import SQLModel, Session, select
 
-from txwtf.core.auth import (
-    sign_jwt,
-    decode_jwt, 
-    authorized_session_launch,
-    authorized_sessions,
-    authorized_session_deactivate,
-    authorized_session_verify
-)
 import txwtf.core
 from txwtf.core.codes import (
     ErrorCode,
@@ -28,6 +20,12 @@ from txwtf.core.codes import (
     SystemLogEventCode
 )
 from txwtf.core import (
+    sign_jwt,
+    decode_jwt, 
+    authorized_session_launch,
+    authorized_sessions,
+    authorized_session_deactivate,
+    authorized_session_verify,
     hash,
     gen_secret,
     get_setting,
@@ -67,11 +65,21 @@ from txwtf.core.defaults import (
     DEFAULT_JWT_ALGORITHM
 )
 from txwtf.core.errors import (
-    SettingsError, PasswordError, RegistrationError,
-    LoginError, LogoutError, AuthorizedSessionError
+    SettingsError,
+    PasswordError,
+    RegistrationError,
+    LoginError,
+    LogoutError,
+    AuthorizedSessionError
 )
 from txwtf.core.db import get_engine
-from txwtf.core.model import GlobalSettings, User, UserChange, SystemLog
+from txwtf.core.model import (
+    AuthorizedSession,
+    GlobalSettings,
+    User,
+    UserChange,
+    SystemLog
+)
 
 
 # Turn off DNS validation for tests

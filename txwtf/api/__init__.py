@@ -7,9 +7,8 @@ from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from txwtf.core import gen_secret
-from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS
-from txwtf.core.auth import sign_jwt, decode_jwt
+from txwtf.core import gen_secret, sign_jwt, decode_jwt
+from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS 
 from txwtf.core.codes import ErrorCode
 from txwtf.core.model import PostSchema, UserSchema, UserLoginSchema, ResponseSchema
 from txwtf.version import version
