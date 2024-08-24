@@ -12,14 +12,14 @@ from sqlalchemy import DateTime, String, func
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(unique=True, sa_type=String(256), max_length=256)
-    email: str = Field(unique=True, sa_type=String(256), max_length=256)
+    email: EmailStr = Field(unique=True, sa_type=String(256), max_length=256)
     password: str = Field(sa_type=String(1024), max_length=1024)
     name: str = Field(sa_type=String(1024), max_length=1024)
     avatar_url: Optional[str] = Field(default=None, sa_type=String(1024), max_length=1024)
     header_image_url: Optional[str] = Field(default=None, sa_type=String(1024), max_length=1024)
     header_text: Optional[str] = Field(default=None, sa_type=String(1024), max_length=1024)
     card_image_url: Optional[str] = Field(default=None, sa_type=String(1024), max_length=1024)
-    alternate_email: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
+    alternate_email: Optional[EmailStr] = Field(default=None, sa_type=String(256), max_length=256)
     email_verified: Optional[bool] = False
     alternate_email_verified: Optional[bool] = False
     description: Optional[str] = Field(default=None, sa_type=String(10240), max_length=10240)
