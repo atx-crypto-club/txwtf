@@ -460,7 +460,7 @@ def authorized_session_launch(
         user_id: int,
         jwt_secret: str,
         jwt_algorithm: str,
-        request: Any = None,
+        request: Any,
         expire_delta: Optional[timedelta] = None,
         cur_time: Optional[datetime] = None
 ) -> Dict[str, Any]:
@@ -612,7 +612,7 @@ def authorized_session_verify(
 def authorized_session_deactivate(
         session: Session,
         session_uuid: str,
-        request: Any = None,
+        request: Any,
         cur_time: Optional[datetime] = None
 ):
     """
@@ -772,7 +772,10 @@ def execute_login(
         session: Session,
         username: str,
         password: str,
+        jwt_secret: str,
+        jwt_algorithm: str,
         request: Any, 
+        expire_delta: timedelta = timedelta(hours=1),
         cur_time: Optional[datetime] = None
 ) -> Tuple[User, str]:
     """
@@ -801,6 +804,15 @@ def execute_login(
     #    login_function(user, remember=remember)
     # TODO: generate jwt token and create session record then return the signed token
     # at the end 
+    token_payload = authorized_session_launch(
+        session,
+        user.id,
+        jwt_secret,
+        jwt_algorithm,
+        request,
+        expire_delta,
+        cur_time
+    )
 
     if cur_time is None:
         cur_time = datetime.utcnow()
@@ -831,12 +843,13 @@ def execute_login(
     session.add(new_change)
     session.commit()
 
-    return user, None
+    return user, token_payload
 
 # TODO: invalidate a token without logging all out at once
 
 def execute_logout(
         session: Session,
+        session_uuid: str,  # None is valid
         request: Any,
         current_user: Optional[User] = None, 
         cur_time: Optional[datetime] = None):
@@ -875,4 +888,5 @@ def execute_logout(
     session.add(new_change)
     session.commit()
 
-    # TODO: invalidate all current active tokens.
+    if session_uuid is not None:
+        authorized_session_deactivate(session, session_uuid, request, cur_time)

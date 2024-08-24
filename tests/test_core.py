@@ -1210,14 +1210,21 @@ class TestCore(unittest.TestCase):
 
             request.endpoint = "/login"
             user, _ = execute_login(
-                session, username, password, request, cur_time=cur_time)
+                session,
+                username, 
+                password, 
+                self._jwt_secret,
+                self._jwt_algorithm,
+                request, 
+                cur_time=cur_time
+            )
 
             # then
             ## check logs
             user_changes = session.exec(
                 select(UserChange).order_by(UserChange.id.desc()))
             last_changes = user_changes.all()
-            self.assertEqual(len(last_changes), 2)
+            self.assertEqual(len(last_changes), 3)
             last_user_change = last_changes[0]
             self.assertEqual(last_user_change.user_id, user.id)
             self.assertEqual(last_user_change.change_code, UserChangeEventCode.UserLogin)
@@ -1275,7 +1282,13 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 execute_login(
-                    session, username, password, request, cur_time=cur_time)
+                    session,
+                    username,
+                    password,
+                    self._jwt_secret,
+                    self._jwt_algorithm,
+                    request,
+                    cur_time=cur_time)
             except Exception as e:
                 self.assertIsInstance(e, LoginError)
                 code, msg = e.args
@@ -1318,7 +1331,13 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 execute_login(
-                    session, username, password + "foo", request, cur_time=cur_time)
+                    session,
+                    username,
+                    password + "foo",
+                    self._jwt_secret,
+                    self._jwt_algorithm,
+                    request,
+                    cur_time=cur_time)
             except Exception as e:
                 self.assertIsInstance(e, LoginError)
                 code, msg = e.args
@@ -1334,8 +1353,7 @@ class TestCore(unittest.TestCase):
             # when
             code = None
             try:
-                execute_logout(
-                    session, None, None)
+                execute_logout(session, None, None)
             except Exception as e:
                 self.assertIsInstance(e, LogoutError)
                 code, msg = e.args
@@ -1386,18 +1404,27 @@ class TestCore(unittest.TestCase):
             # when
             register_user(
                 session, username, password, password, name, email, request)
-            user, _ = execute_login(
-                session, username, password, request_login)
+            user, session_payload = execute_login(
+                session,
+                username,
+                password,
+                self._jwt_secret,
+                self._jwt_algorithm,
+                request_login)
 
             code = None
             cur_time = datetime.now()
             execute_logout(
-                session, request_logout, user, cur_time)
+                session,
+                session_payload["uuid"],
+                request_logout,
+                user,
+                cur_time)
 
             # then
             user_changes = session.exec(
                 select(UserChange).order_by(UserChange.id.desc()))
-            last_user_change = user_changes.first()
+            last_user_change = user_changes.all()[1]
             self.assertEqual(last_user_change.user_id, user.id)
             self.assertEqual(last_user_change.change_code, UserChangeEventCode.UserLogout)
             self.assertEqual(last_user_change.change_time, cur_time)
