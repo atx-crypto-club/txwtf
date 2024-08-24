@@ -9,8 +9,6 @@ import uuid
 import email_validator
 from werkzeug.security import check_password_hash
 
-from jwt.exceptions import InvalidSignatureError
-
 from sqlmodel import SQLModel, Session, select
 
 import txwtf.core
@@ -65,6 +63,7 @@ from txwtf.core.defaults import (
     DEFAULT_JWT_ALGORITHM
 )
 from txwtf.core.errors import (
+    TXWTFError,
     SettingsError,
     PasswordError,
     RegistrationError,
@@ -131,7 +130,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 get_setting(session, "nothing")
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, SettingsError)
                 code, _ = e.args
 
@@ -196,7 +195,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 get_setting_record(session, var1)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, SettingsError)
                 code, _ = e.args
             self.assertEqual(code, ErrorCode.SettingDoesntExist)
@@ -633,7 +632,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 password_check(session, password)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, PasswordError)
                 code, _ = e.args
 
@@ -653,7 +652,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 password_check(session, password)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, PasswordError)
                 code, _ = e.args
 
@@ -672,7 +671,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 password_check(session, password)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, PasswordError)
                 code, _ = e.args
 
@@ -691,7 +690,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 password_check(session, password)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, PasswordError)
                 code, _ = e.args
 
@@ -710,7 +709,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 password_check(session, password)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, PasswordError)
                 code, _ = e.args
 
@@ -729,7 +728,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 password_check(session, password)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, PasswordError)
                 code, _ = e.args
 
@@ -983,7 +982,7 @@ class TestCore(unittest.TestCase):
             try:
                 register_user(
                     session, username, password, password, name, email, request, cur_time)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
 
@@ -1024,7 +1023,7 @@ class TestCore(unittest.TestCase):
                 email = email + ".net"
                 register_user(
                     session, username, password, password, name, email, request, cur_time)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
 
@@ -1061,7 +1060,7 @@ class TestCore(unittest.TestCase):
             try:
                 register_user(
                     session, username, password, password, name, email, request, cur_time)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
 
@@ -1098,7 +1097,7 @@ class TestCore(unittest.TestCase):
             try:
                 register_user(
                     session, username, password, password, name, email, request, cur_time)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
 
@@ -1136,7 +1135,7 @@ class TestCore(unittest.TestCase):
                 register_user(
                     session, username, password, password + "foo", name, email, request, cur_time
                 )
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
 
@@ -1173,7 +1172,7 @@ class TestCore(unittest.TestCase):
             try:
                 register_user(
                     session, username, password, password, name, email, request, cur_time)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, PasswordError)
                 code, _ = e.args
 
@@ -1289,7 +1288,7 @@ class TestCore(unittest.TestCase):
                     self._jwt_algorithm,
                     request,
                     cur_time=cur_time)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, LoginError)
                 code, msg = e.args
 
@@ -1338,7 +1337,7 @@ class TestCore(unittest.TestCase):
                     self._jwt_algorithm,
                     request,
                     cur_time=cur_time)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, LoginError)
                 code, msg = e.args
 
@@ -1354,7 +1353,7 @@ class TestCore(unittest.TestCase):
             code = None
             try:
                 execute_logout(session, None, None)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, LogoutError)
                 code, msg = e.args
 
@@ -1515,11 +1514,11 @@ class TestCore(unittest.TestCase):
         secret = txwtf.core.gen_secret()  # secret refresh invalidates token
         error = None
         try:
-            payload_decoded = decode_jwt(secret, algo, token)
-        except Exception as e:
+            decode_jwt(secret, algo, token)
+        except TXWTFError as e:
             # then
             error = e
-            self.assertIsInstance(e, InvalidSignatureError)
+            self.assertIsInstance(e, AuthorizedSessionError)
         self.assertIsNotNone(error)
 
     def test_authorized_sessions_default(self):
@@ -1640,7 +1639,7 @@ class TestCore(unittest.TestCase):
                     expire_delta,
                     cur_time
                 )
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, AuthorizedSessionError)
                 code, _ = e.args
 
@@ -1693,7 +1692,7 @@ class TestCore(unittest.TestCase):
                     expire_delta,
                     cur_time
                 )
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, AuthorizedSessionError)
                 code, _ = e.args
 
@@ -1711,7 +1710,7 @@ class TestCore(unittest.TestCase):
                 authorized_session_verify(
                     session, str(uuid.uuid4()),
                     self._jwt_secret)
-            except Exception as e:
+            except TXWTFError as e:
                 self.assertIsInstance(e, AuthorizedSessionError)
                 code, _ = e.args
 
@@ -1766,7 +1765,7 @@ class TestCore(unittest.TestCase):
                     session,
                     session_payload["uuid"],
                     self._jwt_secret)
-            except Exception as e:
+            except TXWTFError as e:
                 code, _ = e.args
 
             self.assertIsNone(code)
@@ -1819,7 +1818,7 @@ class TestCore(unittest.TestCase):
                     session,
                     session_payload["uuid"],
                     self._jwt_secret)
-            except Exception as e:
+            except TXWTFError as e:
                 code, _ = e.args
 
             # then
@@ -1873,7 +1872,7 @@ class TestCore(unittest.TestCase):
                     session,
                     session_payload["uuid"],
                     txwtf.core.gen_secret())
-            except Exception as e:
+            except TXWTFError as e:
                 code, _ = e.args
 
             # then
@@ -1930,7 +1929,7 @@ class TestCore(unittest.TestCase):
                     session,
                     session_payload["uuid"],
                     self._jwt_secret)
-            except Exception as e:
+            except TXWTFError as e:
                 code, _ = e.args
 
             # then
@@ -1984,7 +1983,7 @@ class TestCore(unittest.TestCase):
                     session,
                     session_payload["uuid"],
                     self._jwt_secret)
-            except Exception as e:
+            except TXWTFError as e:
                 code, _ = e.args
 
             # then
@@ -2003,7 +2002,7 @@ class TestCore(unittest.TestCase):
                     session,
                     session_payload["uuid"],
                     self._jwt_secret)
-            except Exception as e:
+            except TXWTFError as e:
                 code, _ = e.args
 
             # then

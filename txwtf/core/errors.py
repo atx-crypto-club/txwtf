@@ -1,22 +1,37 @@
-class PasswordError(Exception):
+class TXWTFError(Exception):
+    """
+    Base class for all exceptions.
+    """
+    def __init__(
+        self,
+        code: int,
+        msg: str,
+        *args
+    ):
+        super(Exception, self).__init__(*([code, msg] + list(args)))
+        self._code = code
+        self._msg = msg
+
+
+class PasswordError(TXWTFError):
     pass
 
 
-class RegistrationError(Exception):
+class RegistrationError(TXWTFError):
     pass
 
 
-class LoginError(Exception):
+class LoginError(TXWTFError):
     pass
 
 
-class LogoutError(Exception):
+class LogoutError(TXWTFError):
     pass
 
 
-class SettingsError(Exception):
+class SettingsError(TXWTFError):
     pass
 
 
-class AuthorizedSessionError(Exception):
+class AuthorizedSessionError(TXWTFError):
     pass

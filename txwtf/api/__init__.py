@@ -7,9 +7,12 @@ from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from txwtf.core import gen_secret, sign_jwt, decode_jwt
+from sqlmodel import Session
+
+from txwtf.core import gen_secret, sign_jwt, decode_jwt, authorized_session_verify
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS 
 from txwtf.core.codes import ErrorCode
+from txwtf.core.errors import TXWTFError
 from txwtf.core.model import PostSchema, UserSchema, UserLoginSchema, ResponseSchema
 from txwtf.version import version
 
@@ -19,43 +22,43 @@ import uvicorn
 class JWTBearer(HTTPBearer):
     def __init__(
         self,
+        session: Session,
         jwt_secret: str,
         jwt_algorithm: str = DEFAULT_JWT_ALGORITHM,
         auto_error: bool = True,
     ):
         super(JWTBearer, self).__init__(auto_error=auto_error)
-        self.jwt_secret = jwt_secret
-        self.jwt_algorithm = jwt_algorithm
+        self._session = session
+        self._jwt_secret = jwt_secret
+        self._jwt_algorithm = jwt_algorithm
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(
             JWTBearer, self
         ).__call__(request)
-        if credentials:
-            if not credentials.scheme == "Bearer":
-                raise HTTPException(
-                    status_code=403, detail="Invalid authentication scheme."
-                )
-            if not self.verify_jwt(credentials.credentials):
-                raise HTTPException(
-                    status_code=403, detail="Invalid token or expired token."
-                )
-            return credentials.credentials
-        else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code.")
 
-    def verify_jwt(self, jwtoken: str) -> bool:
-        valid: bool = False
-
+        if not credentials.scheme == "Bearer":
+            raise HTTPException(
+                status_code=403, detail="Invalid authentication scheme."
+            )
+        
         try:
-            payload = decode_jwt(self.jwt_secret, self.jwt_algorithm, jwtoken)
-            payload = payload if payload["expires"] >= time.time() else None
-        except:
-            payload = None
-        if payload is not None:
-            valid = True
+            self.verify_jwt(credentials.credentials)
+        except TXWTFError as e:
+            code, msg = e.args
+            raise HTTPException(
+                status_code=403,
+                detail="{} ({})".format(msg, code)
+            )
+        
+        return credentials.credentials
 
-        return valid
+    def verify_jwt(self, jwtoken: str):
+        payload = decode_jwt(
+            self._jwt_secret, self._jwt_algorithm, jwtoken)
+        authorized_session_verify(
+            self._session, payload["uuid"], self._jwt_secret)
+
 
 
 logger = logging.getLogger(__name__)
@@ -71,7 +74,10 @@ def get_test_router(
 ) -> APIRouter:
     router = APIRouter(
         #tags=["test"],
-        responses={404: {"description": "Not found"}},
+        responses={
+            404: {"description": "Not found"},
+            403: {"description": "Access denied"}
+        },
     )
 
     @router.get("/posts", tags=["posts"])
@@ -160,7 +166,6 @@ def create_app(
         get_test_router(jwt_secret, jwt_secret),
         prefix="/test",
         tags=["jwt demo"])
-
 
     return app
 

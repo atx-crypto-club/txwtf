@@ -12,6 +12,7 @@ from typing import Tuple, Any, List, Optional, Dict
 import uuid
 
 import jwt
+from jwt.exceptions import InvalidSignatureError
 
 from sqlmodel import Session, select
 from sqlalchemy.exc import NoResultFound
@@ -452,7 +453,15 @@ def decode_jwt(
     jwt_algorithm: str,
     token: str
 ) -> Dict[str, str]:
-    return jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
+    try:
+        ret = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
+    except InvalidSignatureError as e:
+        raise AuthorizedSessionError(
+            ErrorCode.InvalidTokenSignature,
+            "Invalid token signature"
+        )
+
+    return ret
     
 
 def authorized_session_launch(
