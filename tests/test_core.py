@@ -988,6 +988,42 @@ class TestCore(unittest.TestCase):
 
             self.assertEqual(code, ErrorCode.EmailExists)
 
+    def test_register_invalid_username(self):
+        """
+        Test that registration fails if a username isn't a valid identifier
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "#asdf"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            code = None
+            try:
+                register_user(
+                    session, username, password, password, name, email, request, cur_time)
+            except TXWTFError as e:
+                self.assertIsInstance(e, RegistrationError)
+                code, _ = e.args
+
+            self.assertEqual(code, ErrorCode.InvalidIdentifier)
+
     def test_register_username_exists(self):
         """
         Test that there is an error if a username already exists.

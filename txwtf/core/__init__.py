@@ -699,6 +699,13 @@ def register_user(
     if user is not None:
         raise RegistrationError(ErrorCode.EmailExists, "Email address already exists")
 
+    # if the username is an invalid identifier, bail
+    if not valid_identifier(username):
+        raise RegistrationError(
+            ErrorCode.InvalidIdentifier,
+            "Invalid indentifier " + username
+        )
+
     # if this returns a user, then the username already exists in database
     statement = select(User).where(User.username == username)
     results = session.exec(statement)
