@@ -1403,7 +1403,14 @@ class TestCore(unittest.TestCase):
 
             # when
             register_user(
-                session, username, password, password, name, email, request)
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request)
+
             user, session_payload = execute_login(
                 session,
                 username,
@@ -1412,7 +1419,15 @@ class TestCore(unittest.TestCase):
                 self._jwt_algorithm,
                 request_login)
 
-            code = None
+            session_verified = True
+            try:
+                authorized_session_verify(
+                    session,
+                    session_payload["uuid"],
+                    self._jwt_secret)
+            except:
+                session_verified = False
+
             cur_time = datetime.now()
             execute_logout(
                 session,
@@ -1420,6 +1435,15 @@ class TestCore(unittest.TestCase):
                 request_logout,
                 user,
                 cur_time)
+
+            session_verified_post_logout = True
+            try:
+                authorized_session_verify(
+                    session,
+                    session_payload["uuid"],
+                    self._jwt_secret)
+            except:
+                session_verified_post_logout = False
 
             # then
             user_changes = session.exec(
@@ -1454,6 +1478,9 @@ class TestCore(unittest.TestCase):
                 last_log.remote_addr, request_logout.headers.get("X-Forwarded-For")
             )
             self.assertEqual(last_log.endpoint, request_logout.endpoint)
+
+            self.assertTrue(session_verified)
+            self.assertFalse(session_verified_post_logout)
 
     def test_auth_jwt(self):
         """
