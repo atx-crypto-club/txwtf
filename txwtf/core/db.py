@@ -2,6 +2,7 @@ import os
 
 from decouple import config
 
+from sqlalchemy import Engine
 from sqlmodel import create_engine, SQLModel, Session
 
 
@@ -11,8 +12,7 @@ def get_engine(db_url: str = None, echo: bool = False):
     return create_engine(db_url, echo=echo)
 
 
-def init_db(db_url: str = None):
-    engine = get_engine(db_url)
+def init_db(engine: Engine):
     SQLModel.metadata.create_all(engine)
 
 

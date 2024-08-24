@@ -1,21 +1,46 @@
 from contextlib import asynccontextmanager
 import logging
+from typing import Union, Any
+from typing_extensions import Annotated
 
 from decouple import config
 
-from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException, Request
+from fastapi import (
+    APIRouter,
+    FastAPI,
+    Body,
+    Depends,
+    HTTPException,
+    Request,
+    Header
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from sqlalchemy import Engine
 from sqlmodel import Session
 
-from txwtf.core import gen_secret, sign_jwt, decode_jwt, authorized_session_verify
-from txwtf.core.db import get_engine
+from txwtf.core import (
+    gen_secret,
+    sign_jwt,
+    decode_jwt,
+    authorized_session_verify,
+    register_user,
+    set_setting,
+    request_compat
+)
+from txwtf.core.db import get_engine, init_db
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS 
 from txwtf.core.codes import ErrorCode
 from txwtf.core.errors import TXWTFError
-from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema, ResponseSchema
+from txwtf.core.model import User
+from txwtf.api.model import (
+    PostSchema,
+    UserSchema,
+    UserLoginSchema,
+    ResponseSchema,
+    Registration
+)
 from txwtf.version import version
 
 import uvicorn
@@ -136,6 +161,38 @@ def get_test_router(
     return router
 
 
+def get_user_router(
+        engine: Engine,
+        jwt_secret: str = None,
+        jwt_algorithm: str = None
+) -> APIRouter:
+    router = APIRouter(
+        #tags=["user"],
+        responses={
+            404: {"description": "Not found"},
+            403: {"description": "Access denied"}
+        },
+    )
+
+    @router.post("/register", tags=["auth"], response_model=User)
+    async def register(
+        user: Registration,
+        request: Request,
+        user_agent: Annotated[Union[str, None], Header()] = None
+    ):
+        with Session(engine) as session:
+            return register_user(
+                session,
+                user.username,
+                user.password,
+                user.password,
+                user.name,
+                user.email,
+                request_compat(request, user_agent))
+
+    return router
+
+
 def create_app(
     jwt_secret: str = None,
     jwt_algorithm: str = None,
@@ -173,10 +230,19 @@ def create_app(
     # **** API entry points ****
 
     engine = get_engine(db_url)
+    init_db(engine)  # TODO: flag for init or something
+    with Session(engine) as session:
+        set_setting(session, "email_validate_deliv_enabled", 0)
+    
+    # app.include_router(
+    #     get_test_router(engine, jwt_secret, jwt_secret),
+    #     prefix="/test",
+    #     tags=["jwt demo"])
+    
     app.include_router(
-        get_test_router(engine, jwt_secret, jwt_secret),
-        prefix="/test",
-        tags=["jwt demo"])
+        get_user_router(engine, jwt_secret, jwt_secret),
+        prefix="/user",
+        tags=["user"])
 
     return app
 

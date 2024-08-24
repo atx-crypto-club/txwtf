@@ -14,6 +14,8 @@ import uuid
 import jwt
 from jwt.exceptions import InvalidSignatureError
 
+from pydantic import EmailStr
+
 from sqlmodel import Session, select
 from sqlalchemy.exc import NoResultFound
 
@@ -100,6 +102,17 @@ def remote_addr(request):
         "X-Forwarded-For", request.headers.get("X-Real-IP", request.remote_addr)
     )
 
+
+def request_compat(request, user_agent):
+    """
+    Add fields to request to make the object compatible with txwtf routines
+    that read request data and expect the attributes provided by flask.
+    """
+    request.remote_addr = request.client.host
+    request.endpoint = request.url
+    request.user_agent = user_agent
+    request.referrer = request.headers.get('referer')
+    return request
 
 @contextmanager
 def cli_context(obj):
@@ -673,7 +686,7 @@ def register_user(
         password: str, 
         verify_password: str,
         name: str,
-        email: str,
+        email: EmailStr,
         request: Any,
         cur_time: Optional[datetime] = None
 ) -> User:
@@ -766,7 +779,7 @@ def register_user(
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+        endpoint=str(request.endpoint),
     )
     session.add(new_change)
     new_log = SystemLog(
@@ -776,10 +789,12 @@ def register_user(
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+        endpoint=str(request.endpoint),
     )
     session.add(new_log)
     session.commit()
+
+    session.refresh(new_user)
 
     return new_user
 

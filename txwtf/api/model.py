@@ -48,3 +48,22 @@ class ResponseSchema(SQLModel):
     message: Optional[str] = None
     error: Optional[int] = 1 #ErrorCode.NoError
     data: dict = Field(...)
+
+
+class Registration(SQLModel):
+    username: str
+    password: str
+    verify_password: str
+    name: str
+    email: EmailStr
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "username": "user",
+                "email": "user@example.com",
+                "password": "passWord1234@",
+                "verify_password": "password1234@",
+                "name": "Mr User",
+            }
+        }
