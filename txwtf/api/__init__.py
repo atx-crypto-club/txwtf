@@ -7,13 +7,15 @@ from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from sqlalchemy import Engine
 from sqlmodel import Session
 
 from txwtf.core import gen_secret, sign_jwt, decode_jwt, authorized_session_verify
+from txwtf.core.db import get_engine
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS 
 from txwtf.core.codes import ErrorCode
 from txwtf.core.errors import TXWTFError
-from txwtf.core.model import PostSchema, UserSchema, UserLoginSchema, ResponseSchema
+from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema, ResponseSchema
 from txwtf.version import version
 
 import uvicorn
@@ -22,13 +24,13 @@ import uvicorn
 class JWTBearer(HTTPBearer):
     def __init__(
         self,
-        session: Session,
+        engine: Engine,
         jwt_secret: str,
         jwt_algorithm: str = DEFAULT_JWT_ALGORITHM,
         auto_error: bool = True,
     ):
         super(JWTBearer, self).__init__(auto_error=auto_error)
-        self._session = session
+        self._engine = engine
         self._jwt_secret = jwt_secret
         self._jwt_algorithm = jwt_algorithm
 
@@ -56,8 +58,9 @@ class JWTBearer(HTTPBearer):
     def verify_jwt(self, jwtoken: str):
         payload = decode_jwt(
             self._jwt_secret, self._jwt_algorithm, jwtoken)
-        authorized_session_verify(
-            self._session, payload["uuid"], self._jwt_secret)
+        with Session(self._engine) as session:
+            authorized_session_verify(
+                session, payload["uuid"], self._jwt_secret)
 
 
 
@@ -70,7 +73,9 @@ users = []
 
 
 def get_test_router(
-        jwt_secret: str = None, jwt_algorithm: str = None
+        engine: Engine,
+        jwt_secret: str = None,
+        jwt_algorithm: str = None
 ) -> APIRouter:
     router = APIRouter(
         #tags=["test"],
@@ -97,7 +102,7 @@ def get_test_router(
 
     @router.post(
         "/posts",
-        dependencies=[Depends(JWTBearer(jwt_secret, jwt_algorithm))],
+        dependencies=[Depends(JWTBearer(engine, jwt_secret, jwt_algorithm))],
         tags=["posts"],
     )
     async def add_post(post: PostSchema) -> ResponseSchema:
@@ -106,7 +111,7 @@ def get_test_router(
         return ResponseSchema(message="post added.")
 
     @router.post("/user/signup", tags=["user"])
-    async def create_user(user: UserSchema = Body(...)):
+    async def create_user(user: UserSchema = Body(...)) -> ResponseSchema:
         users.append(
             user
         )  # replace with db call, making sure to hash the password first
@@ -120,7 +125,7 @@ def get_test_router(
         return False
 
     @router.post("/user/login", tags=["user"])
-    async def user_login(user: UserLoginSchema = Body(...)):
+    async def user_login(user: UserLoginSchema = Body(...)) -> ResponseSchema:
         if check_user(user):
             return ResponseSchema(
                 data=sign_jwt(jwt_secret, jwt_algorithm, user.email))
@@ -147,6 +152,9 @@ def create_app(
         jwt_algorithm = config("TXWTF_API_JWT_ALGO", default=DEFAULT_JWT_ALGORITHM)
     if jwt_secret is None:
         jwt_secret = config("TXWTF_API_JWT_SECRET", default=gen_secret())
+    if db_url is None:
+        db_url = config("TXWTF_API_DB_URL", default="sqlite://")
+
     origins.extend(CORS_ORIGINS)
 
     app = FastAPI(lifespan=lifespan)
@@ -162,8 +170,11 @@ def create_app(
     async def read_root() -> dict:
         return {"message": "txwtf v{}".format(version)}
     
+    # **** API entry points ****
+
+    engine = get_engine(db_url)
     app.include_router(
-        get_test_router(jwt_secret, jwt_secret),
+        get_test_router(engine, jwt_secret, jwt_secret),
         prefix="/test",
         tags=["jwt demo"])
 
