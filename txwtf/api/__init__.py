@@ -259,6 +259,7 @@ def create_app(
     engine = get_engine(db_url)
     init_db(engine)  # TODO: flag for init or something
     with Session(engine) as session:
+        # Disable email deliverability verification for testing
         set_setting(session, "email_validate_deliv_enabled", 0)
     
     # app.include_router(
@@ -267,7 +268,7 @@ def create_app(
     #     tags=["jwt demo"])
     
     app.include_router(
-        get_user_router(engine, jwt_secret, jwt_secret),
+        get_user_router(engine, jwt_secret, jwt_algorithm),
         prefix="/user",
         tags=["user"])
 

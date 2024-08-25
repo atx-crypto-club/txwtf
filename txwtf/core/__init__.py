@@ -109,7 +109,7 @@ def request_compat(request, user_agent):
     that read request data and expect the attributes provided by flask.
     """
     request.remote_addr = request.client.host
-    request.endpoint = request.url
+    request.endpoint = str(request.url)
     request.user_agent = user_agent
     request.referrer = request.headers.get('referer')
     return request
