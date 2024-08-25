@@ -808,7 +808,7 @@ def execute_login(
         request: Any, 
         expire_delta: timedelta = timedelta(hours=1),
         cur_time: Optional[datetime] = None
-) -> Tuple[User, str]:
+) -> Tuple[User, Dict[str, Any]]:
     """
     Record a login and execute a provided login function if the supplied
     credentials are correct. Returns a tuple of the User record and
@@ -876,7 +876,6 @@ def execute_login(
 
     return user, token_payload
 
-# TODO: invalidate a token without logging all out at once
 
 def execute_logout(
         session: Session,

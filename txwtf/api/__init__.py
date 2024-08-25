@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from datetime import datetime
 import logging
 from typing import Union, Any
 from typing_extensions import Annotated
@@ -27,7 +28,8 @@ from txwtf.core import (
     authorized_session_verify,
     register_user,
     set_setting,
-    request_compat
+    request_compat,
+    execute_login
 )
 from txwtf.core.db import get_engine, init_db
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS 
@@ -39,7 +41,9 @@ from txwtf.api.model import (
     UserSchema,
     UserLoginSchema,
     ResponseSchema,
-    Registration
+    Registration,
+    Login,
+    LoginResponse
 )
 from txwtf.version import version
 
@@ -189,6 +193,29 @@ def get_user_router(
                 user.name,
                 user.email,
                 request_compat(request, user_agent))
+
+    @router.post("/login", tags=["auth"], response_model=LoginResponse)
+    async def login(
+        login: Login,
+        request: Request,
+        user_agent: Annotated[Union[str, None], Header()] = None
+    ):
+        with Session(engine) as session:
+            user, token_payload = execute_login(
+                session,
+                login.username,
+                login.password,
+                jwt_secret,
+                jwt_algorithm,
+                request_compat(request, user_agent),
+                login.expire_delta)
+        expires = datetime.fromtimestamp(token_payload["expires"])
+        return LoginResponse(
+            user=user,
+            expires=expires,
+            token=token_payload["token"],
+            session_uuid=token_payload["uuid"]
+        )
 
     return router
 

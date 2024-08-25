@@ -1,8 +1,11 @@
+from datetime import datetime, timedelta
 from typing import Optional
 
 from pydantic import EmailStr
 
 from sqlmodel import SQLModel, Field
+
+from txwtf.core.model import User
 
 
 class PostSchema(SQLModel):
@@ -67,3 +70,25 @@ class Registration(SQLModel):
                 "name": "Mr User",
             }
         }
+
+
+class Login(SQLModel):
+    username: str
+    password: str
+    expire_delta: timedelta
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "username": "user",
+                "password": "passWord1234@",
+                "expire_delta": 3600,
+            }
+        }
+
+
+class LoginResponse(SQLModel):
+    user: User
+    expires: datetime
+    token: str
+    session_uuid: str
