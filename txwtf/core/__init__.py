@@ -879,17 +879,14 @@ def execute_login(
 
 def execute_logout(
         session: Session,
-        session_uuid: str,  # None is valid
+        session_uuid: str,
         request: Any,
-        current_user: Optional[User] = None, 
+        current_user: User, 
         cur_time: Optional[datetime] = None):
     """
-    Record a logout and execute logout by invalidating all a
-    users tokens.
+    Record a logout and execute logout by invalidating the session
+    by its uuid.
     """
-    if current_user is None:
-        raise LogoutError(ErrorCode.UserNull, "Null user")
-
     if cur_time is None:
         cur_time = datetime.utcnow()
 
@@ -918,5 +915,4 @@ def execute_logout(
     session.add(new_change)
     session.commit()
 
-    if session_uuid is not None:
-        authorized_session_deactivate(session, session_uuid, request, cur_time)
+    authorized_session_deactivate(session, session_uuid, request, cur_time)

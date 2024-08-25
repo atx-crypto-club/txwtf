@@ -1380,23 +1380,6 @@ class TestCore(unittest.TestCase):
             self.assertEqual(code, ErrorCode.UserPasswordIncorrect)
             self.assertEqual(msg, "Access denied!")
 
-    def test_execute_logout_with_null_current_user(self):
-        """
-        Test that we get an error when passing a null current user
-        """
-        with Session(self._engine) as session:
-            # when
-            code = None
-            try:
-                execute_logout(session, None, None)
-            except TXWTFError as e:
-                self.assertIsInstance(e, LogoutError)
-                code, msg = e.args
-
-            # then
-            self.assertEqual(code, ErrorCode.UserNull)
-            self.assertEqual(msg, "Null user")
-
     def test_execute_logout(self):
         """
         Test that calling execute_logout writes the expected
