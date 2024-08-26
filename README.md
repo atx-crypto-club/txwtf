@@ -108,11 +108,11 @@ To access special system information and change critical settings through the ap
 
 ## API
 
-This is a module evolving along side the webapp. It has a module intended to be run using gunicorn -> uvicorn. You can launch it using the following in the shell to install python, download dependencies and run the server in an isolated environment:
+The `txwtf.api` subpackage is evolving alongside the webapp. It has a module intended to be run using gunicorn to launch uvicorn. You can execute it using the following in the shell to install python, download dependencies and run the server in an isolated environment:
 
-    $ WSGI_BIND="0.0.0.0:31337" WSGI_APP="txwtf.api" WSGI_WORKER_CLASS="uvicorn.workers.UvicornWorker" WSGI_APP_ENTRY_POINT="create_app" bash init.sh -e /tmp/test-install -r "run-wsgi"
+    $ WSGI_BIND="127.0.0.1:31337" WSGI_APP="txwtf.api" WSGI_WORKER_CLASS="uvicorn.workers.UvicornWorker" WSGI_APP_ENTRY_POINT="create_app" bash init.sh -e /tmp/test-install -r "run-wsgi"
 
-This is for interacting with the backend. All applications including the webapp middleware should be able to work with this without connecting to the database directly. This API uses JWT token based authentication. There is swagger documentation available for the API at `0.0.0.0:31337/docs` on your running instance above.
+This is for interacting with the backend. All applications including the webapp will soon work with this without connecting to the database directly. This API uses JWT token based authentication. There is swagger documentation available for the API at `127.0.0.1:31337/docs` on your running instance above.
 
 You can also run the backend from the production environment using the `backend` command.
 
@@ -127,8 +127,8 @@ To control JWT token acess, either create an `.env` file that contains secret an
     TXWTF_API_JWT_SECRET=...
     TXWTF_API_JWT_ALGO=HS256
 
-By default, the `TXWTF_API_JWT_ALGO` is set internally to `HS256`. If the secret isn't set in `TXWTF_API_JWT_SECRET` then `txwtf.core.gen_secret` is used to generate a secret. The equivalent on the command line is:
+By default, the `TXWTF_API_JWT_ALGO` is set internally to `HS256`. If the secret isn't set in `TXWTF_API_JWT_SECRET` then `txwtf.core.gen_secret` is used to generate a secret. The equivalent on the command line via the production environment is:
 
     $ export TXWTF_API_JWT_SECRET=`txwtf gen-secret`
 
-A good value for the secret key based on a random sha256 hash can be generated with the `txwtf gen-secret` command that you can run from the production environment. Remember that every time you use a new secret, all previously generated tokens are invalid.
+A good value for the secret key based on a random sha256 hash can be generated any time with the `txwtf gen-secret` command. Remember that every time you use a new secret, all previously generated tokens become invalid.
