@@ -47,6 +47,7 @@ from txwtf.core import (
     get_email_validate_deliverability_enabled,
     password_check,
     register_user, execute_login, execute_logout,
+    get_user
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -69,7 +70,8 @@ from txwtf.core.errors import (
     RegistrationError,
     LoginError,
     LogoutError,
-    AuthorizedSessionError
+    AuthorizedSessionError,
+    UserError
 )
 from txwtf.core.db import get_engine
 from txwtf.core.model import (
@@ -2027,6 +2029,55 @@ class TestCore(unittest.TestCase):
 
             # then
             self.assertEqual(code, ErrorCode.DeactivatedSession)
+
+    def test_get_user(self):
+        """
+        Test returning a user given a database session and user id.
+        """
+        with Session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = register_user(
+                session, username, password, password, name, email, request, cur_time)
+            test_user = get_user(session, user.id)
+
+            # then
+            self.assertEqual(user, test_user)
+
+    def test_get_user_invalid(self):
+        """
+        Test that we throw an error if the user id is invalid.
+        """
+        with Session(self._engine) as session:
+            # when
+            code = None
+            try:
+                get_user(session, 420)
+            except TXWTFError as e:
+                self.assertIsInstance(e, UserError)
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.InvalidUser)
 
 
 if __name__ == "__main__":
