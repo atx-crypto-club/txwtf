@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 import logging
-from typing import Union, Any
+from typing import Union, List
 from typing_extensions import Annotated
 
 from decouple import config
@@ -23,7 +23,6 @@ from sqlmodel import Session
 
 from txwtf.core import (
     gen_secret,
-    sign_jwt,
     decode_jwt,
     authorized_session_verify,
     register_user,
@@ -31,18 +30,19 @@ from txwtf.core import (
     request_compat,
     execute_login,
     execute_logout,
-    get_user
+    get_user,
+    authorized_sessions
 )
 from txwtf.core.db import get_engine, init_db
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS 
 from txwtf.core.codes import ErrorCode
 from txwtf.core.errors import TXWTFError
-from txwtf.core.model import User
+from txwtf.core.model import User, AuthorizedSession
 from txwtf.api.model import (
     ResponseSchema,
     Registration,
     Login,
-    LoginResponse
+    LoginResponse,
 )
 from txwtf.version import version
 
@@ -113,6 +113,7 @@ def get_user_router(
     router = APIRouter(
         #tags=["user"],
         responses={
+            400: {"description": "Bad Request"},
             401: {"description": "Unauthorized"},
             404: {"description": "Not found"},
             403: {"description": "Access denied"}
@@ -170,23 +171,59 @@ def get_user_router(
         token_payload: Annotated[
             JWTBearer, Depends(JWTBearer(engine, jwt_secret, jwt_algorithm))
         ],
-        user_agent: Annotated[Union[str, None], Header()] = None
+        user_agent: Annotated[Union[str, None], Header()] = None,
+        all: bool = False,
     ):
         with map_txwtf_errors(401):
             with Session(engine) as session:
                 user_id = token_payload["user_id"]
                 user: User = get_user(session, user_id)
-                execute_logout(
-                    session,
-                    token_payload["uuid"],
-                    jwt_secret,
-                    request_compat(request, user_agent),
-                    user
-                )
+                if not all:
+                    execute_logout(
+                        session,
+                        token_payload["uuid"],
+                        jwt_secret,
+                        request_compat(request, user_agent),
+                        user
+                    )
+                else:
+                    sessions = authorized_sessions(
+                        session,
+                        user_id,
+                        True
+                    )
+                    for auth_sess in sessions:
+                        execute_logout(
+                            session,
+                            auth_sess.uuid,
+                            jwt_secret,
+                            request_compat(request, user_agent),
+                            user
+                        )
         
         return ResponseSchema(
-            message="Successfully ended authorized session"
+            message="Successfully logged out"
         )
+    
+    @router.get(
+        "/sessions",
+        tags=["auth"],
+        response_model=List[AuthorizedSession],
+    )
+    async def get_sessions(
+        active_only: bool = True,
+        token_payload: Annotated[
+            JWTBearer, Depends(
+                JWTBearer(engine, jwt_secret, jwt_algorithm))
+        ] = None
+    ):
+        with map_txwtf_errors(401):
+            with Session(engine) as session:
+                return authorized_sessions(
+                    session,
+                    token_payload["user_id"],
+                    active_only)
+
 
     return router
 
@@ -236,7 +273,8 @@ def create_app(
     app.include_router(
         get_user_router(engine, jwt_secret, jwt_algorithm),
         prefix="/user",
-        tags=["user"])
+        #tags=["user"]
+    )
 
     return app
 
