@@ -58,6 +58,7 @@ from txwtf.core.errors import (
     LoginError,
     LogoutError,
     SettingsError,
+    UserError,
 )
 
 
@@ -874,12 +875,15 @@ def execute_login(
     session.add(new_change)
     session.commit()
 
+    session.refresh(user)
+
     return user, token_payload
 
 
 def execute_logout(
         session: Session,
         session_uuid: str,
+        jwt_secret: str,
         request: Any,
         current_user: User, 
         cur_time: Optional[datetime] = None):
@@ -889,6 +893,8 @@ def execute_logout(
     """
     if cur_time is None:
         cur_time = datetime.utcnow()
+
+    authorized_session_verify(session, session_uuid, jwt_secret)
 
     new_log = SystemLog(
         event_code=SystemLogEventCode.UserLogout,
@@ -916,3 +922,15 @@ def execute_logout(
     session.commit()
 
     authorized_session_deactivate(session, session_uuid, request, cur_time)
+
+
+def get_user(session: Session, user_id: int) -> User:
+    statement = select(User).where(User.id == user_id)
+    results = session.exec(statement)
+    try:
+        return results.one()
+    except NoResultFound:
+        raise UserError(
+            ErrorCode.InvalidUser,
+            "Invalid user id {}".format(user_id)
+    )

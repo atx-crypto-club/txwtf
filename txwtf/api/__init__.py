@@ -29,7 +29,9 @@ from txwtf.core import (
     register_user,
     set_setting,
     request_compat,
-    execute_login
+    execute_login,
+    execute_logout,
+    get_user
 )
 from txwtf.core.db import get_engine, init_db
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS 
@@ -37,9 +39,6 @@ from txwtf.core.codes import ErrorCode
 from txwtf.core.errors import TXWTFError
 from txwtf.core.model import User
 from txwtf.api.model import (
-    PostSchema,
-    UserSchema,
-    UserLoginSchema,
     ResponseSchema,
     Registration,
     Login,
@@ -48,6 +47,9 @@ from txwtf.api.model import (
 from txwtf.version import version
 
 import uvicorn
+
+
+logger = logging.getLogger(__name__)
 
 
 class JWTBearer(HTTPBearer):
@@ -74,15 +76,13 @@ class JWTBearer(HTTPBearer):
             )
         
         try:
-            self.verify_jwt(credentials.credentials)
+            return self.verify_jwt(credentials.credentials)
         except TXWTFError as e:
             code, msg = e.args
             raise HTTPException(
                 status_code=403,
                 detail="{} ({})".format(msg, code)
             )
-        
-        return credentials.credentials
 
     def verify_jwt(self, jwtoken: str):
         payload = decode_jwt(
@@ -90,79 +90,7 @@ class JWTBearer(HTTPBearer):
         with Session(self._engine) as session:
             authorized_session_verify(
                 session, payload["uuid"], self._jwt_secret)
-
-
-
-logger = logging.getLogger(__name__)
-
-
-posts = [{"id": 1, "title": "Pancake", "content": "Lorem Ipsum ..."}]
-
-users = []
-
-
-def get_test_router(
-        engine: Engine,
-        jwt_secret: str = None,
-        jwt_algorithm: str = None
-) -> APIRouter:
-    router = APIRouter(
-        #tags=["test"],
-        responses={
-            404: {"description": "Not found"},
-            403: {"description": "Access denied"}
-        },
-    )
-
-    @router.get("/posts", tags=["posts"])
-    async def get_posts() -> ResponseSchema:
-        return ResponseSchema(data={"posts":posts})
-
-    @router.get("/posts/{id}", tags=["posts"])
-    async def get_single_post(id: int) -> ResponseSchema:
-        if id > len(posts):
-            return ResponseSchema(
-                message="No such post with the supplied ID.",
-                error=ErrorCode.GenericError)
-
-        for post in posts:
-            if post["id"] == id:
-                return ResponseSchema(data={"post": post})
-
-    @router.post(
-        "/posts",
-        dependencies=[Depends(JWTBearer(engine, jwt_secret, jwt_algorithm))],
-        tags=["posts"],
-    )
-    async def add_post(post: PostSchema) -> ResponseSchema:
-        post.id = len(posts) + 1
-        posts.append(post.dict())
-        return ResponseSchema(message="post added.")
-
-    @router.post("/user/signup", tags=["user"])
-    async def create_user(user: UserSchema = Body(...)) -> ResponseSchema:
-        users.append(
-            user
-        )  # replace with db call, making sure to hash the password first
-        return ResponseSchema(
-            data=sign_jwt(jwt_secret, jwt_algorithm, user.email))
-
-    def check_user(data: UserLoginSchema):
-        for user in users:
-            if user.email == data.email and user.password == data.password:
-                return True
-        return False
-
-    @router.post("/user/login", tags=["user"])
-    async def user_login(user: UserLoginSchema = Body(...)) -> ResponseSchema:
-        if check_user(user):
-            return ResponseSchema(
-                data=sign_jwt(jwt_secret, jwt_algorithm, user.email))
-        return ResponseSchema(
-            message="Wrong login details!",
-            error=ErrorCode.GenericError)
-
-    return router
+        return payload
 
 
 def get_user_router(
@@ -173,6 +101,7 @@ def get_user_router(
     router = APIRouter(
         #tags=["user"],
         responses={
+            401: {"description": "Unauthorized"},
             404: {"description": "Not found"},
             403: {"description": "Access denied"}
         },
@@ -215,6 +144,40 @@ def get_user_router(
             expires=expires,
             token=token_payload["token"],
             session_uuid=token_payload["uuid"]
+        )
+    
+    @router.get(
+        "/logout",
+        tags=["auth"],
+        response_model=ResponseSchema,
+    )
+    async def logout(
+        request: Request,
+        token_payload: Annotated[
+            JWTBearer, Depends(JWTBearer(engine, jwt_secret, jwt_algorithm))
+        ],
+        user_agent: Annotated[Union[str, None], Header()] = None
+    ):
+        try:
+            with Session(engine) as session:
+                user_id = token_payload["user_id"]
+                user: User = get_user(session, user_id)
+                execute_logout(
+                    session,
+                    token_payload["uuid"],
+                    jwt_secret,
+                    request_compat(request, user_agent),
+                    user
+                )
+        except TXWTFError as e:
+            code, msg = e.args
+            raise HTTPException(
+                status_code=401,
+                detail="{} ({})".format(msg, code)
+            )
+        
+        return ResponseSchema(
+            message="Successfully ended authorized session"
         )
 
     return router
@@ -261,11 +224,6 @@ def create_app(
     with Session(engine) as session:
         # Disable email deliverability verification for testing
         set_setting(session, "email_validate_deliv_enabled", 0)
-    
-    # app.include_router(
-    #     get_test_router(engine, jwt_secret, jwt_secret),
-    #     prefix="/test",
-    #     tags=["jwt demo"])
     
     app.include_router(
         get_user_router(engine, jwt_secret, jwt_algorithm),

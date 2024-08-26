@@ -9,6 +9,9 @@ from sqlmodel import SQLModel, Column, Field
 from sqlalchemy import DateTime, String, func
 
 
+# TODO: add user groups, group permissions
+# and invite links for registration
+# TODO: consider not returning the password hash...
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(unique=True, sa_type=String(256), max_length=256)
@@ -35,6 +38,7 @@ class User(SQLModel, table=True):
     post_view_count: Optional[int] = 0
     post_count: Optional[int] = 0
     enabled: bool = True
+    invited_by: Optional[int] = None
 
 
 class GlobalSettings(SQLModel, table=True):

@@ -8,49 +8,10 @@ from sqlmodel import SQLModel, Field
 from txwtf.core.model import User
 
 
-class PostSchema(SQLModel):
-    id: int = Field(default=None)
-    title: str = Field(...)
-    content: str = Field(...)
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "title": "Hello, World",
-                "content": "Test post",
-            }
-        }
-
-
-class UserSchema(SQLModel):
-    fullname: str = Field(...)
-    email: EmailStr = Field(...)
-    password: str = Field(...)
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "fullname": "Joe Rivera",
-                "email": "j@jriv.us",
-                "password": "password1234",
-            }
-        }
-
-
-class UserLoginSchema(SQLModel):
-    email: EmailStr = Field(...)
-    password: str = Field(...)
-
-    class Config:
-        json_schema_extra = {
-            "example": {"email": "j@jriv.us", "password": "password1234"}
-        }
-
-
 class ResponseSchema(SQLModel):
     message: Optional[str] = None
-    error: Optional[int] = 1 #ErrorCode.NoError
-    data: dict = Field(...)
+    code: Optional[int] = 1 #ErrorCode.NoError
+    data: Optional[dict] = None
 
 
 class Registration(SQLModel):

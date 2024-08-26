@@ -35,3 +35,7 @@ class SettingsError(TXWTFError):
 
 class AuthorizedSessionError(TXWTFError):
     pass
+
+
+class UserError(TXWTFError):
+    pass

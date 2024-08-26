@@ -1450,6 +1450,7 @@ class TestCore(unittest.TestCase):
             execute_logout(
                 session,
                 session_payload["uuid"],
+                self._jwt_secret,
                 request_logout,
                 user,
                 cur_time)
