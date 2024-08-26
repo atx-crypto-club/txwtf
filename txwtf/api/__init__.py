@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 import logging
 from typing import Union, Any
@@ -93,6 +93,18 @@ class JWTBearer(HTTPBearer):
         return payload
 
 
+@contextmanager
+def map_txwtf_errors(status_code=400):
+    try:
+        yield
+    except TXWTFError as e:
+        code, msg = e.args
+        raise HTTPException(
+            status_code=status_code,
+            detail="{} ({})".format(msg, code)
+        )
+
+
 def get_user_router(
         engine: Engine,
         jwt_secret: str = None,
@@ -113,15 +125,16 @@ def get_user_router(
         request: Request,
         user_agent: Annotated[Union[str, None], Header()] = None
     ):
-        with Session(engine) as session:
-            return register_user(
-                session,
-                user.username,
-                user.password,
-                user.password,
-                user.name,
-                user.email,
-                request_compat(request, user_agent))
+        with map_txwtf_errors():
+            with Session(engine) as session:
+                return register_user(
+                    session,
+                    user.username,
+                    user.password,
+                    user.password,
+                    user.name,
+                    user.email,
+                    request_compat(request, user_agent))
 
     @router.post("/login", tags=["auth"], response_model=LoginResponse)
     async def login(
@@ -129,15 +142,16 @@ def get_user_router(
         request: Request,
         user_agent: Annotated[Union[str, None], Header()] = None
     ):
-        with Session(engine) as session:
-            user, token_payload = execute_login(
-                session,
-                login.username,
-                login.password,
-                jwt_secret,
-                jwt_algorithm,
-                request_compat(request, user_agent),
-                login.expire_delta)
+        with map_txwtf_errors(401):
+            with Session(engine) as session:
+                user, token_payload = execute_login(
+                    session,
+                    login.username,
+                    login.password,
+                    jwt_secret,
+                    jwt_algorithm,
+                    request_compat(request, user_agent),
+                    login.expire_delta)
         expires = datetime.fromtimestamp(token_payload["expires"])
         return LoginResponse(
             user=user,
@@ -158,7 +172,7 @@ def get_user_router(
         ],
         user_agent: Annotated[Union[str, None], Header()] = None
     ):
-        try:
+        with map_txwtf_errors(401):
             with Session(engine) as session:
                 user_id = token_payload["user_id"]
                 user: User = get_user(session, user_id)
@@ -169,12 +183,6 @@ def get_user_router(
                     request_compat(request, user_agent),
                     user
                 )
-        except TXWTFError as e:
-            code, msg = e.args
-            raise HTTPException(
-                status_code=401,
-                detail="{} ({})".format(msg, code)
-            )
         
         return ResponseSchema(
             message="Successfully ended authorized session"
