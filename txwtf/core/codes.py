@@ -48,6 +48,7 @@ ErrorCode = IntEnum(
         "DisabledUser",
         "DeactivatedSession",
         "InvalidSession",
-        "InvalidTokenSignature"
+        "InvalidTokenSignature",
+        "InvalidSecret"
     ],
 )

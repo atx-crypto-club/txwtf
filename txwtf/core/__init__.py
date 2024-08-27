@@ -59,6 +59,7 @@ from txwtf.core.errors import (
     LogoutError,
     SettingsError,
     UserError,
+    TXWTFError
 )
 
 
@@ -550,7 +551,8 @@ def authorized_session_launch(
 def authorized_sessions(
         session: Session,
         user_id: Optional[int] = None,
-        active_only: bool = False
+        verified_only: Optional[bool] = False,
+        jwt_secret: Optional[str] = None
 ) -> List[AuthorizedSession]:
     """
     Returns all authorized sessions that match the user_id.
@@ -559,13 +561,29 @@ def authorized_sessions(
     if user_id is not None:
         statement = statement.where(
             AuthorizedSession.user_id == user_id)
-    if active_only:
-        statement = statement.where(
-            AuthorizedSession.active == True)
     statement = statement.order_by(
         AuthorizedSession.created_time.desc())
     result = session.exec(statement)
-    return result.all()
+    sessions = result.all()
+    if not verified_only:
+        return sessions
+    if jwt_secret is None:
+        raise AuthorizedSessionError(
+            ErrorCode.InvalidSecret,
+            "Null secret when trying to return verified authorized sessions"
+        )
+    verified_sessions = []
+    for auth_session in sessions:
+        try:
+            authorized_session_verify(
+                session,
+                auth_session.uuid,
+                jwt_secret
+            )
+            verified_sessions.append(auth_session)
+        except TXWTFError as e:
+            pass
+    return verified_sessions
 
 
 def authorized_session_verify(

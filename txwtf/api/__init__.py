@@ -190,7 +190,8 @@ def get_user_router(
                     sessions = authorized_sessions(
                         session,
                         user_id,
-                        True
+                        True,
+                        jwt_secret
                     )
                     for auth_sess in sessions:
                         execute_logout(
@@ -211,7 +212,7 @@ def get_user_router(
         response_model=List[AuthorizedSession],
     )
     async def get_sessions(
-        active_only: bool = True,
+        verified_only: bool = True,
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(engine, jwt_secret, jwt_algorithm))
@@ -222,7 +223,8 @@ def get_user_router(
                 return authorized_sessions(
                     session,
                     token_payload["user_id"],
-                    active_only)
+                    verified_only,
+                    jwt_secret)
 
 
     return router
