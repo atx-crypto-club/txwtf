@@ -132,7 +132,7 @@ def get_user_router(
                     session,
                     user.username,
                     user.password,
-                    user.password,
+                    user.verify_password,
                     user.name,
                     user.email,
                     request_compat(request, user_agent))

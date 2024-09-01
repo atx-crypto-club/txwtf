@@ -27,7 +27,7 @@ class Registration(SQLModel):
                 "username": "user",
                 "email": "user@example.com",
                 "password": "passWord1234@",
-                "verify_password": "password1234@",
+                "verify_password": "passWord1234@",
                 "name": "Mr User",
             }
         }
