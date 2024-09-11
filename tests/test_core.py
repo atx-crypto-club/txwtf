@@ -73,7 +73,7 @@ from txwtf.core.errors import (
     AuthorizedSessionError,
     UserError
 )
-from txwtf.core.db import get_engine
+from txwtf.core.db import get_engine, init_db
 from txwtf.core.model import (
     AuthorizedSession,
     GlobalSettings,
@@ -99,7 +99,7 @@ class FakeRequest(object):
 class TestCore(unittest.TestCase):
     def setUp(self):
         self._engine = get_engine("sqlite://")
-        SQLModel.metadata.create_all(self._engine)
+        init_db(self._engine)
 
         self._jwt_secret = gen_secret()
         self._jwt_algorithm = DEFAULT_JWT_ALGORITHM

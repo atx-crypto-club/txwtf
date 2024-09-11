@@ -30,3 +30,5 @@ PyJWT>=2.8.0
 python-decouple>=3.8
 sqlmodel>=0.0.21
 aiosqlite>=0.20.0
+#aioboto3>=13.1.1
+#asyncer>=0.0.8
