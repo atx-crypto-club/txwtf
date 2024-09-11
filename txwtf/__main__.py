@@ -44,25 +44,6 @@ def root(context, log_file, log_level, profiling):
 
 
 @root.command()
-@click.option("--pattern", "-p", default="test*.py", help="test files to match")
-@click.option("--verbosity", "-v", default=1, help="test output verbosity")
-@click.pass_obj
-def test(obj, pattern, verbosity):
-    """
-    Run test suite.
-    """
-    with txwtf.core.cli_context(obj):
-        loader = unittest.TestLoader()
-        suite = loader.discover(
-            os.path.abspath(os.path.dirname(__file__)),
-            pattern=pattern,
-            top_level_dir=os.path.join(os.path.dirname(__file__), ".."),
-        )
-        runner = unittest.TextTestRunner(verbosity=verbosity)
-        runner.run(suite)
-
-
-@root.command()
 @click.pass_obj
 def flake8(obj):
     """
@@ -297,7 +278,14 @@ def list_posts(obj, config, hashtag):
         print(
             tabulate(
                 table,
-                headers=["ID", "reply_to", "repost_id", "deleted", "post_time", "content"],
+                headers=[
+                    "ID",
+                    "reply_to",
+                    "repost_id",
+                    "deleted",
+                    "post_time",
+                    "content",
+                ],
             )
         )
 
@@ -358,23 +346,37 @@ def gen_secret(obj):
     """
     Convenience for generating a random SECRET_KEY.
     """
-    from txwtf.webapp import gen_secret
+    from txwtf.core import gen_secret
 
     print(gen_secret())
 
 
 @root.command()
-@click.option("--host", "-h", type=click.STRING, envvar="TXWTF_BACKEND_HOSTNAME", default="localhost", help="host interface to bind to")
-@click.option("--port", "-p", type=click.INT, envvar="TXWTF_BACKEND_PORT", default=8086, help="service port")
+@click.option(
+    "--host",
+    "-h",
+    type=click.STRING,
+    envvar="TXWTF_BACKEND_HOSTNAME",
+    default="localhost",
+    help="host interface to bind to",
+)
+@click.option(
+    "--port",
+    "-p",
+    type=click.INT,
+    envvar="TXWTF_BACKEND_PORT",
+    default=8086,
+    help="service port",
+)
 @click.pass_obj
 def backend(obj, host, port):
     """
     Launch the fastapi backend.
     """
-    import uvicorn
+    from txwtf.api import launch
 
     with txwtf.core.cli_context(obj):
-        uvicorn.run("txwtf.api:app", host=host, port=port, reload=True)
+        launch(host=host, port=port)
 
 
 if __name__ == "__main__":

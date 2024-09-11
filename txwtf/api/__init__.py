@@ -1,75 +1,288 @@
-from fastapi import FastAPI, Body, Depends
+from contextlib import asynccontextmanager, contextmanager
+from datetime import datetime
+import logging
+from typing import Union, List
+from typing_extensions import Annotated
 
-from txwtf.api.auth import sign_jwt, JWTBearer
-from txwtf.api.model import PostSchema, UserSchema, UserLoginSchema
+from decouple import config
 
+from fastapi import (
+    APIRouter,
+    FastAPI,
+    Body,
+    Depends,
+    HTTPException,
+    Request,
+    Header
+)
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-app = FastAPI()
+from sqlalchemy import Engine
+from sqlmodel import Session
 
+from txwtf.core import (
+    gen_secret,
+    decode_jwt,
+    authorized_session_verify,
+    register_user,
+    set_setting,
+    request_compat,
+    execute_login,
+    execute_logout,
+    get_user,
+    authorized_sessions
+)
+from txwtf.core.db import get_engine, init_db
+from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS 
+from txwtf.core.codes import ErrorCode
+from txwtf.core.errors import TXWTFError
+from txwtf.core.model import User, AuthorizedSession
+from txwtf.api.model import (
+    ResponseSchema,
+    Registration,
+    Login,
+    LoginResponse,
+)
+from txwtf.version import version
 
-posts = [
-    {
-        "id": 1,
-        "title": "Pancake",
-        "content": "Lorem Ipsum ..."
-    }
-]
-
-users = []
-
-
-@app.get("/", tags=["root"])
-async def read_root() -> dict:
-    return {"message": "Welcome to your blog!"}
-
-
-@app.get("/posts", tags=["posts"])
-async def get_posts() -> dict:
-    return { "data": posts }
-
-
-@app.get("/posts/{id}", tags=["posts"])
-async def get_single_post(id: int) -> dict:
-    if id > len(posts):
-        return {
-            "error": "No such post with the supplied ID."
-        }
-
-    for post in posts:
-        if post["id"] == id:
-            return {
-                "data": post
-            }
-
-
-@app.post("/posts", dependencies=[Depends(JWTBearer())], tags=["posts"])
-async def add_post(post: PostSchema) -> dict:
-    post.id = len(posts) + 1
-    posts.append(post.dict())
-    return {
-        "data": "post added."
-    }
+import uvicorn
 
 
-@app.post("/user/signup", tags=["user"])
-async def create_user(user: UserSchema = Body(...)):
-    users.append(user) # replace with db call, making sure to hash the password first
-    return sign_jwt(user.email)
+logger = logging.getLogger(__name__)
 
 
-def check_user(data: UserLoginSchema):
-    for user in users:
-        if user.email == data.email and user.password == data.password:
-            return True
-    return False
+class JWTBearer(HTTPBearer):
+    def __init__(
+        self,
+        engine: Engine,
+        jwt_secret: str,
+        jwt_algorithm: str = DEFAULT_JWT_ALGORITHM,
+        auto_error: bool = True,
+    ):
+        super(JWTBearer, self).__init__(auto_error=auto_error)
+        self._engine = engine
+        self._jwt_secret = jwt_secret
+        self._jwt_algorithm = jwt_algorithm
+
+    async def __call__(self, request: Request):
+        credentials: HTTPAuthorizationCredentials = await super(
+            JWTBearer, self
+        ).__call__(request)
+
+        if not credentials.scheme == "Bearer":
+            raise HTTPException(
+                status_code=403, detail="Invalid authentication scheme."
+            )
+        
+        try:
+            return self.verify_jwt(credentials.credentials)
+        except TXWTFError as e:
+            code, msg = e.args
+            raise HTTPException(
+                status_code=403,
+                detail="{} ({})".format(msg, code)
+            )
+
+    def verify_jwt(self, jwtoken: str):
+        payload = decode_jwt(
+            self._jwt_secret, self._jwt_algorithm, jwtoken)
+        with Session(self._engine) as session:
+            authorized_session_verify(
+                session, payload["uuid"], self._jwt_secret)
+        return payload
 
 
-@app.post("/user/login", tags=["user"])
-async def user_login(user: UserLoginSchema = Body(...)):
-    if check_user(user):
-        return sign_jwt(user.email)
-    return {
-        "error": "Wrong login details!"
-    }
+@contextmanager
+def map_txwtf_errors(status_code=400):
+    try:
+        yield
+    except TXWTFError as e:
+        code, msg = e.args
+        raise HTTPException(
+            status_code=status_code,
+            detail="{} ({})".format(msg, code)
+        )
 
 
+def get_user_router(
+        engine: Engine,
+        jwt_secret: str = None,
+        jwt_algorithm: str = None
+) -> APIRouter:
+    router = APIRouter(
+        #tags=["user"],
+        responses={
+            400: {"description": "Bad Request"},
+            401: {"description": "Unauthorized"},
+            404: {"description": "Not found"},
+            403: {"description": "Access denied"}
+        },
+    )
+
+    @router.post("/register", tags=["auth"], response_model=User)
+    async def register(
+        user: Registration,
+        request: Request,
+        user_agent: Annotated[Union[str, None], Header()] = None
+    ):
+        with map_txwtf_errors():
+            with Session(engine) as session:
+                return register_user(
+                    session,
+                    user.username,
+                    user.password,
+                    user.verify_password,
+                    user.name,
+                    user.email,
+                    request_compat(request, user_agent))
+
+    @router.post("/login", tags=["auth"], response_model=LoginResponse)
+    async def login(
+        login: Login,
+        request: Request,
+        user_agent: Annotated[Union[str, None], Header()] = None
+    ):
+        with map_txwtf_errors(401):
+            with Session(engine) as session:
+                user, token_payload = execute_login(
+                    session,
+                    login.username,
+                    login.password,
+                    jwt_secret,
+                    jwt_algorithm,
+                    request_compat(request, user_agent),
+                    login.expire_delta)
+        expires = datetime.fromtimestamp(token_payload["expires"])
+        return LoginResponse(
+            user=user,
+            expires=expires,
+            token=token_payload["token"],
+            session_uuid=token_payload["uuid"]
+        )
+    
+    @router.get(
+        "/logout",
+        tags=["auth"],
+        response_model=ResponseSchema,
+    )
+    async def logout(
+        request: Request,
+        token_payload: Annotated[
+            JWTBearer, Depends(JWTBearer(engine, jwt_secret, jwt_algorithm))
+        ],
+        user_agent: Annotated[Union[str, None], Header()] = None,
+        all: bool = False,
+    ):
+        with map_txwtf_errors(401):
+            with Session(engine) as session:
+                user_id = token_payload["user_id"]
+                user: User = get_user(session, user_id)
+                if not all:
+                    execute_logout(
+                        session,
+                        token_payload["uuid"],
+                        jwt_secret,
+                        request_compat(request, user_agent),
+                        user
+                    )
+                else:
+                    sessions = authorized_sessions(
+                        session,
+                        user_id,
+                        True,
+                        jwt_secret
+                    )
+                    for auth_sess in sessions:
+                        execute_logout(
+                            session,
+                            auth_sess.uuid,
+                            jwt_secret,
+                            request_compat(request, user_agent),
+                            user
+                        )
+        
+        return ResponseSchema(
+            message="Successfully logged out"
+        )
+    
+    @router.get(
+        "/sessions",
+        tags=["auth"],
+        response_model=List[AuthorizedSession],
+    )
+    async def get_sessions(
+        verified_only: bool = True,
+        token_payload: Annotated[
+            JWTBearer, Depends(
+                JWTBearer(engine, jwt_secret, jwt_algorithm))
+        ] = None
+    ):
+        with map_txwtf_errors(401):
+            with Session(engine) as session:
+                return authorized_sessions(
+                    session,
+                    token_payload["user_id"],
+                    verified_only,
+                    jwt_secret)
+
+
+    return router
+
+
+def create_app(
+    jwt_secret: str = None,
+    jwt_algorithm: str = None,
+    db_url: str = None,
+    origins: list = []
+) -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        logger.info("Launching API")
+        yield
+        logger.info("Shutting down API")
+
+    if jwt_algorithm is None:
+        jwt_algorithm = config("TXWTF_API_JWT_ALGO", default=DEFAULT_JWT_ALGORITHM)
+    if jwt_secret is None:
+        jwt_secret = config("TXWTF_API_JWT_SECRET", default=gen_secret())
+    if db_url is None:
+        db_url = config("TXWTF_API_DB_URL", default="sqlite://")
+
+    origins.extend(CORS_ORIGINS)
+
+    app = FastAPI(lifespan=lifespan)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    @app.get("/", tags=["root"])
+    async def read_root() -> dict:
+        return {"message": "txwtf v{}".format(version)}
+    
+    # **** API entry points ****
+
+    engine = get_engine(db_url)
+    init_db(engine)  # TODO: flag for init or something
+    with Session(engine) as session:
+        # Disable email deliverability verification for testing
+        set_setting(session, "email_validate_deliv_enabled", 0)
+    
+    app.include_router(
+        get_user_router(engine, jwt_secret, jwt_algorithm),
+        prefix="/user",
+        #tags=["user"]
+    )
+
+    return app
+
+
+def launch(host="0.0.0.0", port=8081):
+    """
+    Launch the txwtf.api backend using uvicorn.
+    """
+    uvicorn.run("txwtf.api:create_app", host=host, port=port, reload=True, factory=True)

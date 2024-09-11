@@ -1,44 +1,55 @@
+from datetime import datetime, timedelta
+from typing import Optional
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import EmailStr
 
+from sqlmodel import SQLModel, Field
 
-class PostSchema(BaseModel):
-    id: int = Field(default=None)
-    title: str = Field(...)
-    content: str = Field(...)
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "title": "Securing FastAPI applications with JWT.",
-                "content": "In this tutorial, you'll learn how to secure your application by enabling authentication using JWT. We'll be using PyJWT to sign, encode and decode JWT tokens...."
-            }
-        }
+from txwtf.core.model import User
 
 
-class UserSchema(BaseModel):
-    fullname: str = Field(...)
-    email: EmailStr = Field(...)
-    password: str = Field(...)
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "fullname": "Abdulazeez Abdulazeez Adeshina",
-                "email": "abdulazeez@x.com",
-                "password": "weakpassword"
-            }
-        }
+class ResponseSchema(SQLModel):
+    message: Optional[str] = None
+    code: Optional[int] = 1 #ErrorCode.NoError
+    data: Optional[dict] = None
 
 
-class UserLoginSchema(BaseModel):
-    email: EmailStr = Field(...)
-    password: str = Field(...)
+class Registration(SQLModel):
+    username: str
+    password: str
+    verify_password: str
+    name: str
+    email: EmailStr
 
     class Config:
         json_schema_extra = {
             "example": {
-                "email": "abdulazeez@x.com",
-                "password": "weakpassword"
+                "username": "user",
+                "email": "user@example.com",
+                "password": "passWord1234@",
+                "verify_password": "passWord1234@",
+                "name": "Mr User",
             }
         }
+
+
+class Login(SQLModel):
+    username: str
+    password: str
+    expire_delta: timedelta
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "username": "user",
+                "password": "passWord1234@",
+                "expire_delta": 3600,
+            }
+        }
+
+
+class LoginResponse(SQLModel):
+    user: User
+    expires: datetime
+    token: str
+    session_uuid: str

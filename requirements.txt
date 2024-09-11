@@ -23,7 +23,12 @@ markdown>=3.4.1
 markdownify>=0.11.6
 lxml==4.6.4
 gunicorn>=20.1.0
+uvicorn[standard]>=0.30.3
 python-dotenv>=1.0.0
 pymysql>=1.1.0
 PyJWT>=2.8.0
 python-decouple>=3.8
+sqlmodel>=0.0.21
+aiosqlite>=0.20.0
+#aioboto3>=13.1.1
+#asyncer>=0.0.8

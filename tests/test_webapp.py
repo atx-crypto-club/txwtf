@@ -71,7 +71,7 @@ class FakeRequest(object):
         self.headers = kwargs["headers"]
 
 
-class TestWebappUtils(TestCase):
+class TestWebapp(TestCase):
 
     SQLALCHEMY_DATABASE_URI = "sqlite://"
     TESTING = True
