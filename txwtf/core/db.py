@@ -1,21 +1,29 @@
-import os
+from contextlib import asynccontextmanager
 
 from decouple import config
 
 from sqlalchemy import Engine
+from sqlalchemy.ext.asyncio import create_async_engine
+
 from sqlmodel import create_engine, SQLModel, Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 
-def get_engine(db_url: str = None, echo: bool = False):
+def get_engine(db_url: str = None, echo: bool = False) -> AsyncSession:
     if db_url is None:
-        db_url = config("TXWTF_API_DATABASE_URL", default="sqlite://")
-    return create_engine(db_url, echo=echo)
+        db_url = config("TXWTF_API_DATABASE_URL", default="sqlite+aiosqlite://")
+    return create_async_engine(db_url, echo=echo)
 
 
-def init_db(engine: Engine):
-    SQLModel.metadata.create_all(engine)
+async def init_db(engine: Engine) -> None:
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
 
 
-def get_session(engine):
-    with Session(engine) as session:
+@asynccontextmanager
+async def get_session(engine):
+    async with AsyncSession(
+        engine,
+        expire_on_commit=False
+    ) as session:
         yield session

@@ -17,9 +17,13 @@ from jwt.exceptions import InvalidSignatureError
 from pydantic import EmailStr
 
 from sqlmodel import Session, select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from sqlalchemy.exc import NoResultFound
 
 from email_validator import validate_email, EmailNotValidError
+
+from asyncer import asyncify
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -150,8 +154,8 @@ def valid_identifier(value):
     return re.match(c_ident_re, value) is not None
 
 
-def get_setting_record(
-        session: Session,
+async def get_setting_record(
+        session: AsyncSession,
         *args, 
         parent_id: Optional[int] = None,
         create: Optional[bool] = False,
@@ -171,11 +175,16 @@ def get_setting_record(
         val = None
         if idx == len(args) - 1:
             val = default
-        setting = (
-            session.query(GlobalSettings)
-            .filter(GlobalSettings.var == var, GlobalSettings.parent_id == parent_id)
-            .first()
-        )
+
+        statement = select(GlobalSettings).where(
+            GlobalSettings.var == var, GlobalSettings.parent_id == parent_id)
+        results = await session.exec(statement)
+        setting = None
+        try:
+            setting = results.one()
+        except NoResultFound:
+            pass
+
         if setting is not None:
             setting.accessed_time = now
         if setting is None and create:
@@ -189,7 +198,7 @@ def get_setting_record(
             )
             session.add(setting)
         if create or setting is not None:
-            session.commit()
+            await session.commit()
         if setting is None and not create:
             parent_id_str = ""
             if parent_id is not None:
@@ -203,8 +212,8 @@ def get_setting_record(
     return setting
 
 
-def has_setting(
-        session: Session,
+async def has_setting(
+        session: AsyncSession,
         *args,
         parent_id: Optional[int] = None) -> bool:
     """
@@ -212,42 +221,52 @@ def has_setting(
     existing record.
     """
     for var in args:
-        setting = (
-            session.query(GlobalSettings)
-            .filter(GlobalSettings.var == var, GlobalSettings.parent_id == parent_id)
-            .first()
-        )
+        statement = select(GlobalSettings).where(
+            GlobalSettings.var == var, GlobalSettings.parent_id == parent_id)
+        results = await session.exec(statement)
+        setting = None
+        try:
+            setting = results.one()
+        except NoResultFound:
+            pass
+
         if setting is None:
             return False
         parent_id = setting.id
     return True
 
 
-def list_setting(
-        session: Session,
+async def list_setting(
+        session: AsyncSession,
         *args, 
         parent_id: Optional[int] = None) -> List[str]:
     """
     Returns a list of child vars for this setting.
     """
     retval = []
-    setting = get_setting_record(
+    setting = await get_setting_record(
         session,
         *args, parent_id=parent_id)
     if setting is None:
         return retval
-    children = (
-        session.query(GlobalSettings)
-        .filter(GlobalSettings.parent_id == setting.id)
-        .all()
-    )
-    for child in children:
-        retval.append(child.var)
+
+    statement = select(GlobalSettings).where(
+        GlobalSettings.parent_id == parent_id)
+    results = await session.exec(statement)
+    children = None
+    try:
+        children = results.all()
+    except NoResultFound:
+        pass
+
+    if children is not None:
+        for child in children:
+            retval.append(child.var)
     return retval
 
 
-def set_setting(
-        session: Session,
+async def set_setting(
+        session: AsyncSession,
         *args, 
         parent_id: Optional[int] = None,
         now: Optional[datetime] = None,
@@ -257,7 +276,7 @@ def set_setting(
     """
     var = args[:-1]
     value = str(args[-1])
-    setting = get_setting_record(
+    setting = await get_setting_record(
         session,
         *var, parent_id=parent_id, create=True, default=value, now=now
     )
@@ -265,20 +284,20 @@ def set_setting(
         setting.val = value
         setting.modified_time = datetime.utcnow()
         if do_commit:
-            session.commit()
+            await session.commit()
         return setting
     return setting
 
 
-def get_setting(
-        session: Session,
+async def get_setting(
+        session: AsyncSession,
         *args,
         default: Optional[Any] = None,
         parent_id: Optional[int] = None) -> str:
     create = False
     if default is not None:
         create = True
-    setting = get_setting_record(
+    setting = await get_setting_record(
         session,
         *args, parent_id=parent_id, default=default, create=create
     )
@@ -287,111 +306,112 @@ def get_setting(
     return None
 
 
-def get_site_logo(
-        session: Session,
+async def get_site_logo(
+        session: AsyncSession,
         default: Optional[Any] = SITE_LOGO):
-    return get_setting(
+    return await get_setting(
         session, "site_logo", default=default)
 
 
-def get_default_avatar(
-        session: Session,
+async def get_default_avatar(
+        session: AsyncSession,
         default: Optional[Any] = AVATAR):
-    return get_setting(
+    return await get_setting(
         session, "default_avatar", default=default)
 
 
-def get_default_card_image(
-        session: Session,
+async def get_default_card_image(
+        session: AsyncSession,
         default: Optional[Any] = CARD_IMAGE):
-    return get_setting(
+    return await get_setting(
         session, "default_card", default=default)
 
 
-def get_default_header_image(
-        session: Session,
+async def get_default_header_image(
+        session: AsyncSession,
         default: Optional[Any] = HEADER_IMAGE):
-    return get_setting(
+    return await get_setting(
         session, "default_header", default=default)
 
 
-def get_password_special_symbols(session: Session,
+async def get_password_special_symbols(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS):
-    return get_setting(
+    return await get_setting(
         session, "passwd_special_symbols", default=default)
 
 
-def get_password_min_length(
-        session: Session,
+async def get_password_min_length(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_MINIMUM_LENGTH):
-    return int(get_setting(
+    return int(await get_setting(
         session, "passwd_minimum_length", default=default))
 
 
-def get_password_max_length(
-        session: Session,
+async def get_password_max_length(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH):
-    return int(get_setting(
+    return int(await get_setting(
         session, "passwd_maximum_length", default=default))
 
 
-def get_password_special_symbols_enabled(
-        session: Session,
+async def get_password_special_symbols_enabled(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS_ENABLED):
-    return int(get_setting(
+    return int(await get_setting(
         session, "passwd_special_sym_enabled", default=default))
 
 
-def get_password_min_length_enabled(
-        session: Session,
+async def get_password_min_length_enabled(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_MINIMUM_LENGTH_ENABLED):
-    return int(get_setting(
+    return int(await get_setting(
         session, "passwd_minimum_len_enabled", default=default))
 
 
-def get_password_max_length_enabled(
-        session: Session,
+async def get_password_max_length_enabled(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH_ENABLED):
-    return int(get_setting(
+    return int(await get_setting(
         session, "passwd_maximum_len_enabled", default=default))
 
 
-def get_password_digit_enabled(
-        session: Session,
+async def get_password_digit_enabled(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_DIGIT_ENABLED):
-    return int(get_setting(
+    return int(await get_setting(
         session, "passwd_digit_enabled", default=default))
 
 
-def get_password_upper_enabled(
-        session: Session,
+async def get_password_upper_enabled(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_UPPER_ENABLED):
-    return int(get_setting(
+    return int(await get_setting(
         session, "passwd_upper_enabled", default=default))
 
 
-def get_password_lower_enabled(
-        session: Session,
+async def get_password_lower_enabled(
+        session: AsyncSession,
         default: Optional[Any] = PASSWORD_LOWER_ENABLED):
-    return int(get_setting(
+    return int(await get_setting(
         session, "passwd_lower_enabled", default=default))
 
 
-def password_check(session: Session, passwd: str):
+async def password_check(session: AsyncSession, passwd: str):
     """
     Check password for validity and throw an error if invalid
     based on global flags and settings.
     """
-    password_min_length_enabled = get_password_min_length_enabled(session)
-    password_max_length_enabled = get_password_max_length_enabled(session)
-    password_digit_enabled = get_password_digit_enabled(session)
-    password_upper_enabled = get_password_upper_enabled(session)
-    password_lower_enabled = get_password_lower_enabled(session)
-    password_special_symbols_enabled = get_password_special_symbols_enabled(session)
+    password_min_length_enabled = await get_password_min_length_enabled(session)
+    password_max_length_enabled = await get_password_max_length_enabled(session)
+    password_digit_enabled = await get_password_digit_enabled(session)
+    password_upper_enabled = await get_password_upper_enabled(session)
+    password_lower_enabled = await get_password_lower_enabled(session)
+    password_special_symbols_enabled = await get_password_special_symbols_enabled(session)
 
-    special_sym = get_password_special_symbols(session)
-    min_length = get_password_min_length(session)
-    max_length = get_password_max_length(session)
+    special_sym = await get_password_special_symbols(session)
+    min_length = await get_password_min_length(session)
+    max_length = await get_password_max_length(session)
 
     if len(special_sym) == 0:
         password_special_symbols_enabled = False
@@ -479,8 +499,8 @@ def decode_jwt(
     return ret
     
 
-def authorized_session_launch(
-        session: Session,
+async def authorized_session_launch(
+        session: AsyncSession,
         user_id: int,
         jwt_secret: str,
         jwt_algorithm: str,
@@ -500,7 +520,7 @@ def authorized_session_launch(
     expires = cur_time + expire_delta
 
     statement = select(User).where(User.id == user_id)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -543,13 +563,13 @@ def authorized_session_launch(
         endpoint=request.endpoint,
     )
     session.add(new_change)
-    session.commit()
+    await session.commit()
 
     return session_payload
 
 
-def authorized_sessions(
-        session: Session,
+async def authorized_sessions(
+        session: AsyncSession,
         user_id: Optional[int] = None,
         verified_only: Optional[bool] = False,
         jwt_secret: Optional[str] = None
@@ -563,7 +583,7 @@ def authorized_sessions(
             AuthorizedSession.user_id == user_id)
     statement = statement.order_by(
         AuthorizedSession.created_time.desc())
-    result = session.exec(statement)
+    result = await session.exec(statement)
     sessions = result.all()
     if not verified_only:
         return sessions
@@ -575,7 +595,7 @@ def authorized_sessions(
     verified_sessions = []
     for auth_session in sessions:
         try:
-            authorized_session_verify(
+            await authorized_session_verify(
                 session,
                 auth_session.uuid,
                 jwt_secret
@@ -586,8 +606,8 @@ def authorized_sessions(
     return verified_sessions
 
 
-def authorized_session_verify(
-        session: Session,
+async def authorized_session_verify(
+        session: AsyncSession,
         session_uuid: str,
         jwt_secret: str
 ):
@@ -597,7 +617,7 @@ def authorized_session_verify(
     """
     statement = select(AuthorizedSession).where(
         AuthorizedSession.uuid == session_uuid)
-    results = session.exec(statement)
+    results = await session.exec(statement)
 
     # get the session
     auth_sess = None
@@ -626,7 +646,7 @@ def authorized_session_verify(
     
     # get the user and check if the account is still enabled
     statement = select(User).where(User.id == auth_sess.user_id)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -650,8 +670,8 @@ def authorized_session_verify(
         )
 
 
-def authorized_session_deactivate(
-        session: Session,
+async def authorized_session_deactivate(
+        session: AsyncSession,
         session_uuid: str,
         request: Any,
         cur_time: Optional[datetime] = None
@@ -662,7 +682,7 @@ def authorized_session_deactivate(
     """
     statement = select(AuthorizedSession).where(
         AuthorizedSession.uuid == session_uuid)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     auth_sess = None
     try:
         auth_sess = results.one()
@@ -688,19 +708,19 @@ def authorized_session_deactivate(
         endpoint=request.endpoint,
     )
     session.add(new_change)
-    session.commit()
+    await session.commit()
 
 
-def get_email_validate_deliverability_enabled(
-        session: Session,
+async def get_email_validate_deliverability_enabled(
+        session: AsyncSession,
         default: Optional[Any] = EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
 ):
-    return int(get_setting(
+    return int(await get_setting(
         session, "email_validate_deliv_enabled", default=default))
 
 
-def register_user(
-        session: Session,
+async def register_user(
+        session: AsyncSession,
         username: str,
         password: str, 
         verify_password: str,
@@ -716,11 +736,11 @@ def register_user(
         raise RegistrationError(ErrorCode.PasswordMismatch, "Password mismatch!")
 
     # make sure the password passes system checks
-    password_check(session, password)
+    await password_check(session, password)
 
     # if this returns a user, then the email already exists in database
     statement = select(User).where(User.email == email)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -740,7 +760,7 @@ def register_user(
 
     # if this returns a user, then the username already exists in database
     statement = select(User).where(User.username == username)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -751,9 +771,10 @@ def register_user(
         raise RegistrationError(ErrorCode.UsernameExists, "Username already exists")
 
     # check email validity
-    check_deliverability = get_email_validate_deliverability_enabled(session)
+    check_deliverability = await get_email_validate_deliverability_enabled(session)
     try:
-        emailinfo = validate_email(email, check_deliverability=check_deliverability)
+        emailinfo = await asyncify(validate_email)(
+            email, check_deliverability=check_deliverability)
         email = emailinfo.normalized
     except EmailNotValidError as e:
         raise RegistrationError(ErrorCode.InvalidEmail, str(e))
@@ -771,9 +792,9 @@ def register_user(
         password=generate_password_hash(password),
         created_time=now,
         modified_time=now,
-        avatar_url=get_default_avatar(session),
-        card_image_url=get_default_card_image(session),
-        header_image_url=get_default_header_image(session),
+        avatar_url=await get_default_avatar(session),
+        card_image_url=await get_default_card_image(session),
+        header_image_url=await get_default_header_image(session),
         header_text=name,
         description="{} is on the scene".format(name),
         email_verified=False,
@@ -788,7 +809,7 @@ def register_user(
 
     # add the new user to the database
     session.add(new_user)
-    session.commit()  # commit now to create new user id
+    await session.commit()  # commit now to create new user id
 
     new_change = UserChange(
         user_id=new_user.id,
@@ -811,15 +832,15 @@ def register_user(
         endpoint=str(request.endpoint),
     )
     session.add(new_log)
-    session.commit()
+    await session.commit()
 
-    session.refresh(new_user)
+    await session.refresh(new_user)
 
     return new_user
 
 
-def execute_login(
-        session: Session,
+async def execute_login(
+        session: AsyncSession,
         username: str,
         password: str,
         jwt_secret: str,
@@ -834,7 +855,7 @@ def execute_login(
     a signed token.
     """
     statement = select(User).where(User.username == username)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -854,7 +875,7 @@ def execute_login(
     #    login_function(user, remember=remember)
     # TODO: generate jwt token and create session record then return the signed token
     # at the end 
-    token_payload = authorized_session_launch(
+    token_payload = await authorized_session_launch(
         session,
         user.id,
         jwt_secret,
@@ -891,15 +912,15 @@ def execute_login(
         endpoint=request.endpoint,
     )
     session.add(new_change)
-    session.commit()
+    await session.commit()
 
-    session.refresh(user)
+    await session.refresh(user)
 
     return user, token_payload
 
 
-def execute_logout(
-        session: Session,
+async def execute_logout(
+        session: AsyncSession,
         session_uuid: str,
         jwt_secret: str,
         request: Any,
@@ -912,7 +933,7 @@ def execute_logout(
     if cur_time is None:
         cur_time = datetime.utcnow()
 
-    authorized_session_verify(session, session_uuid, jwt_secret)
+    await authorized_session_verify(session, session_uuid, jwt_secret)
 
     new_log = SystemLog(
         event_code=SystemLogEventCode.UserLogout,
@@ -937,14 +958,17 @@ def execute_logout(
         endpoint=request.endpoint,
     )
     session.add(new_change)
-    session.commit()
+    await session.commit()
 
-    authorized_session_deactivate(session, session_uuid, request, cur_time)
+    await authorized_session_deactivate(session, session_uuid, request, cur_time)
 
 
-def get_user(session: Session, user_id: int) -> User:
+async def get_user(
+    session: AsyncSession,
+    user_id: int
+) -> User:
     statement = select(User).where(User.id == user_id)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     try:
         return results.one()
     except NoResultFound:
