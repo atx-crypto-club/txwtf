@@ -120,6 +120,7 @@ def request_compat(request, user_agent):
     request.referrer = request.headers.get('referer')
     return request
 
+
 @contextmanager
 def cli_context(obj):
     """
@@ -155,12 +156,13 @@ def valid_identifier(value):
 
 
 async def get_setting_record(
-        session: AsyncSession,
-        *args, 
-        parent_id: Optional[int] = None,
-        create: Optional[bool] = False,
-        default: Optional[Any] = None,
-        now: Optional[datetime] = None) -> GlobalSettings:
+    session: AsyncSession,
+    *args, 
+    parent_id: Optional[int] = None,
+    create: Optional[bool] = False,
+    default: Optional[Any] = None,
+    now: Optional[datetime] = None
+) -> GlobalSettings:
 
     if now is None:
         now = datetime.utcnow()
@@ -222,7 +224,8 @@ async def has_setting(
     """
     for var in args:
         statement = select(GlobalSettings).where(
-            GlobalSettings.var == var, GlobalSettings.parent_id == parent_id)
+            GlobalSettings.var == var,
+            GlobalSettings.parent_id == parent_id)
         results = await session.exec(statement)
         setting = None
         try:
@@ -251,7 +254,7 @@ async def list_setting(
         return retval
 
     statement = select(GlobalSettings).where(
-        GlobalSettings.parent_id == parent_id)
+        GlobalSettings.parent_id == setting.id)
     results = await session.exec(statement)
     children = None
     try:

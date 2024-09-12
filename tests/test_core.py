@@ -259,7 +259,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(val0, await get_setting(session, var0))
             self.assertEqual(val1, await get_setting(session, var0, var1))
             self.assertTrue(await has_setting(session, var0, var1))
-            self.assertEqual(set(await list_setting(session, var0)), {var1})
+            #import pdb; pdb.set_trace()
+            val = await list_setting(session, var0)
+            self.assertEqual(set(val), {var1})
             self.assertEqual(set(await list_setting(session, var0, var1)), set())
 
     async def test_get_setting_parent_none(self):
