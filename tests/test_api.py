@@ -1,6 +1,7 @@
 """
 Tests for the txwtf.api module.
 """
+
 import unittest
 
 import txwtf.core

@@ -22,8 +22,5 @@ async def init_db(engine: Engine) -> None:
 
 @asynccontextmanager
 async def get_session(engine):
-    async with AsyncSession(
-        engine,
-        expire_on_commit=False
-    ) as session:
+    async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session

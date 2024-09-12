@@ -2,24 +2,12 @@ from enum import IntEnum
 
 
 SystemLogEventCode = IntEnum(
-    "SystemLogEventCode",
-    [
-        "UserLogin",
-        "UserCreate",
-        "UserLogout",
-        "SettingChange"
-    ]
+    "SystemLogEventCode", ["UserLogin", "UserCreate", "UserLogout", "SettingChange"]
 )
 
 UserChangeEventCode = IntEnum(
     "UserChangeEventCode",
-    [
-        "UserLogin",
-        "UserCreate",
-        "UserLogout",
-        "DeactivateSession",
-        "LaunchSession"
-    ]
+    ["UserLogin", "UserCreate", "UserLogout", "DeactivateSession", "LaunchSession"],
 )
 
 ErrorCode = IntEnum(
@@ -49,6 +37,6 @@ ErrorCode = IntEnum(
         "DeactivatedSession",
         "InvalidSession",
         "InvalidTokenSignature",
-        "InvalidSecret"
+        "InvalidSecret",
     ],
 )

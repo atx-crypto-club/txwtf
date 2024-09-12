@@ -1,6 +1,7 @@
 """
 Tests for the txwtf.core module.
 """
+
 import asyncio
 from datetime import datetime, timedelta
 import time
@@ -13,14 +14,10 @@ from werkzeug.security import check_password_hash
 from sqlmodel import SQLModel, Session, select
 
 import txwtf.core
-from txwtf.core.codes import (
-    ErrorCode,
-    UserChangeEventCode,
-    SystemLogEventCode
-)
+from txwtf.core.codes import ErrorCode, UserChangeEventCode, SystemLogEventCode
 from txwtf.core import (
     sign_jwt,
-    decode_jwt, 
+    decode_jwt,
     authorized_session_launch,
     authorized_sessions,
     authorized_session_deactivate,
@@ -47,22 +44,27 @@ from txwtf.core import (
     get_password_upper_enabled,
     get_email_validate_deliverability_enabled,
     password_check,
-    register_user, execute_login, execute_logout,
-    get_user
+    register_user,
+    execute_login,
+    execute_logout,
+    get_user,
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
     AVATAR,
     CARD_IMAGE,
     HEADER_IMAGE,
-    PASSWORD_SPECIAL_SYMBOLS, PASSWORD_MINIMUM_LENGTH,
-    PASSWORD_MAXIMUM_LENGTH, PASSWORD_SPECIAL_SYMBOLS_ENABLED,
+    PASSWORD_SPECIAL_SYMBOLS,
+    PASSWORD_MINIMUM_LENGTH,
+    PASSWORD_MAXIMUM_LENGTH,
+    PASSWORD_SPECIAL_SYMBOLS_ENABLED,
     PASSWORD_MINIMUM_LENGTH_ENABLED,
     PASSWORD_MAXIMUM_LENGTH_ENABLED,
-    PASSWORD_DIGIT_ENABLED, PASSWORD_UPPER_ENABLED,
+    PASSWORD_DIGIT_ENABLED,
+    PASSWORD_UPPER_ENABLED,
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
-    DEFAULT_JWT_ALGORITHM
+    DEFAULT_JWT_ALGORITHM,
 )
 from txwtf.core.errors import (
     TXWTFError,
@@ -72,7 +74,7 @@ from txwtf.core.errors import (
     LoginError,
     LogoutError,
     AuthorizedSessionError,
-    UserError
+    UserError,
 )
 from txwtf.core.db import get_engine, init_db, get_session, get_session
 from txwtf.core.model import (
@@ -80,7 +82,7 @@ from txwtf.core.model import (
     GlobalSettings,
     User,
     UserChange,
-    SystemLog
+    SystemLog,
 )
 
 
@@ -203,9 +205,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 self.assertIsInstance(e, SettingsError)
                 code, _ = e.args
             self.assertEqual(code, ErrorCode.SettingDoesntExist)
-            self.assertEqual(setting1, await get_setting_record(session, var1, parent_id=setting0.id))
+            self.assertEqual(
+                setting1,
+                await get_setting_record(
+                    session,
+                    var1,
+                    parent_id=setting0.id
+                )
+            )
             self.assertEqual(setting1, await get_setting_record(session, var0, var1))
-
 
     async def test_get_setting_record_recursive_create(self):
         """
@@ -234,7 +242,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # then
             setting1 = await get_setting_record(
-                session, var0, var1, create=True, default=val1, now=now0)
+                session, var0, var1, create=True, default=val1, now=now0
+            )
             self.assertIsNotNone(setting1)
             self.assertEqual(setting1.parent_id, setting0.id)
             self.assertEqual(setting1.val, val1)
@@ -259,7 +268,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(val0, await get_setting(session, var0))
             self.assertEqual(val1, await get_setting(session, var0, var1))
             self.assertTrue(await has_setting(session, var0, var1))
-            #import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             val = await list_setting(session, var0)
             self.assertEqual(set(val), {var1})
             self.assertEqual(set(await list_setting(session, var0, var1)), set())
@@ -349,8 +358,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         Test default card image setting.
         """
         async with get_session(self._engine) as session:
-            self.assertEqual(
-                await get_default_card_image(session), CARD_IMAGE)
+            self.assertEqual(await get_default_card_image(session), CARD_IMAGE)
 
     async def test_default_card_image_change(self):
         """
@@ -392,7 +400,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         Test default password special symbols setting.
         """
         async with get_session(self._engine) as session:
-            self.assertEqual(await get_password_special_symbols(session), PASSWORD_SPECIAL_SYMBOLS)
+            self.assertEqual(
+                await get_password_special_symbols(session), PASSWORD_SPECIAL_SYMBOLS
+            )
 
     async def test_password_special_symbols_change(self):
         """
@@ -413,7 +423,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         Test default password minimumm length.
         """
         async with get_session(self._engine) as session:
-            self.assertEqual(await get_password_min_length(session), PASSWORD_MINIMUM_LENGTH)
+            self.assertEqual(
+                await get_password_min_length(session), PASSWORD_MINIMUM_LENGTH
+            )
 
     async def test_password_min_length_change(self):
         """
@@ -434,7 +446,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         Test default password maximum length.
         """
         async with get_session(self._engine) as session:
-            self.assertEqual(await get_password_max_length(session), PASSWORD_MAXIMUM_LENGTH)
+            self.assertEqual(
+                await get_password_max_length(session), PASSWORD_MAXIMUM_LENGTH
+            )
 
     async def test_password_max_length_change(self):
         """
@@ -456,7 +470,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         """
         async with get_session(self._engine) as session:
             self.assertEqual(
-                await get_password_special_symbols_enabled(session), PASSWORD_SPECIAL_SYMBOLS_ENABLED
+                await get_password_special_symbols_enabled(session),
+                PASSWORD_SPECIAL_SYMBOLS_ENABLED,
             )
 
     async def test_password_special_symbols_enabled_change(self):
@@ -469,14 +484,13 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             await set_setting(
-                session,
-                "passwd_special_sym_enabled",
-                special_symbols_enabled)
+                session, "passwd_special_sym_enabled", special_symbols_enabled
+            )
 
             # then
             self.assertEqual(
                 await get_password_special_symbols_enabled(session),
-                special_symbols_enabled
+                special_symbols_enabled,
             )
 
     async def test_password_min_length_enabled(self):
@@ -486,7 +500,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         async with get_session(self._engine) as session:
             self.assertEqual(
                 await get_password_min_length_enabled(session),
-                PASSWORD_MINIMUM_LENGTH_ENABLED
+                PASSWORD_MINIMUM_LENGTH_ENABLED,
             )
 
     async def test_password_min_length_enabled_change(self):
@@ -502,8 +516,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # then
             self.assertEqual(
-                await get_password_min_length_enabled(session),
-                min_length_enabled)
+                await get_password_min_length_enabled(session), min_length_enabled
+            )
 
     async def test_password_max_length_enabled(self):
         """
@@ -512,7 +526,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         async with get_session(self._engine) as session:
             self.assertEqual(
                 await get_password_max_length_enabled(session),
-                PASSWORD_MAXIMUM_LENGTH_ENABLED
+                PASSWORD_MAXIMUM_LENGTH_ENABLED,
             )
 
     async def test_password_max_length_enabled_change(self):
@@ -524,15 +538,12 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             max_length_enabled = 0
 
             # when
-            await set_setting(
-                session,
-                "passwd_maximum_len_enabled",
-                max_length_enabled)
+            await set_setting(session, "passwd_maximum_len_enabled", max_length_enabled)
 
             # then
             self.assertEqual(
-                await get_password_max_length_enabled(session),
-                max_length_enabled)
+                await get_password_max_length_enabled(session), max_length_enabled
+            )
 
     async def test_password_digit_enabled(self):
         """
@@ -540,8 +551,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         """
         async with get_session(self._engine) as session:
             self.assertEqual(
-                await get_password_digit_enabled(session),
-                PASSWORD_DIGIT_ENABLED)
+                await get_password_digit_enabled(session), PASSWORD_DIGIT_ENABLED
+            )
 
     async def test_password_digit_enabled_change(self):
         """
@@ -555,9 +566,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await set_setting(session, "passwd_digit_enabled", digit_enabled)
 
             # then
-            self.assertEqual(
-                await get_password_digit_enabled(session),
-                digit_enabled)
+            self.assertEqual(await get_password_digit_enabled(session), digit_enabled)
 
     async def test_password_upper_enabled(self):
         """
@@ -565,8 +574,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         """
         async with get_session(self._engine) as session:
             self.assertEqual(
-                await get_password_upper_enabled(session),
-                PASSWORD_UPPER_ENABLED)
+                await get_password_upper_enabled(session), PASSWORD_UPPER_ENABLED
+            )
 
     async def test_password_uppper_enabled_change(self):
         """
@@ -580,9 +589,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await set_setting(session, "passwd_upper_enabled", upper_enabled)
 
             # then
-            self.assertEqual(
-                await get_password_upper_enabled(session),
-                upper_enabled)
+            self.assertEqual(await get_password_upper_enabled(session), upper_enabled)
 
     async def test_password_lower_enabled(self):
         """
@@ -590,8 +597,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         """
         async with get_session(self._engine) as session:
             self.assertEqual(
-                await get_password_lower_enabled(session),
-                PASSWORD_LOWER_ENABLED)
+                await get_password_lower_enabled(session), PASSWORD_LOWER_ENABLED
+            )
 
     async def test_password_lower_enabled_change(self):
         """
@@ -605,9 +612,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await set_setting(session, "passwd_lower_enabled", lower_enabled)
 
             # then
-            self.assertEqual(
-                await get_password_lower_enabled(session),
-                lower_enabled)
+            self.assertEqual(await get_password_lower_enabled(session), lower_enabled)
 
     async def test_email_validate_deliverability_enabled(self):
         """
@@ -632,8 +637,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # then
             self.assertEqual(
-                await get_email_validate_deliverability_enabled(session),
-                enabled)
+                await get_email_validate_deliverability_enabled(session), enabled
+            )
 
     async def test_password_check(self):
         """
@@ -932,7 +937,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             await register_user(
-                session, username, password, password, name, email, request, cur_time)
+                session, username, password, password, name, email, request, cur_time
+            )
 
             # then
             ## check user
@@ -944,7 +950,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(user.modified_time, cur_time)
             self.assertEqual(user.avatar_url, await get_default_avatar(session))
             self.assertEqual(user.card_image_url, await get_default_card_image(session))
-            self.assertEqual(user.header_image_url, await get_default_header_image(session))
+            self.assertEqual(
+                user.header_image_url, await get_default_header_image(session)
+            )
             self.assertEqual(user.header_text, name)
             self.assertEqual(user.description, "{} is on the scene".format(name))
             self.assertEqual(user.email_verified, False)
@@ -967,7 +975,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(new_change.referrer, request.referrer)
             self.assertEqual(new_change.user_agent, request.user_agent)
-            self.assertEqual(new_change.remote_addr, request.headers.get("X-Forwarded-For"))
+            self.assertEqual(
+                new_change.remote_addr, request.headers.get("X-Forwarded-For")
+            )
             self.assertEqual(new_change.endpoint, request.endpoint)
 
             new_log = (await session.exec(select(SystemLog))).first()
@@ -979,7 +989,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(new_log.referrer, request.referrer)
             self.assertEqual(new_log.user_agent, request.user_agent)
-            self.assertEqual(new_log.remote_addr, request.headers.get("X-Forwarded-For"))
+            self.assertEqual(
+                new_log.remote_addr, request.headers.get("X-Forwarded-For")
+            )
             self.assertEqual(new_log.endpoint, request.endpoint)
 
     async def test_register_email_exists(self):
@@ -1009,12 +1021,28 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             await register_user(
-                session, username, password, password, name, email, request, cur_time)
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
 
             code = None
             try:
                 await register_user(
-                    session, username, password, password, name, email, request, cur_time)
+                    session,
+                    username,
+                    password,
+                    password,
+                    name,
+                    email,
+                    request,
+                    cur_time,
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
@@ -1050,7 +1078,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             code = None
             try:
                 await register_user(
-                    session, username, password, password, name, email, request, cur_time)
+                    session,
+                    username,
+                    password,
+                    password,
+                    name,
+                    email,
+                    request,
+                    cur_time,
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
@@ -1084,14 +1120,30 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             await register_user(
-                session, username, password, password, name, email, request, cur_time)
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
 
             code = None
             try:
                 # change the email to trigger a username error instead
                 email = email + ".net"
                 await register_user(
-                    session, username, password, password, name, email, request, cur_time)
+                    session,
+                    username,
+                    password,
+                    password,
+                    name,
+                    email,
+                    request,
+                    cur_time,
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
@@ -1128,7 +1180,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             code = None
             try:
                 await register_user(
-                    session, username, password, password, name, email, request, cur_time)
+                    session,
+                    username,
+                    password,
+                    password,
+                    name,
+                    email,
+                    request,
+                    cur_time,
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
@@ -1165,7 +1225,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             code = None
             try:
                 await register_user(
-                    session, username, password, password, name, email, request, cur_time)
+                    session,
+                    username,
+                    password,
+                    password,
+                    name,
+                    email,
+                    request,
+                    cur_time,
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
                 code, _ = e.args
@@ -1202,7 +1270,14 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             code = None
             try:
                 await register_user(
-                    session, username, password, password + "foo", name, email, request, cur_time
+                    session,
+                    username,
+                    password,
+                    password + "foo",
+                    name,
+                    email,
+                    request,
+                    cur_time,
                 )
             except TXWTFError as e:
                 self.assertIsInstance(e, RegistrationError)
@@ -1240,7 +1315,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             code = None
             try:
                 await register_user(
-                    session, username, password, password, name, email, request, cur_time)
+                    session,
+                    username,
+                    password,
+                    password,
+                    name,
+                    email,
+                    request,
+                    cur_time,
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, PasswordError)
                 code, _ = e.args
@@ -1274,28 +1357,32 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             await register_user(
-                session, username, password, password, name, email, request, cur_time)
+                session, username, password, password, name, email, request, cur_time
+            )
 
             request.endpoint = "/login"
             user, _ = await execute_login(
                 session,
-                username, 
-                password, 
+                username,
+                password,
                 self._jwt_secret,
                 self._jwt_algorithm,
-                request, 
-                cur_time=cur_time
+                request,
+                cur_time=cur_time,
             )
 
             # then
             ## check logs
             user_changes = await session.exec(
-                select(UserChange).order_by(UserChange.id.desc()))
+                select(UserChange).order_by(UserChange.id.desc())
+            )
             last_changes = user_changes.all()
             self.assertEqual(len(last_changes), 3)
             last_user_change = last_changes[0]
             self.assertEqual(last_user_change.user_id, user.id)
-            self.assertEqual(last_user_change.change_code, UserChangeEventCode.UserLogin)
+            self.assertEqual(
+                last_user_change.change_code, UserChangeEventCode.UserLogin
+            )
             self.assertEqual(last_user_change.change_time, cur_time)
             self.assertEqual(
                 last_user_change.change_desc,
@@ -1309,18 +1396,22 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(last_user_change.endpoint, request.endpoint)
 
             system_logs = await session.exec(
-                select(SystemLog).order_by(SystemLog.id.desc()))
+                select(SystemLog).order_by(SystemLog.id.desc())
+            )
             last_logs = system_logs.all()
             self.assertEqual(len(last_logs), 2)
             last_log = last_logs[0]
             self.assertEqual(last_log.event_code, SystemLogEventCode.UserLogin)
             self.assertEqual(last_log.event_time, cur_time)
             self.assertEqual(
-                last_log.event_desc, "user {} [{}] logged in".format(user.username, user.id)
+                last_log.event_desc,
+                "user {} [{}] logged in".format(user.username, user.id),
             )
             self.assertEqual(last_log.referrer, request.referrer)
             self.assertEqual(last_log.user_agent, request.user_agent)
-            self.assertEqual(last_log.remote_addr, request.headers.get("X-Forwarded-For"))
+            self.assertEqual(
+                last_log.remote_addr, request.headers.get("X-Forwarded-For")
+            )
             self.assertEqual(last_log.endpoint, request.endpoint)
 
     async def test_execute_login_user_doesnt_exist(self):
@@ -1356,7 +1447,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                     self._jwt_secret,
                     self._jwt_algorithm,
                     request,
-                    cur_time=cur_time)
+                    cur_time=cur_time,
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, LoginError)
                 code, msg = e.args
@@ -1393,7 +1485,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             await register_user(
-                session, username, password, password, name, email, request, cur_time)
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
 
             request.endpoint = "/login"
             code = None
@@ -1405,7 +1505,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                     self._jwt_secret,
                     self._jwt_algorithm,
                     request,
-                    cur_time=cur_time)
+                    cur_time=cur_time,
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, LoginError)
                 code, msg = e.args
@@ -1458,9 +1559,10 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 username,
                 password,
                 password,
-                name,
+                name, 
                 email,
-                request)
+                request
+            )
 
             user, session_payload = await execute_login(
                 session,
@@ -1468,14 +1570,14 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 password,
                 self._jwt_secret,
                 self._jwt_algorithm,
-                request_login)
+                request_login,
+            )
 
             session_verified = True
             try:
                 await authorized_session_verify(
-                    session,
-                    session_payload["uuid"],
-                    self._jwt_secret)
+                    session, session_payload["uuid"], self._jwt_secret
+                )
             except:
                 session_verified = False
 
@@ -1486,23 +1588,26 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 self._jwt_secret,
                 request_logout,
                 user,
-                cur_time)
+                cur_time,
+            )
 
             session_verified_post_logout = True
             try:
                 await authorized_session_verify(
-                    session,
-                    session_payload["uuid"],
-                    self._jwt_secret)
+                    session, session_payload["uuid"], self._jwt_secret
+                )
             except:
                 session_verified_post_logout = False
 
             # then
             user_changes = await session.exec(
-                select(UserChange).order_by(UserChange.id.desc()))
+                select(UserChange).order_by(UserChange.id.desc())
+            )
             last_user_change = user_changes.all()[1]
             self.assertEqual(last_user_change.user_id, user.id)
-            self.assertEqual(last_user_change.change_code, UserChangeEventCode.UserLogout)
+            self.assertEqual(
+                last_user_change.change_code, UserChangeEventCode.UserLogout
+            )
             self.assertEqual(last_user_change.change_time, cur_time)
             self.assertEqual(
                 last_user_change.change_desc,
@@ -1511,12 +1616,14 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(last_user_change.referrer, request_logout.referrer)
             self.assertEqual(last_user_change.user_agent, request_logout.user_agent)
             self.assertEqual(
-                last_user_change.remote_addr, request_logout.headers.get("X-Forwarded-For")
+                last_user_change.remote_addr,
+                request_logout.headers.get("X-Forwarded-For"),
             )
             self.assertEqual(last_user_change.endpoint, request_logout.endpoint)
 
             system_logs = await session.exec(
-                select(SystemLog).order_by(SystemLog.id.desc()))
+                select(SystemLog).order_by(SystemLog.id.desc())
+            )
             last_log = system_logs.first()
             self.assertEqual(last_log.event_code, SystemLogEventCode.UserLogout)
             self.assertEqual(last_log.event_time, cur_time)
@@ -1614,8 +1721,16 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             user = await register_user(
-                session, username, password, password, name, email, request, cur_time)
-            request.endpoint="/login"
+                session,
+                username, 
+                password, 
+                password, 
+                name, 
+                email, 
+                request, 
+                cur_time
+            )
+            request.endpoint = "/login"
 
             session_payload = await authorized_session_launch(
                 session,
@@ -1624,7 +1739,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 self._jwt_algorithm,
                 request,
                 expire_delta,
-                cur_time
+                cur_time,
             )
 
             sessions = await authorized_sessions(session)
@@ -1638,10 +1753,13 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(sessions[0].hashed_secret, hash(self._jwt_secret))
 
             user_changes = await session.exec(
-                select(UserChange).order_by(UserChange.id.desc()))
+                select(UserChange).order_by(UserChange.id.desc())
+            )
             last_user_change = user_changes.first()
             self.assertEqual(last_user_change.user_id, user.id)
-            self.assertEqual(last_user_change.change_code, UserChangeEventCode.LaunchSession)
+            self.assertEqual(
+                last_user_change.change_code, UserChangeEventCode.LaunchSession
+            )
             self.assertEqual(last_user_change.change_time, cur_time)
             self.assertEqual(
                 last_user_change.change_desc,
@@ -1690,7 +1808,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                     self._jwt_algorithm,
                     request,
                     expire_delta,
-                    cur_time
+                    cur_time,
                 )
             except TXWTFError as e:
                 self.assertIsInstance(e, AuthorizedSessionError)
@@ -1728,8 +1846,16 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             user = await register_user(
-                session, username, password, password, name, email, request, cur_time)
-            request.endpoint="/login"
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+            request.endpoint = "/login"
 
             user.enabled = False
             await session.commit()
@@ -1743,7 +1869,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                     self._jwt_algorithm,
                     request,
                     expire_delta,
-                    cur_time
+                    cur_time,
                 )
             except TXWTFError as e:
                 self.assertIsInstance(e, AuthorizedSessionError)
@@ -1761,8 +1887,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             code = None
             try:
                 await authorized_session_verify(
-                    session, str(uuid.uuid4()),
-                    self._jwt_secret)
+                    session, str(uuid.uuid4()), self._jwt_secret
+                )
             except TXWTFError as e:
                 self.assertIsInstance(e, AuthorizedSessionError)
                 code, _ = e.args
@@ -1799,8 +1925,16 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             user = await register_user(
-                session, username, password, password, name, email, request, cur_time)
-            request.endpoint="/login"
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+            request.endpoint = "/login"
 
             session_payload = await authorized_session_launch(
                 session,
@@ -1809,15 +1943,14 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 self._jwt_algorithm,
                 request,
                 expire_delta,
-                cur_time
+                cur_time,
             )
 
             code = None
             try:
                 await authorized_session_verify(
-                    session,
-                    session_payload["uuid"],
-                    self._jwt_secret)
+                    session, session_payload["uuid"], self._jwt_secret
+                )
             except TXWTFError as e:
                 code, _ = e.args
 
@@ -1851,8 +1984,16 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             user = await register_user(
-                session, username, password, password, name, email, request, cur_time)
-            request.endpoint="/login"
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+            request.endpoint = "/login"
 
             session_payload = await authorized_session_launch(
                 session,
@@ -1861,16 +2002,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 self._jwt_algorithm,
                 request,
                 expire_delta,
-                cur_time
+                cur_time,
             )
 
             await asyncio.sleep(1)
             code = None
             try:
                 await authorized_session_verify(
-                    session,
-                    session_payload["uuid"],
-                    self._jwt_secret)
+                    session, session_payload["uuid"], self._jwt_secret
+                )
             except TXWTFError as e:
                 code, _ = e.args
 
@@ -1906,8 +2046,16 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             user = await register_user(
-                session, username, password, password, name, email, request, cur_time)
-            request.endpoint="/login"
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+            request.endpoint = "/login"
 
             session_payload = await authorized_session_launch(
                 session,
@@ -1916,15 +2064,14 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 self._jwt_algorithm,
                 request,
                 expire_delta,
-                cur_time
+                cur_time,
             )
 
             code = None
             try:
                 await authorized_session_verify(
-                    session,
-                    session_payload["uuid"],
-                    txwtf.core.gen_secret())
+                    session, session_payload["uuid"], txwtf.core.gen_secret()
+                )
             except TXWTFError as e:
                 code, _ = e.args
 
@@ -1960,8 +2107,16 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             user = await register_user(
-                session, username, password, password, name, email, request, cur_time)
-            request.endpoint="/login"
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+            request.endpoint = "/login"
 
             session_payload = await authorized_session_launch(
                 session,
@@ -1970,7 +2125,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 self._jwt_algorithm,
                 request,
                 expire_delta,
-                cur_time
+                cur_time,
             )
 
             user.enabled = False
@@ -1979,9 +2134,8 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             code = None
             try:
                 await authorized_session_verify(
-                    session,
-                    session_payload["uuid"],
-                    self._jwt_secret)
+                    session, session_payload["uuid"], self._jwt_secret
+                )
             except TXWTFError as e:
                 code, _ = e.args
 
@@ -2017,8 +2171,16 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             user = await register_user(
-                session, username, password, password, name, email, request, cur_time)
-            request.endpoint="/login"
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+            request.endpoint = "/login"
 
             session_payload = await authorized_session_launch(
                 session,
@@ -2027,34 +2189,30 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 self._jwt_algorithm,
                 request,
                 expire_delta,
-                cur_time
+                cur_time,
             )
 
             code = None
             try:
                 await authorized_session_verify(
-                    session,
-                    session_payload["uuid"],
-                    self._jwt_secret)
+                    session, session_payload["uuid"], self._jwt_secret
+                )
             except TXWTFError as e:
                 code, _ = e.args
 
             # then
             self.assertIsNone(code)
 
-            request.endpoint="/logout"
+            request.endpoint = "/logout"
             await authorized_session_deactivate(
-                session,
-                session_payload["uuid"],
-                request,
-                cur_time)
+                session, session_payload["uuid"], request, cur_time
+            )
 
             code = None
             try:
                 await authorized_session_verify(
-                    session,
-                    session_payload["uuid"],
-                    self._jwt_secret)
+                    session, session_payload["uuid"], self._jwt_secret
+                )
             except TXWTFError as e:
                 code, _ = e.args
 
@@ -2088,7 +2246,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             # when
             user = await register_user(
-                session, username, password, password, name, email, request, cur_time)
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
             test_user = await get_user(session, user.id)
 
             # then
