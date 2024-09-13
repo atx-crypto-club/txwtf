@@ -10,8 +10,7 @@ from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException, Request, H
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from sqlalchemy import Engine
-from sqlmodel import Session
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from txwtf.core import (
     gen_secret,
@@ -25,7 +24,7 @@ from txwtf.core import (
     get_user,
     authorized_sessions,
 )
-from txwtf.core.db import get_engine, init_db
+from txwtf.core.db import get_engine, init_db, get_session
 from txwtf.core.defaults import DEFAULT_JWT_ALGORITHM, CORS_ORIGINS
 from txwtf.core.codes import ErrorCode
 from txwtf.core.errors import TXWTFError
@@ -47,7 +46,7 @@ logger = logging.getLogger(__name__)
 class JWTBearer(HTTPBearer):
     def __init__(
         self,
-        engine: Engine,
+        engine: AsyncEngine,
         jwt_secret: str,
         jwt_algorithm: str = DEFAULT_JWT_ALGORITHM,
         auto_error: bool = True,
@@ -68,15 +67,25 @@ class JWTBearer(HTTPBearer):
             )
 
         try:
-            return self.verify_jwt(credentials.credentials)
+            return await self.verify_jwt(credentials.credentials)
         except TXWTFError as e:
             code, msg = e.args
-            raise HTTPException(status_code=403, detail="{} ({})".format(msg, code))
+            raise HTTPException(
+                status_code=403,
+                detail="{} ({})".format(msg, code)
+            )
 
-    def verify_jwt(self, jwtoken: str):
-        payload = decode_jwt(self._jwt_secret, self._jwt_algorithm, jwtoken)
-        with Session(self._engine) as session:
-            authorized_session_verify(session, payload["uuid"], self._jwt_secret)
+    async def verify_jwt(self, jwtoken: str):
+        payload = decode_jwt(
+            self._jwt_secret,
+            self._jwt_algorithm,
+            jwtoken
+        )
+        async with get_session(self._engine) as session:
+            await authorized_session_verify(
+                session,
+                payload["uuid"],
+                self._jwt_secret)
         return payload
 
 
@@ -86,11 +95,14 @@ def map_txwtf_errors(status_code=400):
         yield
     except TXWTFError as e:
         code, msg = e.args
-        raise HTTPException(status_code=status_code, detail="{} ({})".format(msg, code))
+        raise HTTPException(
+            status_code=status_code,
+            detail="{} ({})".format(msg, code)
+        )
 
 
 def get_user_router(
-    engine: Engine, jwt_secret: str = None, jwt_algorithm: str = None
+    engine: AsyncEngine, jwt_secret: str = None, jwt_algorithm: str = None
 ) -> APIRouter:
     router = APIRouter(
         # tags=["user"],
@@ -109,8 +121,8 @@ def get_user_router(
         user_agent: Annotated[Union[str, None], Header()] = None,
     ):
         with map_txwtf_errors():
-            with Session(engine) as session:
-                return register_user(
+            async with get_session(engine) as session:
+                return await register_user(
                     session,
                     user.username,
                     user.password,
@@ -127,8 +139,8 @@ def get_user_router(
         user_agent: Annotated[Union[str, None], Header()] = None,
     ):
         with map_txwtf_errors(401):
-            with Session(engine) as session:
-                user, token_payload = execute_login(
+            async with get_session(engine) as session:
+                user, token_payload = await execute_login(
                     session,
                     login.username,
                     login.password,
@@ -159,11 +171,11 @@ def get_user_router(
         all: bool = False,
     ):
         with map_txwtf_errors(401):
-            with Session(engine) as session:
+            async with get_session(engine) as session:
                 user_id = token_payload["user_id"]
-                user: User = get_user(session, user_id)
+                user: User = await get_user(session, user_id)
                 if not all:
-                    execute_logout(
+                    await execute_logout(
                         session,
                         token_payload["uuid"],
                         jwt_secret,
@@ -171,9 +183,14 @@ def get_user_router(
                         user,
                     )
                 else:
-                    sessions = authorized_sessions(session, user_id, True, jwt_secret)
+                    sessions = await authorized_sessions(
+                        session,
+                        user_id,
+                        True,
+                        jwt_secret
+                    )
                     for auth_sess in sessions:
-                        execute_logout(
+                        await execute_logout(
                             session,
                             auth_sess.uuid,
                             jwt_secret,
@@ -195,9 +212,12 @@ def get_user_router(
         ] = None,
     ):
         with map_txwtf_errors(401):
-            with Session(engine) as session:
-                return authorized_sessions(
-                    session, token_payload["user_id"], verified_only, jwt_secret
+            async with get_session(engine) as session:
+                return await authorized_sessions(
+                    session,
+                    token_payload["user_id"],
+                    verified_only,
+                    jwt_secret
                 )
 
     return router
@@ -209,9 +229,17 @@ def create_app(
     db_url: str = None,
     origins: list = [],
 ) -> FastAPI:
+
+    engine = get_engine(db_url)
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("Launching API")
+        await init_db(engine)  # TODO: flag for init or something
+        async with get_session(engine) as session:
+            # Disable email deliverability verification for now to
+            # help with testing
+            await set_setting(session, "email_validate_deliv_enabled", 0)
         yield
         logger.info("Shutting down API")
 
@@ -239,12 +267,6 @@ def create_app(
 
     # **** API entry points ****
 
-    engine = get_engine(db_url)
-    init_db(engine)  # TODO: flag for init or something
-    with Session(engine) as session:
-        # Disable email deliverability verification for testing
-        set_setting(session, "email_validate_deliv_enabled", 0)
-
     app.include_router(
         get_user_router(engine, jwt_secret, jwt_algorithm),
         prefix="/user",
@@ -258,4 +280,10 @@ def launch(host="0.0.0.0", port=8081):
     """
     Launch the txwtf.api backend using uvicorn.
     """
-    uvicorn.run("txwtf.api:create_app", host=host, port=port, reload=True, factory=True)
+    uvicorn.run(
+        "txwtf.api:create_app",
+        host=host,
+        port=port,
+        reload=True,
+        factory=True
+    )
