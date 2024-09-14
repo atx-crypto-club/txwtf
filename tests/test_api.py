@@ -4,28 +4,30 @@ Tests for the txwtf.api module.
 
 import unittest
 
+from httpx import ASGITransport, AsyncClient
+
 import txwtf.core
+from txwtf.version import version
+from txwtf.api import create_app
 
 
-class TestAPI(unittest.TestCase):
-    def setUp(self):
+class TestAPI(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self._app = create_app()
+
+    async def asyncTearDown(self):
         pass
 
-    def tearDown(self):
-        pass
-
-    def test_core_stub(self):
+    async def test_root(self):
+        """"
+        Test the default endpoint
         """
-        Test that our boilerplate works.
-        """
-        # with
-        pass
-
-        # when
-        val = txwtf.core.stub()
-
-        # then
-        self.assertTrue(val)
+        async with AsyncClient(
+            transport=ASGITransport(app=self._app), base_url="http://test"
+        ) as ac:
+            response = await ac.get("/")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["message"], "txwtf v{}".format(version))
 
 
 if __name__ == "__main__":

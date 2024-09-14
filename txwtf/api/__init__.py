@@ -102,7 +102,9 @@ def map_txwtf_errors(status_code=400):
 
 
 def get_user_router(
-    engine: AsyncEngine, jwt_secret: str = None, jwt_algorithm: str = None
+    engine: AsyncEngine,
+    jwt_secret: str = None,
+    jwt_algorithm: str = None
 ) -> APIRouter:
     router = APIRouter(
         # tags=["user"],
@@ -230,6 +232,13 @@ def create_app(
     origins: list = [],
 ) -> FastAPI:
 
+    if jwt_algorithm is None:
+        jwt_algorithm = config("TXWTF_API_JWT_ALGO", default=DEFAULT_JWT_ALGORITHM)
+    if jwt_secret is None:
+        jwt_secret = config("TXWTF_API_JWT_SECRET", default=gen_secret())
+    if db_url is None:
+        db_url = config("TXWTF_API_DB_URL", default="sqlite+aiosqlite://")
+
     engine = get_engine(db_url)
 
     @asynccontextmanager
@@ -242,13 +251,6 @@ def create_app(
             await set_setting(session, "email_validate_deliv_enabled", 0)
         yield
         logger.info("Shutting down API")
-
-    if jwt_algorithm is None:
-        jwt_algorithm = config("TXWTF_API_JWT_ALGO", default=DEFAULT_JWT_ALGORITHM)
-    if jwt_secret is None:
-        jwt_secret = config("TXWTF_API_JWT_SECRET", default=gen_secret())
-    if db_url is None:
-        db_url = config("TXWTF_API_DB_URL", default="sqlite://")
 
     origins.extend(CORS_ORIGINS)
 
