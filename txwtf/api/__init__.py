@@ -232,6 +232,7 @@ def create_app(
     origins: list = [],
 ) -> FastAPI:
 
+    # TODO: use pydantic settings and dotenv instead, remove decouple
     if jwt_algorithm is None:
         jwt_algorithm = config("TXWTF_API_JWT_ALGO", default=DEFAULT_JWT_ALGORITHM)
     if jwt_secret is None:

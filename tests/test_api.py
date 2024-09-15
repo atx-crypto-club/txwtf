@@ -1,14 +1,23 @@
 """
 Tests for the txwtf.api module.
 """
-
+from contextlib import asynccontextmanager
 import unittest
 
 from httpx import ASGITransport, AsyncClient
+from fastapi import FastAPI
 
 import txwtf.core
 from txwtf.version import version
 from txwtf.api import create_app
+
+
+@asynccontextmanager
+async def get_client(app: FastAPI):
+    async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as ac:
+        yield ac
 
 
 class TestAPI(unittest.IsolatedAsyncioTestCase):
@@ -22,9 +31,7 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
         """"
         Test the default endpoint
         """
-        async with AsyncClient(
-            transport=ASGITransport(app=self._app), base_url="http://test"
-        ) as ac:
+        async with get_client(self._app) as ac:
             response = await ac.get("/")
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["message"], "txwtf v{}".format(version))
