@@ -265,8 +265,8 @@ def create_app(
     )
 
     @app.get("/", tags=["root"])
-    async def read_root() -> dict:
-        return {"message": "txwtf v{}".format(version)}
+    async def read_root() -> ResponseSchema:
+        return ResponseSchema(message="txwtf v{}".format(version))
 
     # **** API entry points ****
 

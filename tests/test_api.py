@@ -15,7 +15,8 @@ from txwtf.api import create_app
 @asynccontextmanager
 async def get_client(app: FastAPI):
     async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app),
+            base_url="http://test"
         ) as ac:
         yield ac
 
@@ -34,7 +35,10 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
         async with get_client(self._app) as ac:
             response = await ac.get("/")
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()["message"], "txwtf v{}".format(version))
+            self.assertEqual(
+                response.json()["message"],
+                "txwtf v{}".format(version)
+            )
 
 
 if __name__ == "__main__":
