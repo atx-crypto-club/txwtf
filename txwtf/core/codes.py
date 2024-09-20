@@ -13,7 +13,6 @@ SystemLogEventCode = IntEnum(
     ],
 )
 
-UserChangeEventCode = SystemLogEventCode
 
 ErrorCode = IntEnum(
     "ErrorCode",

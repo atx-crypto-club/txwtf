@@ -14,7 +14,7 @@ from werkzeug.security import check_password_hash
 from sqlmodel import SQLModel, Session, select
 
 import txwtf.core
-from txwtf.core.codes import ErrorCode, UserChangeEventCode, SystemLogEventCode
+from txwtf.core.codes import ErrorCode, SystemLogEventCode
 from txwtf.core import (
     sign_jwt,
     decode_jwt,
@@ -81,7 +81,6 @@ from txwtf.core.model import (
     AuthorizedSession,
     GlobalSettings,
     User,
-    UserChange,
     SystemLog,
 )
 
@@ -965,9 +964,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(user.post_count, 0)
 
             ## check logs
-            new_change = (await session.exec(select(UserChange))).first()
+            new_change = (await session.exec(select(SystemLog))).first()
             self.assertEqual(new_change.user_id, user.id)
-            self.assertEqual(new_change.event_code, UserChangeEventCode.UserCreate)
+            self.assertEqual(new_change.event_code, SystemLogEventCode.UserCreate)
             self.assertEqual(new_change.event_time, cur_time)
             self.assertEqual(
                 new_change.event_desc,
@@ -979,20 +978,6 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 new_change.remote_addr, request.headers.get("X-Forwarded-For")
             )
             self.assertEqual(new_change.endpoint, request.endpoint)
-
-            new_log = (await session.exec(select(SystemLog))).first()
-            self.assertEqual(new_log.event_code, SystemLogEventCode.UserCreate)
-            self.assertEqual(new_log.event_time, cur_time)
-            self.assertEqual(
-                new_log.event_desc,
-                "creating new user {} [{}]".format(user.username, user.id),
-            )
-            self.assertEqual(new_log.referrer, request.referrer)
-            self.assertEqual(new_log.user_agent, request.user_agent)
-            self.assertEqual(
-                new_log.remote_addr, request.headers.get("X-Forwarded-For")
-            )
-            self.assertEqual(new_log.endpoint, request.endpoint)
 
     async def test_register_email_exists(self):
         """
@@ -1374,14 +1359,14 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             # then
             ## check logs
             user_changes = await session.exec(
-                select(UserChange).order_by(UserChange.id.desc())
+                select(SystemLog).order_by(SystemLog.id.desc())
             )
             last_changes = user_changes.all()
             self.assertEqual(len(last_changes), 3)
             last_user_change = last_changes[0]
             self.assertEqual(last_user_change.user_id, user.id)
             self.assertEqual(
-                last_user_change.event_code, UserChangeEventCode.UserLogin
+                last_user_change.event_code, SystemLogEventCode.UserLogin
             )
             self.assertEqual(last_user_change.event_time, cur_time)
             self.assertEqual(
@@ -1396,27 +1381,6 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 last_user_change.remote_addr, request.headers.get("X-Forwarded-For")
             )
             self.assertEqual(last_user_change.endpoint, request.endpoint)
-
-            system_logs = await session.exec(
-                select(SystemLog).order_by(SystemLog.id.desc())
-            )
-            last_logs = system_logs.all()
-            self.assertEqual(len(last_logs), 2)
-            last_log = last_logs[0]
-            self.assertEqual(last_log.event_code, SystemLogEventCode.UserLogin)
-            self.assertEqual(last_log.event_time, cur_time)
-            self.assertEqual(
-                last_log.event_desc,
-                "user {} [{}] logged in from {}".format(
-                    user.username, user.id,
-                    headers["X-Forwarded-For"]),
-            )
-            self.assertEqual(last_log.referrer, request.referrer)
-            self.assertEqual(last_log.user_agent, request.user_agent)
-            self.assertEqual(
-                last_log.remote_addr, request.headers.get("X-Forwarded-For")
-            )
-            self.assertEqual(last_log.endpoint, request.endpoint)
 
     async def test_execute_login_user_doesnt_exist(self):
         """
@@ -1604,13 +1568,16 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 session_verified_post_logout = False
 
             # then
+            self.assertTrue(session_verified)
+            self.assertFalse(session_verified_post_logout)
+
             user_changes = await session.exec(
-                select(UserChange).order_by(UserChange.id.desc())
+                select(SystemLog).order_by(SystemLog.id.desc())
             )
             last_user_change = user_changes.all()[1]
             self.assertEqual(last_user_change.user_id, user.id)
             self.assertEqual(
-                last_user_change.event_code, UserChangeEventCode.UserLogout
+                last_user_change.event_code, SystemLogEventCode.UserLogout
             )
             self.assertEqual(last_user_change.event_time, cur_time)
             self.assertEqual(
@@ -1626,28 +1593,6 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 request_logout.headers.get("X-Forwarded-For"),
             )
             self.assertEqual(last_user_change.endpoint, request_logout.endpoint)
-
-            system_logs = await session.exec(
-                select(SystemLog).order_by(SystemLog.id.desc())
-            )
-            last_log = system_logs.first()
-            self.assertEqual(last_log.event_code, SystemLogEventCode.UserLogout)
-            self.assertEqual(last_log.event_time, cur_time)
-            self.assertEqual(
-                last_log.event_desc,
-                "user {} [{}] logged out from {}".format(
-                    user.username, user.id,
-                    headers["X-Forwarded-For"]),
-            )
-            self.assertEqual(last_log.referrer, request_logout.referrer)
-            self.assertEqual(last_log.user_agent, request_logout.user_agent)
-            self.assertEqual(
-                last_log.remote_addr, request_logout.headers.get("X-Forwarded-For")
-            )
-            self.assertEqual(last_log.endpoint, request_logout.endpoint)
-
-            self.assertTrue(session_verified)
-            self.assertFalse(session_verified_post_logout)
 
     def test_auth_jwt(self):
         """
@@ -1761,12 +1706,12 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(sessions[0].hashed_secret, hash(self._jwt_secret))
 
             user_changes = await session.exec(
-                select(UserChange).order_by(UserChange.id.desc())
+                select(SystemLog).order_by(SystemLog.id.desc())
             )
             last_user_change = user_changes.first()
             self.assertEqual(last_user_change.user_id, user.id)
             self.assertEqual(
-                last_user_change.event_code, UserChangeEventCode.LaunchSession
+                last_user_change.event_code, SystemLogEventCode.LaunchSession
             )
             self.assertEqual(last_user_change.event_time, cur_time)
             self.assertEqual(

@@ -33,10 +33,9 @@ from txwtf.core.model import (
     Group,
     GroupAssociation,
     User,
-    UserChange,
     SystemLog,
 )
-from txwtf.core.codes import SystemLogEventCode, UserChangeEventCode, ErrorCode
+from txwtf.core.codes import SystemLogEventCode, ErrorCode
 from txwtf.core.defaults import (
     SITE_LOGO,
     AVATAR,
@@ -621,19 +620,16 @@ async def authorized_session_launch(
         endpoint=request.endpoint,
     )
     session.add(new_as)
-
-    new_change = UserChange(
-        user_id=user.id,
-        event_code=UserChangeEventCode.LaunchSession,
-        event_time=cur_time,
-        event_desc="launching session {}".format(session_uuid),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
-    )
-    session.add(new_change)
     await session.commit()
+    
+    await log_system_change(
+        session,
+        SystemLogEventCode.LaunchSession,
+        "launching session {}".format(session_uuid),
+        request,
+        cur_time,
+        user.id
+    )
 
     return session_payload
 
@@ -758,22 +754,19 @@ async def authorized_session_deactivate(
         )
     auth_sess.active = False
     session.add(auth_sess)
+    await session.commit()
 
     if cur_time is None:
         cur_time = datetime.utcnow()
 
-    new_change = UserChange(
-        user_id=auth_sess.user_id,
-        event_code=UserChangeEventCode.DeactivateSession,
-        event_time=cur_time,
-        event_desc="deactivating session {}".format(session_uuid),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+    await log_system_change(
+        session,
+        SystemLogEventCode.DeactivateSession,
+        "deactivating session {}".format(session_uuid),
+        request,
+        cur_time,
+        auth_sess.user_id
     )
-    session.add(new_change)
-    await session.commit()
 
 
 async def get_email_validate_deliverability_enabled(
@@ -787,7 +780,7 @@ async def get_email_validate_deliverability_enabled(
     ))
 
 
-async def log_user_system_change(
+async def log_system_change(
     session: AsyncSession,
     event_code: int,
     event_desc: str,
@@ -799,18 +792,8 @@ async def log_user_system_change(
         now = datetime.utcnow()
     else:
         now = cur_time
-    new_change = UserChange(
-        user_id=user_id,
-        event_code=event_code,
-        event_time=now,
-        event_desc=event_desc,
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=str(request.endpoint),
-    )
-    session.add(new_change)
     new_log = SystemLog(
+        user_id=user_id,
         event_code=event_code,
         event_time=now,
         event_desc=event_desc,
@@ -927,7 +910,7 @@ async def register_user(
     session.add(new_user)
     await session.commit()  # commit now to create new user id
 
-    await log_user_system_change(
+    await log_system_change(
         session,
         SystemLogEventCode.UserCreate,
         "creating new user {} [{}]".format(
@@ -999,7 +982,7 @@ async def execute_login(
     user.last_login = now
     user.last_login_addr = remote_addr(request)
 
-    await log_user_system_change(
+    await log_system_change(
         session,
         SystemLogEventCode.UserLogin,
         "user {} [{}] logged in from {}".format(
@@ -1034,7 +1017,7 @@ async def execute_logout(
 
     await authorized_session_verify(session, session_uuid, jwt_secret)
 
-    await log_user_system_change(
+    await log_system_change(
         session,
         SystemLogEventCode.UserLogout,
         "user {} [{}] logged out from {}".format(
