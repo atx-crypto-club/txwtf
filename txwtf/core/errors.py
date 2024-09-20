@@ -35,3 +35,7 @@ class AuthorizedSessionError(TXWTFError):
 
 class UserError(TXWTFError):
     pass
+
+
+class GroupError(TXWTFError):
+    pass

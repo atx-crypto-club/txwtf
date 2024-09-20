@@ -12,7 +12,7 @@ from sqlalchemy import DateTime, String, func
 class Group(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True, sa_type=String(256), max_length=256)
-    meta: str = Field(sa_type=String(1024), max_length=1024)
+    meta: Optional[str] = Field(sa_type=String(1024), max_length=1024)
 
 
 # TODO: add user groups, group permissions
@@ -61,7 +61,7 @@ class User(SQLModel, table=True):
     invited_by: Optional[int] = None
 
 
-class GroupAssociations(SQLModel, table=True):
+class GroupAssociation(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     group_id: int = Field(default=None, foreign_key="group.id")
     user_id: int = Field(default=None, foreign_key="user.id")
@@ -97,14 +97,9 @@ class EventLog(ClientTracking):
     event_desc: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
 
 
-class UserChange(ClientTracking, table=True):
+class UserChange(EventLog, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    change_code: int
-    change_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
-    change_desc: Optional[str] = Field(
-        default=None, sa_type=String(256), max_length=256
-    )
 
 
 class SystemLog(EventLog, table=True):

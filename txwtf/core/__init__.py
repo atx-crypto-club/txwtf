@@ -30,6 +30,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from txwtf.core.model import (
     AuthorizedSession,
     GlobalSettings,
+    Group,
+    GroupAssociation,
     User,
     UserChange,
     SystemLog,
@@ -59,6 +61,7 @@ from txwtf.core.errors import (
     LogoutError,
     SettingsError,
     UserError,
+    GroupError,
     TXWTFError,
 )
 
@@ -621,9 +624,9 @@ async def authorized_session_launch(
 
     new_change = UserChange(
         user_id=user.id,
-        change_code=UserChangeEventCode.LaunchSession,
-        change_time=cur_time,
-        change_desc="launching session {}".format(session_uuid),
+        event_code=UserChangeEventCode.LaunchSession,
+        event_time=cur_time,
+        event_desc="launching session {}".format(session_uuid),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
@@ -761,9 +764,9 @@ async def authorized_session_deactivate(
 
     new_change = UserChange(
         user_id=auth_sess.user_id,
-        change_code=UserChangeEventCode.DeactivateSession,
-        change_time=cur_time,
-        change_desc="deactivating session {}".format(session_uuid),
+        event_code=UserChangeEventCode.DeactivateSession,
+        event_time=cur_time,
+        event_desc="deactivating session {}".format(session_uuid),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
@@ -890,9 +893,9 @@ async def register_user(
 
     new_change = UserChange(
         user_id=new_user.id,
-        change_code=UserChangeEventCode.UserCreate,
-        change_time=now,
-        change_desc="creating new user {} [{}]".format(
+        event_code=UserChangeEventCode.UserCreate,
+        event_time=now,
+        event_desc="creating new user {} [{}]".format(
             new_user.username, new_user.id),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
@@ -984,9 +987,9 @@ async def execute_login(
     session.add(new_log)
     new_change = UserChange(
         user_id=user.id,
-        change_code=UserChangeEventCode.UserLogin,
-        change_time=now,
-        change_desc="logging in from {}".format(remote_addr(request)),
+        event_code=UserChangeEventCode.UserLogin,
+        event_time=now,
+        event_desc="logging in from {}".format(remote_addr(request)),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
@@ -1031,9 +1034,9 @@ async def execute_logout(
     session.add(new_log)
     new_change = UserChange(
         user_id=current_user.id,
-        change_code=UserChangeEventCode.UserLogout,
-        change_time=cur_time,
-        change_desc="logging out from {}".format(remote_addr(request)),
+        event_code=UserChangeEventCode.UserLogout,
+        event_time=cur_time,
+        event_desc="logging out from {}".format(remote_addr(request)),
         referrer=request.referrer,
         user_agent=str(request.user_agent),
         remote_addr=remote_addr(request),
@@ -1060,3 +1063,71 @@ async def get_user(session: AsyncSession, user_id: int) -> User:
             ErrorCode.InvalidUser,
             "Invalid user id {}".format(user_id)
         )
+
+
+async def get_groups(session: AsyncSession) -> List[Group]:
+    statement = select(Group)
+    results = await session.exec(statement)
+    return results.all()
+
+
+async def has_group(session: AsyncSession, name: str) -> bool:
+    statement = select(Group).where(Group.name == name)
+    results = await session.exec(statement)
+    group = None
+    try:
+        group = results.one()
+    except NoResultFound:
+        pass
+    return group is not None
+
+
+async def create_group(session: AsyncSession, name: str) -> Group:
+    if await has_group(session, name):
+        raise GroupError(
+            ErrorCode.GroupExists,
+            "Group {} already exists".format(group)
+        )
+
+    group = Group(name=name)
+    session.add(group)
+    await session.commit()
+    await session.refresh(group)
+    return group
+
+
+async def is_user_in_group(
+    session: AsyncSession,
+    group_id: int,
+    user_id: int
+) -> Group:
+    statement = select(GroupAssociation).where(
+        GroupAssociation.group_id == group_id
+        ).where(
+            GroupAssociation.user_id == user_id
+        )
+    results = await session.exec(statement)
+    ga = None
+    try:
+        ga = results.one()
+    except NoResultFound:
+        pass
+    return ga is not None
+
+
+async def add_user_to_group(
+    session: AsyncSession,
+    group_id: int,
+    user_id: int
+) -> GroupAssociation:
+    if await is_user_in_group(session, group_id, user_id):
+        raise GroupError(
+            ErrorCode.GroupHasUser,
+            "Group {} already has user {}".format(group_id, user_id)
+        )
+
+    ga = GroupAssociation(group_id=group_id, user_id=user_id)
+    session.add(ga)
+    await session.commit()
+    await session.refresh(ga)
+    return ga

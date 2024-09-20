@@ -967,10 +967,10 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             ## check logs
             new_change = (await session.exec(select(UserChange))).first()
             self.assertEqual(new_change.user_id, user.id)
-            self.assertEqual(new_change.change_code, UserChangeEventCode.UserCreate)
-            self.assertEqual(new_change.change_time, cur_time)
+            self.assertEqual(new_change.event_code, UserChangeEventCode.UserCreate)
+            self.assertEqual(new_change.event_time, cur_time)
             self.assertEqual(
-                new_change.change_desc,
+                new_change.event_desc,
                 "creating new user {} [{}]".format(user.username, user.id),
             )
             self.assertEqual(new_change.referrer, request.referrer)
@@ -1381,11 +1381,11 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             last_user_change = last_changes[0]
             self.assertEqual(last_user_change.user_id, user.id)
             self.assertEqual(
-                last_user_change.change_code, UserChangeEventCode.UserLogin
+                last_user_change.event_code, UserChangeEventCode.UserLogin
             )
-            self.assertEqual(last_user_change.change_time, cur_time)
+            self.assertEqual(last_user_change.event_time, cur_time)
             self.assertEqual(
-                last_user_change.change_desc,
+                last_user_change.event_desc,
                 "logging in from {}".format(headers["X-Forwarded-For"]),
             )
             self.assertEqual(last_user_change.referrer, request.referrer)
@@ -1606,11 +1606,11 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             last_user_change = user_changes.all()[1]
             self.assertEqual(last_user_change.user_id, user.id)
             self.assertEqual(
-                last_user_change.change_code, UserChangeEventCode.UserLogout
+                last_user_change.event_code, UserChangeEventCode.UserLogout
             )
-            self.assertEqual(last_user_change.change_time, cur_time)
+            self.assertEqual(last_user_change.event_time, cur_time)
             self.assertEqual(
-                last_user_change.change_desc,
+                last_user_change.event_desc,
                 "logging out from {}".format(headers["X-Forwarded-For"]),
             )
             self.assertEqual(last_user_change.referrer, request_logout.referrer)
@@ -1758,11 +1758,11 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             last_user_change = user_changes.first()
             self.assertEqual(last_user_change.user_id, user.id)
             self.assertEqual(
-                last_user_change.change_code, UserChangeEventCode.LaunchSession
+                last_user_change.event_code, UserChangeEventCode.LaunchSession
             )
-            self.assertEqual(last_user_change.change_time, cur_time)
+            self.assertEqual(last_user_change.event_time, cur_time)
             self.assertEqual(
-                last_user_change.change_desc,
+                last_user_change.event_desc,
                 "launching session {}".format(session_payload["uuid"]),
             )
             self.assertEqual(last_user_change.referrer, request.referrer)
