@@ -789,11 +789,11 @@ async def get_email_validate_deliverability_enabled(
 
 async def log_user_system_change(
     session: AsyncSession,
-    user_id: int,
     event_code: int,
     event_desc: str,
     request: Any,
-    cur_time: Optional[datetime] = None
+    cur_time: Optional[datetime] = None,
+    user_id: Optional[int] = None
 ) -> None:
     if cur_time is None:
         now = datetime.utcnow()
@@ -929,7 +929,6 @@ async def register_user(
 
     await log_user_system_change(
         session,
-        new_user.id,
         SystemLogEventCode.UserCreate,
         "creating new user {} [{}]".format(
             new_user.username,
@@ -937,6 +936,7 @@ async def register_user(
         ),
         request,
         now,
+        new_user.id
     )
 
     await session.refresh(new_user)
@@ -1001,7 +1001,6 @@ async def execute_login(
 
     await log_user_system_change(
         session,
-        user.id,
         SystemLogEventCode.UserLogin,
         "user {} [{}] logged in from {}".format(
             user.username,
@@ -1010,6 +1009,7 @@ async def execute_login(
         ),
         request,
         now,
+        user.id
     )
 
     await session.refresh(user)
@@ -1036,7 +1036,6 @@ async def execute_logout(
 
     await log_user_system_change(
         session,
-        current_user.id,
         SystemLogEventCode.UserLogout,
         "user {} [{}] logged out from {}".format(
             current_user.username,
@@ -1045,6 +1044,7 @@ async def execute_logout(
         ),
         request,
         cur_time,
+        current_user.id
     )
 
     await authorized_session_deactivate(
