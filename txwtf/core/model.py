@@ -82,7 +82,22 @@ class GlobalSettings(SQLModel, table=True):
     accessed_time: datetime = Field(default_factory=datetime.utcnow)
 
 
-class UserChange(SQLModel, table=True):
+class ClientTracking(SQLModel):
+    referrer: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
+    user_agent: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
+    remote_addr: Optional[str] = Field(
+        default=None, sa_type=String(256), max_length=256
+    )
+    endpoint: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
+
+
+class EventLog(ClientTracking):
+    event_code: int
+    event_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    event_desc: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
+
+
+class UserChange(ClientTracking, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     change_code: int
@@ -90,25 +105,10 @@ class UserChange(SQLModel, table=True):
     change_desc: Optional[str] = Field(
         default=None, sa_type=String(256), max_length=256
     )
-    referrer: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
-    user_agent: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
-    remote_addr: Optional[str] = Field(
-        default=None, sa_type=String(256), max_length=256
-    )
-    endpoint: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
 
 
-class SystemLog(SQLModel, table=True):
+class SystemLog(EventLog, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    event_code: int
-    event_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
-    event_desc: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
-    referrer: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
-    user_agent: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
-    remote_addr: Optional[str] = Field(
-        default=None, sa_type=String(256), max_length=256
-    )
-    endpoint: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
 
 
 class AuthorizedSession(SQLModel, table=True):
