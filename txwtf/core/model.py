@@ -9,12 +9,18 @@ from sqlmodel import SQLModel, Column, Field
 from sqlalchemy import DateTime, String, func
 
 
+class Group(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True, sa_type=String(256), max_length=256)
+    meta: str = Field(sa_type=String(1024), max_length=1024)
+
+
 # TODO: add user groups, group permissions
 # and invite links for registration
 # TODO: consider not returning the password hash...
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    username: str = Field(unique=True, sa_type=String(256), max_length=256)
+    username: str = Field(index=True, unique=True, sa_type=String(256), max_length=256)
     email: EmailStr = Field(unique=True, sa_type=String(256), max_length=256)
     password: str = Field(sa_type=String(1024), max_length=1024)
     name: str = Field(sa_type=String(1024), max_length=1024)
@@ -55,11 +61,17 @@ class User(SQLModel, table=True):
     invited_by: Optional[int] = None
 
 
+class GroupAssociations(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    group_id: int = Field(default=None, foreign_key="group.id")
+    user_id: int = Field(default=None, foreign_key="user.id")
+
+
 class GlobalSettings(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     var: str
     val: Optional[str] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user_id: Optional[int] = Field(
         default=None, foreign_key="user.id"
     )  # track user that created this setting
