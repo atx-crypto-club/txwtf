@@ -7,20 +7,13 @@ SystemLogEventCode = IntEnum(
         "UserLogin",
         "UserCreate",
         "UserLogout",
-        "SettingChange"
-    ],
-)
-
-UserChangeEventCode = IntEnum(
-    "UserChangeEventCode",
-    [
-        "UserLogin",
-        "UserCreate",
-        "UserLogout",
+        "SettingChange",
         "DeactivateSession",
         "LaunchSession"
     ],
 )
+
+UserChangeEventCode = SystemLogEventCode
 
 ErrorCode = IntEnum(
     "ErrorCode",
@@ -51,6 +44,7 @@ ErrorCode = IntEnum(
         "InvalidTokenSignature",
         "InvalidSecret",
         "GroupExists",
-        "GroupHasUser"
+        "GroupHasUser",
+        "InvalidGroup"
     ],
 )

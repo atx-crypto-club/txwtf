@@ -1386,7 +1386,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(last_user_change.event_time, cur_time)
             self.assertEqual(
                 last_user_change.event_desc,
-                "logging in from {}".format(headers["X-Forwarded-For"]),
+                "user {} [{}] logged in from {}".format(
+                    user.username, user.id,
+                    headers["X-Forwarded-For"]),
             )
             self.assertEqual(last_user_change.referrer, request.referrer)
             self.assertEqual(last_user_change.user_agent, request.user_agent)
@@ -1405,7 +1407,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(last_log.event_time, cur_time)
             self.assertEqual(
                 last_log.event_desc,
-                "user {} [{}] logged in".format(user.username, user.id),
+                "user {} [{}] logged in from {}".format(
+                    user.username, user.id,
+                    headers["X-Forwarded-For"]),
             )
             self.assertEqual(last_log.referrer, request.referrer)
             self.assertEqual(last_log.user_agent, request.user_agent)
@@ -1611,7 +1615,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(last_user_change.event_time, cur_time)
             self.assertEqual(
                 last_user_change.event_desc,
-                "logging out from {}".format(headers["X-Forwarded-For"]),
+                "user {} [{}] logged out from {}".format(
+                    user.username, user.id,
+                    headers["X-Forwarded-For"]),
             )
             self.assertEqual(last_user_change.referrer, request_logout.referrer)
             self.assertEqual(last_user_change.user_agent, request_logout.user_agent)
@@ -1629,7 +1635,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(last_log.event_time, cur_time)
             self.assertEqual(
                 last_log.event_desc,
-                "user {} [{}] logging out".format(user.username, user.id),
+                "user {} [{}] logged out from {}".format(
+                    user.username, user.id,
+                    headers["X-Forwarded-For"]),
             )
             self.assertEqual(last_log.referrer, request_logout.referrer)
             self.assertEqual(last_log.user_agent, request_logout.user_agent)

@@ -787,6 +787,42 @@ async def get_email_validate_deliverability_enabled(
     ))
 
 
+async def log_user_system_change(
+    session: AsyncSession,
+    user_id: int,
+    event_code: int,
+    event_desc: str,
+    request: Any,
+    cur_time: Optional[datetime] = None
+) -> None:
+    if cur_time is None:
+        now = datetime.utcnow()
+    else:
+        now = cur_time
+    new_change = UserChange(
+        user_id=user_id,
+        event_code=event_code,
+        event_time=now,
+        event_desc=event_desc,
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=str(request.endpoint),
+    )
+    session.add(new_change)
+    new_log = SystemLog(
+        event_code=event_code,
+        event_time=now,
+        event_desc=event_desc,
+        referrer=request.referrer,
+        user_agent=str(request.user_agent),
+        remote_addr=remote_addr(request),
+        endpoint=str(request.endpoint),
+    )
+    session.add(new_log)
+    await session.commit()
+
+
 async def register_user(
     session: AsyncSession,
     username: str,
@@ -891,30 +927,17 @@ async def register_user(
     session.add(new_user)
     await session.commit()  # commit now to create new user id
 
-    new_change = UserChange(
-        user_id=new_user.id,
-        event_code=UserChangeEventCode.UserCreate,
-        event_time=now,
-        event_desc="creating new user {} [{}]".format(
-            new_user.username, new_user.id),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=str(request.endpoint),
+    await log_user_system_change(
+        session,
+        new_user.id,
+        SystemLogEventCode.UserCreate,
+        "creating new user {} [{}]".format(
+            new_user.username,
+            new_user.id
+        ),
+        request,
+        now,
     )
-    session.add(new_change)
-    new_log = SystemLog(
-        event_code=SystemLogEventCode.UserCreate,
-        event_time=now,
-        event_desc="creating new user {} [{}]".format(
-            new_user.username, new_user.id),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=str(request.endpoint),
-    )
-    session.add(new_log)
-    await session.commit()
 
     await session.refresh(new_user)
 
@@ -975,28 +998,19 @@ async def execute_login(
     now = cur_time
     user.last_login = now
     user.last_login_addr = remote_addr(request)
-    new_log = SystemLog(
-        event_code=SystemLogEventCode.UserLogin,
-        event_time=now,
-        event_desc="user {} [{}] logged in".format(user.username, user.id),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+
+    await log_user_system_change(
+        session,
+        user.id,
+        SystemLogEventCode.UserLogin,
+        "user {} [{}] logged in from {}".format(
+            user.username,
+            user.id,
+            remote_addr(request)
+        ),
+        request,
+        now,
     )
-    session.add(new_log)
-    new_change = UserChange(
-        user_id=user.id,
-        event_code=UserChangeEventCode.UserLogin,
-        event_time=now,
-        event_desc="logging in from {}".format(remote_addr(request)),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
-    )
-    session.add(new_change)
-    await session.commit()
 
     await session.refresh(user)
 
@@ -1020,30 +1034,18 @@ async def execute_logout(
 
     await authorized_session_verify(session, session_uuid, jwt_secret)
 
-    new_log = SystemLog(
-        event_code=SystemLogEventCode.UserLogout,
-        event_time=cur_time,
-        event_desc="user {} [{}] logging out".format(
-            current_user.username, current_user.id
+    await log_user_system_change(
+        session,
+        current_user.id,
+        SystemLogEventCode.UserLogout,
+        "user {} [{}] logged out from {}".format(
+            current_user.username,
+            current_user.id,
+            remote_addr(request)
         ),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+        request,
+        cur_time,
     )
-    session.add(new_log)
-    new_change = UserChange(
-        user_id=current_user.id,
-        event_code=UserChangeEventCode.UserLogout,
-        event_time=cur_time,
-        event_desc="logging out from {}".format(remote_addr(request)),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
-    )
-    session.add(new_change)
-    await session.commit()
 
     await authorized_session_deactivate(
         session,
@@ -1069,6 +1071,18 @@ async def get_groups(session: AsyncSession) -> List[Group]:
     statement = select(Group)
     results = await session.exec(statement)
     return results.all()
+
+
+async def get_group(session: AsyncSession, group_id: int) -> Group:
+    statement = select(Group).where(Group.id == group_id)
+    results = await session.exec(statement)
+    try:
+        return results.one()
+    except NoResultFound:
+        raise UserError(
+            ErrorCode.InvalidGroup,
+            "Invalid group id {}".format(group_id)
+        )
 
 
 async def has_group(session: AsyncSession, name: str) -> bool:
