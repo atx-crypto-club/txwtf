@@ -9,51 +9,109 @@ from sqlmodel import SQLModel, Column, Field
 from sqlalchemy import DateTime, String, func
 
 
-class Group(SQLModel, table=True):
+class ObjectMetadata(SQLModel, table=True):
+    id: Optional[int] = Field(
+        default=None, primary_key=True
+    )
+    desc: Optional[str] = Field(
+        default=None,
+        sa_type=String(1024),
+        max_length=1024
+    )
+    created_time: Optional[datetime] = Field(
+        default_factory=datetime.utcnow
+    )
+    modified_time: Optional[datetime] = Field(
+        sa_column=Column(DateTime(), onupdate=func.now())
+    )
+    accessed_time: Optional[datetime] = Field(
+        default_factory=datetime.utcnow
+    )
+    created_by: Optional[int] = Field(default=None, foreign_key="user.id")
+
+
+class SystemObject(SQLModel):
     id: Optional[int] = Field(default=None, primary_key=True)
+    metadata_id: Optional[int] = Field(default=None, foreign_key="objectmetadata.id")
+
+
+class Group(SystemObject, table=True):
     name: str = Field(index=True, sa_type=String(256), max_length=256)
     desc: Optional[str] = Field(sa_type=String(1024), max_length=1024)
-    meta: Optional[str] = Field(sa_type=String(1024), max_length=1024)
 
 
 # TODO: add user groups, group permissions
 # and invite links for registration
 # TODO: consider not returning the password hash...
-class User(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    username: str = Field(index=True, unique=True, sa_type=String(256), max_length=256)
-    email: EmailStr = Field(unique=True, sa_type=String(256), max_length=256)
-    password: str = Field(sa_type=String(1024), max_length=1024)
-    name: str = Field(sa_type=String(1024), max_length=1024)
+class User(SystemObject, table=True):
+    username: str = Field(
+        index=True,
+        unique=True,
+        sa_type=String(256),
+        max_length=256
+    )
+    email: EmailStr = Field(
+        unique=True,
+        sa_type=String(256),
+        max_length=256
+    )
+    password: str = Field(
+        sa_type=String(1024),
+        max_length=1024
+    )
+    name: str = Field(
+        sa_type=String(1024),
+        max_length=1024
+    )
     avatar_url: Optional[str] = Field(
-        default=None, sa_type=String(1024), max_length=1024
+        default=None,
+        sa_type=String(1024),
+        max_length=1024
     )
     header_image_url: Optional[str] = Field(
-        default=None, sa_type=String(1024), max_length=1024
+        default=None,
+        sa_type=String(1024),
+        max_length=1024
     )
     header_text: Optional[str] = Field(
-        default=None, sa_type=String(1024), max_length=1024
+        default=None,
+        sa_type=String(1024),
+        max_length=1024
     )
     card_image_url: Optional[str] = Field(
-        default=None, sa_type=String(1024), max_length=1024
+        default=None,
+        sa_type=String(1024),
+        max_length=1024
     )
     alternate_email: Optional[EmailStr] = Field(
-        default=None, sa_type=String(256), max_length=256
+        default=None,
+        sa_type=String(256),
+        max_length=256
     )
     email_verified: Optional[bool] = False
     alternate_email_verified: Optional[bool] = False
     description: Optional[str] = Field(
-        default=None, sa_type=String(10240), max_length=10240
+        default=None,
+        sa_type=String(10240),
+        max_length=10240
     )
-    created_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    # TODO: remove these in favor of object metadata table
+    created_time: Optional[datetime] = Field(
+        default_factory=datetime.utcnow
+    )
     modified_time: Optional[datetime] = Field(
         sa_column=Column(DateTime(), onupdate=func.now())
     )
-    accessed_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
-    is_admin: Optional[bool] = False
+    accessed_time: Optional[datetime] = Field(
+        default_factory=datetime.utcnow
+    )
+    is_admin: Optional[bool] = False  # TODO: remove- redunant with group perms
+    # TODO: move last login tracking to a table
     last_login: Optional[datetime] = None
     last_login_addr: Optional[str] = Field(
-        default=None, sa_type=String(512), max_length=512
+        default=None,
+        sa_type=String(512),
+        max_length=512
     )
     view_count: Optional[int] = 0
     post_view_count: Optional[int] = 0
@@ -62,20 +120,20 @@ class User(SQLModel, table=True):
     invited_by: Optional[int] = None
 
 
-class GroupAssociation(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+class GroupAssociation(SystemObject, table=True):
     group_id: int = Field(default=None, foreign_key="group.id")
     user_id: int = Field(default=None, foreign_key="user.id")
 
 
-class GlobalSettings(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+class GlobalSettings(SystemObject, table=True):
     var: str
     val: Optional[str] = None
     parent_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user_id: Optional[int] = Field(
         default=None, foreign_key="user.id"
     )  # track user that created this setting
+
+    # TODO: remove these and use metadata
     created_time: datetime = Field(default_factory=datetime.utcnow)
     modified_time: Optional[datetime] = Field(
         sa_column=Column(DateTime(), onupdate=func.now())
@@ -84,26 +142,56 @@ class GlobalSettings(SQLModel, table=True):
 
 
 class ClientTracking(SQLModel):
-    referrer: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
-    user_agent: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
-    remote_addr: Optional[str] = Field(
-        default=None, sa_type=String(256), max_length=256
+    referrer: Optional[str] = Field(
+        default=None,
+        sa_type=String(512),
+        max_length=512
     )
-    endpoint: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
+    user_agent: Optional[str] = Field(
+        default=None,
+        sa_type=String(512),
+        max_length=512
+    )
+    remote_addr: Optional[str] = Field(
+        default=None,
+        sa_type=String(256),
+        max_length=256
+    )
+    endpoint: Optional[str] = Field(
+        default=None,
+        sa_type=String(256),
+        max_length=256
+    )
 
 
 class EventLog(ClientTracking):
     event_code: int
-    event_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
-    event_desc: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
+    event_time: Optional[datetime] = Field(
+        default_factory=datetime.utcnow
+    )
+    event_desc: Optional[str] = Field(
+        default=None,
+        sa_type=String(256),
+        max_length=256
+    )
 
 
 class SystemLog(EventLog, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    id: Optional[int] = Field(
+        default=None,
+        primary_key=True
+    )
+    user_id: Optional[int] = Field(
+        default=None,
+        foreign_key="user.id"
+    )
+    auth_user_id: Optional[int] = Field(
+        default=None,
+        foreign_key="user.id"
+    )
 
 
-class AuthorizedSession(SQLModel, table=True):
+class AuthorizedSession(ClientTracking, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     uuid: Optional[str] = Field(
         default_factory=lambda: str(uuid.uuid4()),
@@ -115,13 +203,9 @@ class AuthorizedSession(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     hashed_secret: str = Field(sa_type=String(32), max_length=32)
     active: Optional[bool] = True
-    created_time: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    created_time: Optional[datetime] = Field(
+        default_factory=datetime.utcnow
+    )
     expires_time: Optional[datetime] = Field(
         default_factory=lambda: datetime.utcnow() + timedelta(hours=1)
     )
-    referrer: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
-    user_agent: Optional[str] = Field(default=None, sa_type=String(512), max_length=512)
-    remote_addr: Optional[str] = Field(
-        default=None, sa_type=String(256), max_length=256
-    )
-    endpoint: Optional[str] = Field(default=None, sa_type=String(256), max_length=256)
