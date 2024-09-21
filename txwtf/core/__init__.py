@@ -1,4 +1,5 @@
 import cProfile
+from collections import defaultdict
 import logging
 from hashlib import sha256
 import pstats
@@ -8,7 +9,7 @@ import sys
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 import time
-from typing import Tuple, Any, List, Optional, Dict
+from typing import Tuple, Any, List, Optional, Dict, Union
 import uuid
 
 import jwt
@@ -784,7 +785,7 @@ async def log_system_change(
     session: AsyncSession,
     event_code: int,
     event_desc: str,
-    request: Any,
+    request: Optional[Any] = None,
     cur_time: Optional[datetime] = None,
     user_id: Optional[int] = None
 ) -> None:
@@ -792,16 +793,23 @@ async def log_system_change(
         now = datetime.utcnow()
     else:
         now = cur_time
-    new_log = SystemLog(
-        user_id=user_id,
-        event_code=event_code,
-        event_time=now,
-        event_desc=event_desc,
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=str(request.endpoint),
-    )
+
+    log_data = defaultdict(None)
+    log_data.update({
+        "user_id": user_id,
+        "event_code": event_code,
+        "event_time": now,
+        "event_desc": event_desc,
+    })
+    if request is not None:
+        log_data.update({
+            "referrer": request.referrer,
+            "user_agent": str(request.user_agent),
+            "remote_addr": remote_addr(request),
+            "endpoint": str(request.endpoint),
+        })
+
+    new_log = SystemLog(**log_data)
     session.add(new_log)
     await session.commit()
 
@@ -1038,10 +1046,25 @@ async def execute_logout(
     )
 
 
-async def get_user(session: AsyncSession, user_id: int) -> User:
-    statement = select(User).where(User.id == user_id)
+async def get_user(
+    session: AsyncSession,
+    user_id: Optional[int] = None,
+    username: Optional[str] = None
+) -> Union[User, List[User]]:
+    """
+    Returns a user object from the database given a
+    user_id or username.
+    """
+    statement = select(User)
+    if user_id is not None:
+        statement.where(User.id == user_id)
+    if username is not None:
+        statement.where(User.username == username)
     results = await session.exec(statement)
     try:
+        if user_id is None and username is None:
+            # TODO: pagination for large amounts of users
+            return results.all()
         return results.one()
     except NoResultFound:
         raise UserError(
@@ -1051,20 +1074,37 @@ async def get_user(session: AsyncSession, user_id: int) -> User:
 
 
 async def get_groups(session: AsyncSession) -> List[Group]:
+    """
+    Returns a list of Group objects from the database.
+    """
     statement = select(Group)
     results = await session.exec(statement)
     return results.all()
 
 
-async def get_group(session: AsyncSession, group_id: int) -> Group:
-    statement = select(Group).where(Group.id == group_id)
+async def get_group(
+    session: AsyncSession,
+    group_name: Optional[str] = None,
+    group_id: Optional[int] = None
+) -> Union[Group, List[Group]]:
+    """
+    Returns a Group object given group_name or id.
+    """
+    statement = select(Group)
+    if group_name is not None:
+        statement.where(Group.name == group_name)
+    if group_id is not None:
+        statement.where(Group.id == group_id)
     results = await session.exec(statement)
     try:
+        if group_name is None and group_id is None:
+            # TODO: pagination for large amounts of groups
+            return results.all()
         return results.one()
     except NoResultFound:
-        raise UserError(
+        raise GroupError(
             ErrorCode.InvalidGroup,
-            "Invalid group id {}".format(group_id)
+            "Cannot find group {} [{}]".format(group_name, group_id)
         )
 
 
@@ -1079,7 +1119,11 @@ async def has_group(session: AsyncSession, name: str) -> bool:
     return group is not None
 
 
-async def create_group(session: AsyncSession, name: str) -> Group:
+async def create_group(
+    session: AsyncSession,
+    name: str,
+    request: Optional[Any] = None
+) -> Group:
     if await has_group(session, name):
         raise GroupError(
             ErrorCode.GroupExists,
@@ -1090,7 +1134,51 @@ async def create_group(session: AsyncSession, name: str) -> Group:
     session.add(group)
     await session.commit()
     await session.refresh(group)
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupCreate,
+        "creating new group {} [{}]".format(
+            group.name,
+            group.id
+        ),
+        request,
+    )
+
     return group
+
+
+async def remove_group(
+    session: AsyncSession,
+    name: str,
+    request: Optional[Any] = None
+) -> None:
+    if not await has_group(session, name):
+        raise GroupError(
+            ErrorCode.InvalidGroup,
+            "Group {} doesn't exist".format(name)
+        )
+    
+    group = await get_group(session, name)
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupDelete,
+        "deleting group {} [{}]".format(
+            group.name,
+            group.id
+        ),
+        request,
+    )
+    
+    statement = select(GroupAssociation).where(
+        GroupAssociation.group_id == group.id
+    )
+    results = await session.exec(statement)
+    for ga in results.all():
+        session.delete(ga)
+    session.delete(group)
+    await session.commit()
 
 
 async def is_user_in_group(
@@ -1100,9 +1188,9 @@ async def is_user_in_group(
 ) -> Group:
     statement = select(GroupAssociation).where(
         GroupAssociation.group_id == group_id
-        ).where(
-            GroupAssociation.user_id == user_id
-        )
+    ).where(
+        GroupAssociation.user_id == user_id
+    )
     results = await session.exec(statement)
     ga = None
     try:
@@ -1115,7 +1203,8 @@ async def is_user_in_group(
 async def add_user_to_group(
     session: AsyncSession,
     group_id: int,
-    user_id: int
+    user_id: int,
+    request: Optional[Any] = None
 ) -> GroupAssociation:
     if await is_user_in_group(session, group_id, user_id):
         raise GroupError(
@@ -1127,4 +1216,50 @@ async def add_user_to_group(
     session.add(ga)
     await session.commit()
     await session.refresh(ga)
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupAddUser,
+        "added user {} to group {}".format(
+            user_id,
+            group_id
+        ),
+        request,
+        user_id,
+    )
+
     return ga
+
+
+async def remove_user_from_group(
+    session: AsyncSession,
+    group_id: int,
+    user_id: int,
+    request: Optional[Any] = None
+) -> None:
+    if not await is_user_in_group(session, group_id, user_id):
+        raise GroupError(
+            ErrorCode.MissingUser,
+            "Group {} missing user {}".format(group_id, user_id)
+        )
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupRemoveUser,
+        "removing user {} from group {}".format(
+            user_id,
+            group_id
+        ),
+        request,
+        user_id,
+    )
+
+    statement = select(GroupAssociation).where(
+        GroupAssociation.group_id == group_id
+    ).where(
+        GroupAssociation.user_id == user_id
+    )
+    results = await session.exec(statement)
+    for ga in results.all():
+        session.delete(ga)
+    await session.commit()

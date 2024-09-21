@@ -48,6 +48,7 @@ from txwtf.core import (
     execute_login,
     execute_logout,
     get_user,
+    get_groups,
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -2213,6 +2214,103 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             # then
             self.assertEqual(user, test_user)
 
+    async def test_get_user_from_username(self):
+        """
+        Test returning a user given a database session and user id.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = await register_user(
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+
+            # then
+            self.assertEqual(
+                await get_user(session, user_id=user.id),
+                await get_user(session, username=user.username))
+
+    async def test_get_user_multiple_users(self):
+        """
+        Test returning a list of users if we don't provide
+        user_id and username.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkillah 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = await register_user(
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+            username = "root2"
+            email = "root2@tx.wtf"
+            user2 = await register_user(
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time
+            )
+
+            # then
+            users = await get_user(session)
+            self.assertIn(user, users, "missing user")
+            self.assertIn(user2, users, "missing user")
+
     async def test_get_user_invalid(self):
         """
         Test that we throw an error if the user id is invalid.
@@ -2229,6 +2327,19 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             # then
             self.assertEqual(code, ErrorCode.InvalidUser)
 
+    async def test_get_groups(self):
+        """
+        Test for the initial state of groups.
+        """
+        async with get_session(self._engine) as session:
+            # when
+            groups = await get_groups(session)
+
+            # then
+            # TODO: zero for now- might have more in the future
+            # if we start with default groups.
+            self.assertEqual(0, len(groups))
+            
 
 if __name__ == "__main__":
     unittest.main()

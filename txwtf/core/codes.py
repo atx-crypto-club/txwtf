@@ -9,7 +9,11 @@ SystemLogEventCode = IntEnum(
         "UserLogout",
         "SettingChange",
         "DeactivateSession",
-        "LaunchSession"
+        "LaunchSession",
+        "GroupCreate",
+        "GroupDelete",
+        "GroupAddUser",
+        "GroupRemoveUser"
     ],
 )
 
@@ -44,6 +48,7 @@ ErrorCode = IntEnum(
         "InvalidSecret",
         "GroupExists",
         "GroupHasUser",
-        "InvalidGroup"
+        "InvalidGroup",
+        "MissingUser",
     ],
 )
