@@ -48,7 +48,11 @@ from txwtf.core import (
     execute_login,
     execute_logout,
     get_user,
+    get_group,
     get_groups,
+    has_group,
+    create_group,
+    remove_group,
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -2336,10 +2340,75 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             groups = await get_groups(session)
 
             # then
-            # TODO: zero for now- might have more in the future
-            # if we start with default groups.
             self.assertEqual(0, len(groups))
-            
+
+    async def test_create_group(self):
+        """
+        Test for group creation.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group = "group1"
+
+            # when
+            await create_group(session, group)
+            groups = await get_groups(session)
+
+            # then
+            self.assertTrue(await has_group(session, group))
+            self.assertEqual(1, len(groups))
+            self.assertIn(
+                await get_group(session, group_name=group),
+                groups, "missing group")
+
+    async def test_create_multiple_groups(self):
+        """
+        Test for group creation and that we have the correct
+        number of groups.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1 = "group1"
+            group2 = "group2"
+
+            # when
+            await create_group(session, group1)
+            await create_group(session, group2)
+            groups = await get_groups(session)
+
+            # then
+            self.assertEqual(2, len(groups))
+            self.assertIn(
+                await get_group(session, group_name=group1),
+                groups, "missing group")
+            self.assertIn(
+                await get_group(session, group_name=group2),
+                groups, "missing group")
+
+    async def test_remove_group(self):
+        """
+        Test for group removal.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1 = "group1"
+            group2 = "group2"
+
+            # when
+            await create_group(session, group1)
+            await create_group(session, group2)
+
+            # then
+            self.assertTrue(await has_group(session, group1))
+            self.assertTrue(await has_group(session, group2))
+
+            # when
+            await remove_group(session, group2)
+
+            # then
+            self.assertTrue(await has_group(session, group1))
+            self.assertFalse(await has_group(session, group2))
+
 
 if __name__ == "__main__":
     unittest.main()

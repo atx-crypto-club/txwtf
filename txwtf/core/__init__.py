@@ -1084,17 +1084,17 @@ async def get_groups(session: AsyncSession) -> List[Group]:
 
 async def get_group(
     session: AsyncSession,
-    group_name: Optional[str] = None,
-    group_id: Optional[int] = None
+    group_id: Optional[int] = None,
+    group_name: Optional[str] = None
 ) -> Union[Group, List[Group]]:
     """
     Returns a Group object given group_name or id.
     """
     statement = select(Group)
     if group_name is not None:
-        statement.where(Group.name == group_name)
+        statement = statement.where(Group.name == group_name)
     if group_id is not None:
-        statement.where(Group.id == group_id)
+        statement = statement.where(Group.id == group_id)
     results = await session.exec(statement)
     try:
         if group_name is None and group_id is None:
@@ -1159,7 +1159,7 @@ async def remove_group(
             "Group {} doesn't exist".format(name)
         )
     
-    group = await get_group(session, name)
+    group = await get_group(session, group_name=name)
 
     await log_system_change(
         session,
@@ -1176,8 +1176,8 @@ async def remove_group(
     )
     results = await session.exec(statement)
     for ga in results.all():
-        session.delete(ga)
-    session.delete(group)
+        await session.delete(ga)
+    await session.delete(group)
     await session.commit()
 
 
