@@ -925,7 +925,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -995,7 +995,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1050,7 +1050,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1094,7 +1094,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1152,7 +1152,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@localhost"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1197,7 +1197,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@localhost .com"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1242,7 +1242,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1287,7 +1287,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1331,7 +1331,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1396,7 +1396,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             username = "root"
             password = "asDf1234#!1"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/login"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1442,7 +1442,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1499,7 +1499,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1662,7 +1662,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1741,7 +1741,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1787,7 +1787,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1866,7 +1866,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1925,7 +1925,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -1987,7 +1987,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -2048,7 +2048,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -2112,7 +2112,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -2188,7 +2188,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -2229,7 +2229,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
@@ -2272,7 +2272,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             name = "admin"
             email = "root@tx.wtf"
             referrer = "localhost"
-            user_agent = "mozkillah 420.69"
+            user_agent = "mozkilla 420.69"
             endpoint = "/register"
             remote_addr = "127.0.0.1"
             headers = {"X-Forwarded-For": "192.168.0.1"}
