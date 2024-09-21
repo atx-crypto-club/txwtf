@@ -1078,7 +1078,7 @@ async def get_groups(session: AsyncSession) -> List[Group]:
     Returns a list of Group objects from the database.
     """
     statement = select(Group)
-    results = await session.exec(statement)
+    results = await session.exec(statement.order_by(Group.id.asc()))
     return results.all()
 
 
@@ -1095,7 +1095,7 @@ async def get_group(
         statement = statement.where(Group.name == group_name)
     if group_id is not None:
         statement = statement.where(Group.id == group_id)
-    results = await session.exec(statement)
+    results = await session.exec(statement.order_by(Group.id.asc()))
     try:
         if group_name is None and group_id is None:
             # TODO: pagination for large amounts of groups

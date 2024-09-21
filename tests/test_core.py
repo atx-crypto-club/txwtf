@@ -2361,6 +2361,23 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 await get_group(session, group_name=group),
                 groups, "missing group")
 
+            system_changes = await session.exec(
+                select(SystemLog).order_by(SystemLog.id.asc())
+            )
+            last_changes = system_changes.all()
+            self.assertEqual(
+                last_changes[0].event_code,
+                SystemLogEventCode.GroupCreate
+            )
+            self.assertEqual(
+                last_changes[0].event_desc,
+                "creating new group {} [{}]".format(
+                    groups[0].name,
+                    groups[0].id
+                )
+            )
+            
+
     async def test_create_multiple_groups(self):
         """
         Test for group creation and that we have the correct
@@ -2385,6 +2402,23 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 await get_group(session, group_name=group2),
                 groups, "missing group")
 
+            system_changes = await session.exec(
+                select(SystemLog).order_by(SystemLog.id.asc())
+            )
+            last_changes = system_changes.all()
+            for i in  [0, 1]:
+                self.assertEqual(
+                    last_changes[i].event_code,
+                    SystemLogEventCode.GroupCreate
+                )
+                self.assertEqual(
+                    last_changes[i].event_desc,
+                    "creating new group {} [{}]".format(
+                        groups[i].name,
+                        groups[i].id
+                    )
+                )
+
     async def test_remove_group(self):
         """
         Test for group removal.
@@ -2397,6 +2431,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             # when
             await create_group(session, group1)
             await create_group(session, group2)
+            groups = await get_groups(session)
 
             # then
             self.assertTrue(await has_group(session, group1))
@@ -2408,6 +2443,34 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             # then
             self.assertTrue(await has_group(session, group1))
             self.assertFalse(await has_group(session, group2))
+
+            system_changes = await session.exec(
+                select(SystemLog).order_by(SystemLog.id.asc())
+            )
+            last_changes = system_changes.all()
+            for i in  [0, 1]:
+                self.assertEqual(
+                    last_changes[i].event_code,
+                    SystemLogEventCode.GroupCreate
+                )
+                self.assertEqual(
+                    last_changes[i].event_desc,
+                    "creating new group {} [{}]".format(
+                        groups[i].name,
+                        groups[i].id
+                    )
+                )
+            self.assertEqual(
+                last_changes[2].event_code,
+                SystemLogEventCode.GroupDelete
+            )
+            self.assertEqual(
+                last_changes[2].event_desc,
+                "deleting group {} [{}]".format(
+                    groups[1].name,
+                    groups[1].id
+                )
+            )
 
 
 if __name__ == "__main__":
