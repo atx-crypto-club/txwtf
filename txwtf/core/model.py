@@ -209,3 +209,9 @@ class AuthorizedSession(ClientTracking, table=True):
     expires_time: Optional[datetime] = Field(
         default_factory=lambda: datetime.utcnow() + timedelta(hours=1)
     )
+
+
+class GroupPermission(SystemObject, table=True):
+    group_id: int = Field(index=True, foreign_key="group.id")
+    permission_code: int
+

@@ -52,3 +52,24 @@ ErrorCode = IntEnum(
         "GroupMissingUser",
     ],
 )
+
+
+PermissionCode = IntEnum(
+    "PermissionCode",
+    [
+        "get_setting_record",
+        "has_setting",
+        "list_setting",
+        "set_setting",
+        "get_user",
+        "get_groups",
+        "get_group",
+        "has_group",
+        "create_group",
+        "remove_group",
+        "is_user_in_group",
+        "add_user_to_group",
+        "remove_user_from_group",
+        "get_users_groups",
+    ],
+)
