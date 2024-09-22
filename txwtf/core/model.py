@@ -141,7 +141,7 @@ class GlobalSettings(SystemObject, table=True):
     accessed_time: datetime = Field(default_factory=datetime.utcnow)
 
 
-class ClientTracking(SQLModel):
+class ClientTracking(SystemObject):
     referrer: Optional[str] = Field(
         default=None,
         sa_type=String(512),
@@ -177,10 +177,6 @@ class EventLog(ClientTracking):
 
 
 class SystemLog(EventLog, table=True):
-    id: Optional[int] = Field(
-        default=None,
-        primary_key=True
-    )
     user_id: Optional[int] = Field(
         default=None,
         foreign_key="user.id"
@@ -192,7 +188,6 @@ class SystemLog(EventLog, table=True):
 
 
 class AuthorizedSession(ClientTracking, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
     uuid: Optional[str] = Field(
         default_factory=lambda: str(uuid.uuid4()),
         sa_type=String(48),
