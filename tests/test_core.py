@@ -64,7 +64,8 @@ from txwtf.core import (
     get_users_permissions,
     authorize_database_session,
     add_group_permission,
-    remove_group_permission
+    remove_group_permission,
+    get_groups_users,
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -2850,6 +2851,39 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             except TXWTFError as e:
                 code, _ = e.args
             self.assertIsNone(code)
+
+    async def test_get_groups_users(self):
+        """
+        Test that we return a group's users correctly.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            group2_name = "group2"
+            user_ids = [69, 420, 1337]
+
+            # when
+            group1 = await create_group(session, group1_name)
+            group2 = await create_group(session, group2_name)
+
+            for user_id in user_ids:
+                await add_user_to_group(session, group1.id, user_id)
+                await add_user_to_group(session, group2.id, user_id)
+
+            # then
+            self.assertEqual(
+                user_ids,
+                await get_groups_users(session, group1.id)
+            )
+
+            # when
+            await remove_user_from_group(session, group1.id, user_ids[2])
+
+            # then
+            self.assertEqual(
+                user_ids[:-1],
+                await get_groups_users(session, group1.id)
+            )
 
 
 if __name__ == "__main__":

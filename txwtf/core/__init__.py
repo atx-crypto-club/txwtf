@@ -1570,3 +1570,29 @@ async def remove_group_permission(
         request,
         cur_time,
     )
+
+
+async def get_groups_users(
+    session: AsyncSession,
+    group_id: int,
+) -> List[int]:
+    """
+    Return a list of user_ids that belong to the specified group.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_groups_users
+    )
+    
+    statement = select(GroupAssociation).where(
+        GroupAssociation.group_id == group_id
+    )
+    results = await session.exec(
+        statement.order_by(
+            GroupAssociation.user_id.asc()
+        )
+    )
+    user_list = []
+    for ga in results.all():
+        user_list.append(ga.user_id)
+    return user_list
