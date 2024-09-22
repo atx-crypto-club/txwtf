@@ -2676,12 +2676,13 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
             code = None
             try:
-                session.__user_id = user_id
-                await authorize_database_session(
-                    session,
-                    PermissionCode.get_groups
-                )
-                del session.__user_id
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
             except TXWTFError as e:
                 code, _ = e.args
 

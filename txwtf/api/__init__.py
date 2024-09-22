@@ -107,7 +107,7 @@ def get_user_router(
     jwt_algorithm: str = None
 ) -> APIRouter:
     router = APIRouter(
-        # tags=["user"],
+        tags=["user"],
         responses={
             400: {"description": "Bad Request"},
             401: {"description": "Unauthorized"},
@@ -116,7 +116,11 @@ def get_user_router(
         },
     )
 
-    @router.post("/register", tags=["auth"], response_model=User)
+    @router.post(
+        "/register",
+        #tags=["auth"],
+        response_model=User
+    )
     async def register(
         user: Registration,
         request: Request,
@@ -134,7 +138,11 @@ def get_user_router(
                     request_compat(request, user_agent),
                 )
 
-    @router.post("/login", tags=["auth"], response_model=LoginResponse)
+    @router.post(
+        "/login",
+        # tags=["auth"],
+        response_model=LoginResponse
+    )
     async def login(
         login: Login,
         request: Request,
@@ -161,7 +169,7 @@ def get_user_router(
 
     @router.get(
         "/logout",
-        tags=["auth"],
+        # tags=["auth"],
         response_model=ResponseSchema,
     )
     async def logout(
@@ -204,7 +212,7 @@ def get_user_router(
 
     @router.get(
         "/sessions",
-        tags=["auth"],
+        # tags=["auth"],
         response_model=List[AuthorizedSession],
     )
     async def get_sessions(

@@ -1359,13 +1359,10 @@ async def remove_user_from_group(
     await session.commit()
 
 
-async def get_users_groups(
+async def _get_users_groups(
     session: AsyncSession,
     user_id: int,
 ) -> List[Group]:
-    """
-    Return a list of groups that a user belongs to.
-    """
     statement = select(GroupAssociation).where(
         GroupAssociation.user_id == user_id
     )
@@ -1381,15 +1378,25 @@ async def get_users_groups(
     return group_list
 
 
-async def get_users_permissions(
+async def get_users_groups(
+    session: AsyncSession,
+    user_id: int,
+) -> List[Group]:
+    """
+    Return a list of groups that a user belongs to.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_users_groups
+    )
+    return await _get_users_groups(session, user_id)
+    
+
+async def _get_users_permissions(
     session: AsyncSession,
     user_id: int,
 ) -> List[PermissionCode]:
-    """
-    Get a list of permission codes for a user given the groups
-    they are apart of.
-    """
-    groups = await get_users_groups(session, user_id)
+    groups = await _get_users_groups(session, user_id)
     permissions = set()
     for group in groups:
         statement = select(GroupPermission).where(
@@ -1399,6 +1406,21 @@ async def get_users_permissions(
         for result in results.all():
             permissions.add(result.permission_code)
     return list(permissions)
+
+
+async def get_users_permissions(
+    session: AsyncSession,
+    user_id: int,
+) -> List[PermissionCode]:
+    """
+    Get a list of permission codes for a user given the groups
+    they are apart of.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_users_permissions
+    )
+    return await _get_users_permissions(session, user_id)
 
 
 async def authorize_database_session(
@@ -1419,7 +1441,7 @@ async def authorize_database_session(
     if user_id == 0:
         return
 
-    perms = await get_users_permissions(
+    perms = await _get_users_permissions(
         session, user_id
     )
     if permission_code not in perms:

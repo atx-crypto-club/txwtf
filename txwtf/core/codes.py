@@ -72,10 +72,12 @@ PermissionCode = IntEnum(
         "has_group",
         "create_group",
         "remove_group",
+        "get_users_groups",
         "is_user_in_group",
         "add_user_to_group",
         "remove_user_from_group",
         "add_group_permissions",
         "remove_group_permission",
+        "get_users_permissions",
     ],
 )
