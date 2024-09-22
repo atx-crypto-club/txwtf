@@ -164,6 +164,10 @@ async def get_setting_record(
     default: Optional[Any] = None,
     now: Optional[datetime] = None
 ) -> GlobalSettings:
+    await authorize_database_session(
+        session,
+        PermissionCode.get_setting_record
+    )
 
     if now is None:
         now = datetime.utcnow()
@@ -225,6 +229,11 @@ async def has_setting(
     Returns a whether args with parent id points to an
     existing record.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.has_setting
+    )
+
     for var in args:
         statement = select(GlobalSettings).where(
             GlobalSettings.var == var,
@@ -251,6 +260,11 @@ async def list_setting(
     """
     Returns a list of child vars for this setting.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.list_setting
+    )
+
     retval = []
     setting = await get_setting_record(
         session, *args, parent_id=parent_id
@@ -284,6 +298,11 @@ async def set_setting(
     """
     Sets a setting to the global settings table.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.set_setting
+    )
+
     var = args[:-1]
     value = str(args[-1])
     setting = await get_setting_record(
@@ -1060,6 +1079,11 @@ async def get_user(
     Returns a user object from the database given a
     user_id or username.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_user
+    )
+
     statement = select(User)
     if user_id is not None:
         statement.where(User.id == user_id)
@@ -1082,6 +1106,11 @@ async def get_groups(session: AsyncSession) -> List[Group]:
     """
     Returns a list of Group objects from the database.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_groups
+    )
+
     statement = select(Group)
     results = await session.exec(statement.order_by(Group.id.asc()))
     return results.all()
@@ -1095,6 +1124,11 @@ async def get_group(
     """
     Returns a Group object given group_name or id.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_group
+    )
+
     statement = select(Group)
     if group_name is not None:
         statement = statement.where(Group.name == group_name)
@@ -1118,6 +1152,11 @@ async def has_group(
     group_id: Optional[int] = None,
     group_name: Optional[str] = None
 ) -> bool:
+    await authorize_database_session(
+        session,
+        PermissionCode.has_group
+    )
+
     statement = select(Group)
     if group_name is not None:
         statement = statement.where(Group.name == group_name)
@@ -1138,6 +1177,11 @@ async def create_group(
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None,
 ) -> Group:
+    await authorize_database_session(
+        session,
+        PermissionCode.create_group
+    )
+
     if await has_group(session, name):
         raise GroupError(
             ErrorCode.GroupExists,
@@ -1169,6 +1213,11 @@ async def remove_group(
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None,
 ) -> None:
+    await authorize_database_session(
+        session,
+        PermissionCode.remove_group
+    )
+
     if not await has_group(session, group_name=name):
         raise GroupError(
             ErrorCode.InvalidGroup,
@@ -1203,6 +1252,11 @@ async def is_user_in_group(
     group_id: int,
     user_id: int
 ) -> Group:
+    await authorize_database_session(
+        session,
+        PermissionCode.is_user_in_group
+    )
+
     if not await has_group(session, group_id=group_id):
         raise GroupError(
             ErrorCode.InvalidGroup,
@@ -1233,6 +1287,11 @@ async def add_user_to_group(
     """
     Adds a user to a group. The user inherets the group's permissions.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.add_user_to_group
+    )
+
     if await is_user_in_group(session, group_id, user_id):
         raise GroupError(
             ErrorCode.GroupHasUser,
@@ -1266,6 +1325,11 @@ async def remove_user_from_group(
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None
 ) -> None:
+    await authorize_database_session(
+        session,
+        PermissionCode.remove_user_from_group
+    )
+
     if not await is_user_in_group(session, group_id, user_id):
         raise GroupError(
             ErrorCode.GroupMissingUser,
@@ -1321,6 +1385,10 @@ async def get_users_permissions(
     session: AsyncSession,
     user_id: int,
 ) -> List[PermissionCode]:
+    """
+    Get a list of permission codes for a user given the groups
+    they are apart of.
+    """
     groups = await get_users_groups(session, user_id)
     permissions = set()
     for group in groups:
@@ -1374,6 +1442,11 @@ async def add_group_permission(
     and restrict it to certain users based on what groups they're
     in.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.add_group_permissions
+    )
+
     if not await has_group(session, group_id=group_id):
         raise PermissionError(
             ErrorCode.InvalidGroup,
@@ -1430,6 +1503,11 @@ async def remove_group_permission(
     """
     Removes a permission code associated with a group.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.remove_group_permission
+    )
+
     if not await has_group(session, group_id=group_id):
         raise PermissionError(
             ErrorCode.InvalidGroup,
