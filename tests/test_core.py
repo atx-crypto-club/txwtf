@@ -2688,9 +2688,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             # then
             self.assertIsNone(code)
 
-    async def test_add_group_permission(self):
+    async def test_add_remove_group_permission(self):
         """
-        Test that we can add a group permission.
+        Test that we can add then remove a group permission.
         """
         async with get_session(self._engine) as session:
             # with
@@ -2740,6 +2740,30 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             except TXWTFError as e:
                 code, _ = e.args
             self.assertIsNone(code)
+
+            # when
+            await remove_group_permission(
+                session,
+                group1.id,
+                PermissionCode.get_groups
+            )
+
+            # then
+            code = None
+            ex = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
+            except TXWTFError as e:
+                ex = e
+                code, _ = e.args
+            self.assertIsInstance(ex, PermissionError)
+            self.assertEqual(code, ErrorCode.AccessDenied)
 
 
 if __name__ == "__main__":
