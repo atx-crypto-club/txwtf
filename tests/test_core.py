@@ -2765,6 +2765,91 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertIsInstance(ex, PermissionError)
             self.assertEqual(code, ErrorCode.AccessDenied)
 
+    async def test_remove_permission_when_group_delete(self):
+        """
+        Test that user can lose permissions if a group he's in is deleted.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            group2_name = "group2"
+            user_id = 420
+
+            # when
+            group1 = await create_group(session, group1_name)
+            group2 = await create_group(session, group2_name)
+            groups = await get_groups(session)
+
+            await add_user_to_group(session, group1.id, user_id)
+            await add_user_to_group(session, group2.id, user_id)
+            await add_group_permission(
+                session,
+                group1.id,
+                PermissionCode.get_groups
+            )
+            await add_group_permission(
+                session,
+                group2.id,
+                PermissionCode.create_group
+            )
+
+            # then
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertIsNone(code)
+
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.create_group
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertIsNone(code)
+
+            # when
+            await remove_group(session, group1_name)
+
+            # then
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertEqual(code, ErrorCode.AccessDenied)
+
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.create_group
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertIsNone(code)
+
 
 if __name__ == "__main__":
     unittest.main()
