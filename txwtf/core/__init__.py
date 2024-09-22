@@ -808,6 +808,8 @@ async def log_system_change(
             "remote_addr": remote_addr(request),
             "endpoint": str(request.endpoint),
         })
+    if hasattr(session, "__user_id"):
+        log_data["auth_user_id"] = session.__user_id
 
     new_log = SystemLog(**log_data)
     session.add(new_log)

@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import Optional
 
 from decouple import config
 
@@ -20,6 +21,17 @@ async def init_db(engine: AsyncEngine) -> None:
 
 
 @asynccontextmanager
-async def get_session(engine):
-    async with AsyncSession(engine, expire_on_commit=False) as session:
+async def get_session(
+    engine: AsyncEngine,
+    user_id: Optional[int] = 0):
+    async with AsyncSession(
+        engine,
+        expire_on_commit=False
+    ) as session:
+        
+        # associate a user_id with the session
+        # for access control in core methods
+        # 0 is the root user id.
+        session.__user_id = user_id
+
         yield session
