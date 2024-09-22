@@ -35,3 +35,5 @@ async def get_session(
         session.__user_id = user_id
 
         yield session
+
+        del session.__user_id

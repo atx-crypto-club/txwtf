@@ -39,3 +39,7 @@ class UserError(TXWTFError):
 
 class GroupError(TXWTFError):
     pass
+
+
+class PermissionError(TXWTFError):
+    pass

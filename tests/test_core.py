@@ -14,7 +14,11 @@ from werkzeug.security import check_password_hash
 from sqlmodel import SQLModel, Session, select
 
 import txwtf.core
-from txwtf.core.codes import ErrorCode, SystemLogEventCode
+from txwtf.core.codes import (
+    ErrorCode,
+    SystemLogEventCode,
+    PermissionCode
+)
 from txwtf.core import (
     sign_jwt,
     decode_jwt,
@@ -56,7 +60,11 @@ from txwtf.core import (
     is_user_in_group,
     add_user_to_group,
     remove_user_from_group,
-    get_users_groups
+    get_users_groups,
+    get_users_permissions,
+    authorize_database_session,
+    add_group_permission,
+    remove_group_permission
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -85,6 +93,7 @@ from txwtf.core.errors import (
     AuthorizedSessionError,
     UserError,
     GroupError,
+    PermissionError,
 )
 from txwtf.core.db import get_engine, init_db, get_session, get_session
 from txwtf.core.model import (
@@ -2657,6 +2666,80 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 await get_users_groups(session, user_id)
             )
 
+    async def test_authorize_database_session_root(self):
+        """
+        Test that root doesn't raise an error.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            user_id = 0
+
+            code = None
+            try:
+                session.__user_id = user_id
+                await authorize_database_session(
+                    session,
+                    PermissionCode.get_groups
+                )
+                del session.__user_id
+            except TXWTFError as e:
+                code, _ = e.args
+
+            # then
+            self.assertIsNone(code)
+
+    async def test_add_group_permission(self):
+        """
+        Test that we can add a group permission.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            user_id = 420
+
+            # then
+            code = None
+            ex = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
+            except TXWTFError as e:
+                ex = e
+                code, _ = e.args
+            self.assertIsInstance(ex, PermissionError)
+            self.assertEqual(code, ErrorCode.AccessDenied)
+
+            # when
+            group1 = await create_group(session, group1_name)
+            await add_group_permission(
+                session,
+                group1.id,
+                PermissionCode.get_groups
+            )
+            await add_user_to_group(
+                session,
+                group1.id,
+                user_id,
+            )
+
+            # then
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertIsNone(code)
 
 
 if __name__ == "__main__":

@@ -35,8 +35,9 @@ from txwtf.core.model import (
     GroupAssociation,
     User,
     SystemLog,
+    GroupPermission
 )
-from txwtf.core.codes import SystemLogEventCode, ErrorCode
+from txwtf.core.codes import SystemLogEventCode, ErrorCode, PermissionCode
 from txwtf.core.defaults import (
     SITE_LOGO,
     AVATAR,
@@ -62,6 +63,7 @@ from txwtf.core.errors import (
     SettingsError,
     UserError,
     GroupError,
+    PermissionError,
     TXWTFError,
 )
 
@@ -170,7 +172,8 @@ async def get_setting_record(
     for idx, var in enumerate(args):
         if not valid_identifier(var):
             raise SettingsError(
-                ErrorCode.InvalidIdentifier, "Invalid indentifier " + var
+                ErrorCode.InvalidIdentifier,
+                "Invalid indentifier " + var
             )
         val = None
         if idx == len(args) - 1:
@@ -1227,6 +1230,9 @@ async def add_user_to_group(
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None,
 ) -> GroupAssociation:
+    """
+    Adds a user to a group. The user inherets the group's permissions.
+    """
     if await is_user_in_group(session, group_id, user_id):
         raise GroupError(
             ErrorCode.GroupHasUser,
@@ -1309,3 +1315,158 @@ async def get_users_groups(
         statement = select(Group).where(Group.id == ga.group_id)
         group_list.append((await session.exec(statement)).one())
     return group_list
+
+
+async def get_users_permissions(
+    session: AsyncSession,
+    user_id: int,
+) -> List[PermissionCode]:
+    groups = await get_users_groups(session, user_id)
+    permissions = set()
+    for group in groups:
+        statement = select(GroupPermission).where(
+            GroupPermission.group_id == group.id
+        )
+        results = await session.exec(statement)
+        for result in results.all():
+            permissions.add(result.permission_code)
+    return list(permissions)
+
+
+async def authorize_database_session(
+    session: AsyncSession,
+    permission_code: int
+) -> None:
+    """
+    Raises an exception if the database session is not authorized
+    for this task.
+    """
+    # noop if no user id associated with this session
+    if not hasattr(session, "__user_id"):
+        return
+    
+    user_id = session.__user_id
+
+    # if user is root, pass it
+    if user_id == 0:
+        return
+
+    perms = await get_users_permissions(
+        session, user_id
+    )
+    if permission_code not in perms:
+        raise PermissionError(
+            ErrorCode.AccessDenied,
+            "Access Denied!!"
+        )
+
+
+async def add_group_permission(
+    session: AsyncSession,
+    group_id: int,
+    permission_code: PermissionCode,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None
+) -> GroupPermission:
+    """
+    Add a permission code to a group. This allows a simple
+    way to authorize functionality that changes the database
+    and restrict it to certain users based on what groups they're
+    in.
+    """
+    if not await has_group(session, group_id=group_id):
+        raise PermissionError(
+            ErrorCode.InvalidGroup,
+            "Group {} doesn't exist".format(group_id)
+        )
+
+    # see if there is already one to avoid duplicates
+    statement = select(GroupPermission).where(
+        GroupPermission.group_id == group_id
+    ).where(
+        GroupPermission.permission_code == permission_code
+    )
+    results = await session.exec(statement)
+    gp = None
+    try:
+        gp = results.one()
+    except NoResultFound:
+        pass
+    if gp is not None:
+        raise PermissionError(
+            ErrorCode.PermissionAlreadySet,
+            "Permission {} for group {} already set".format(
+                permission_code, 
+                group_id
+            )
+        )
+
+    gp = GroupPermission(
+        group_id=group_id,
+        permission_code=permission_code
+    )
+    session.add(gp)
+    await session.commit()
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupAddPermission,
+        "adding permission {} to group {}".format(
+            permission_code,
+            group_id
+        ),
+        request,
+        cur_time,
+    )
+
+
+async def remove_group_permission(
+    session: AsyncSession,
+    group_id: int,
+    permission_code: PermissionCode,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None
+) -> GroupPermission:
+    """
+    Removes a permission code associated with a group.
+    """
+    if not await has_group(session, group_id=group_id):
+        raise PermissionError(
+            ErrorCode.InvalidGroup,
+            "Group {} doesn't exist".format(group_id)
+        )
+
+    # find the record
+    statement = select(GroupPermission).where(
+        GroupPermission.group_id == group_id
+    ).where(
+        GroupPermission.permission_code == permission_code
+    )
+    results = await session.exec(statement)
+    gp = None
+    try:
+        gp = results.one()
+    except NoResultFound:
+        pass
+    if gp is None:
+        raise PermissionError(
+            ErrorCode.PermissionNotSet,
+            "Permission {} for group {} not set".format(
+                permission_code, 
+                group_id
+            )
+        )
+
+    await session.delete(gp)
+    await session.commit()
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupRemovePermission,
+        "removing permission {} from group {}".format(
+            permission_code,
+            group_id
+        ),
+        request,
+        cur_time,
+    )

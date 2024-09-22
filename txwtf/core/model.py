@@ -8,10 +8,21 @@ from pydantic import EmailStr
 from sqlmodel import SQLModel, Column, Field
 from sqlalchemy import DateTime, String, func
 
+from txwtf.core.codes import PermissionCode
 
-class ObjectMetadata(SQLModel, table=True):
-    id: Optional[int] = Field(
-        default=None, primary_key=True
+
+class SystemObject(SQLModel):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    metadata_id: Optional[int] = Field(default=None, foreign_key="objectmetadata.id")
+
+
+class ObjectMetadata(SystemObject, table=True):
+    uuid: Optional[str] = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        sa_type=String(48),
+        max_length=48,
+        unique=True,
+        index=True,
     )
     desc: Optional[str] = Field(
         default=None,
@@ -29,10 +40,13 @@ class ObjectMetadata(SQLModel, table=True):
     )
     created_by: Optional[int] = Field(default=None, foreign_key="user.id")
 
-
-class SystemObject(SQLModel):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    metadata_id: Optional[int] = Field(default=None, foreign_key="objectmetadata.id")
+    # reverse lookup
+    group_id: Optional[int] = Field(default=None, foreign_key="group.id")
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    ga_id: Optional[int] = Field(default=None, foreign_key="groupassociation.id")
+    settings_id: Optional[int] = Field(default=None, foreign_key="globalsettings.id")
+    system_log_id: Optional[int] = Field(default=None, foreign_key="systemlog.id")
+    as_id: Optional[int] = Field(default=None, foreign_key="authorizedsession.id")
 
 
 class Group(SystemObject, table=True):
@@ -208,5 +222,4 @@ class AuthorizedSession(ClientTracking, table=True):
 
 class GroupPermission(SystemObject, table=True):
     group_id: int = Field(index=True, foreign_key="group.id")
-    permission_code: int
-
+    permission_code: PermissionCode

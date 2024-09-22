@@ -13,7 +13,9 @@ SystemLogEventCode = IntEnum(
         "GroupCreate",
         "GroupDelete",
         "GroupAddUser",
-        "GroupRemoveUser"
+        "GroupRemoveUser",
+        "GroupAddPermission",
+        "GroupRemovePermission"
     ],
 )
 
@@ -50,6 +52,9 @@ ErrorCode = IntEnum(
         "GroupHasUser",
         "InvalidGroup",
         "GroupMissingUser",
+        "AccessDenied",
+        "PermissionAlreadySet",
+        "PermissionNotSet",
     ],
 )
 
