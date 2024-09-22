@@ -49,6 +49,6 @@ ErrorCode = IntEnum(
         "GroupExists",
         "GroupHasUser",
         "InvalidGroup",
-        "MissingUser",
+        "GroupMissingUser",
     ],
 )

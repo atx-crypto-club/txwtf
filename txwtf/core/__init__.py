@@ -1108,9 +1108,17 @@ async def get_group(
         )
 
 
-async def has_group(session: AsyncSession, name: str) -> bool:
-    statement = select(Group).where(Group.name == name)
-    results = await session.exec(statement)
+async def has_group(
+    session: AsyncSession, 
+    group_id: Optional[int] = None,
+    group_name: Optional[str] = None
+) -> bool:
+    statement = select(Group)
+    if group_name is not None:
+        statement = statement.where(Group.name == group_name)
+    if group_id is not None:
+        statement = statement.where(Group.id == group_id)
+    results = await session.exec(statement.order_by(Group.id.asc()))
     group = None
     try:
         group = results.one()
@@ -1122,7 +1130,8 @@ async def has_group(session: AsyncSession, name: str) -> bool:
 async def create_group(
     session: AsyncSession,
     name: str,
-    request: Optional[Any] = None
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
 ) -> Group:
     if await has_group(session, name):
         raise GroupError(
@@ -1143,6 +1152,7 @@ async def create_group(
             group.id
         ),
         request,
+        cur_time
     )
 
     return group
@@ -1151,9 +1161,10 @@ async def create_group(
 async def remove_group(
     session: AsyncSession,
     name: str,
-    request: Optional[Any] = None
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
 ) -> None:
-    if not await has_group(session, name):
+    if not await has_group(session, group_name=name):
         raise GroupError(
             ErrorCode.InvalidGroup,
             "Group {} doesn't exist".format(name)
@@ -1169,6 +1180,7 @@ async def remove_group(
             group.id
         ),
         request,
+        cur_time
     )
     
     statement = select(GroupAssociation).where(
@@ -1186,6 +1198,12 @@ async def is_user_in_group(
     group_id: int,
     user_id: int
 ) -> Group:
+    if not await has_group(session, group_id=group_id):
+        raise GroupError(
+            ErrorCode.InvalidGroup,
+            "Group {} doesn't exist".format(group_id)
+        )
+
     statement = select(GroupAssociation).where(
         GroupAssociation.group_id == group_id
     ).where(
@@ -1204,7 +1222,8 @@ async def add_user_to_group(
     session: AsyncSession,
     group_id: int,
     user_id: int,
-    request: Optional[Any] = None
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
 ) -> GroupAssociation:
     if await is_user_in_group(session, group_id, user_id):
         raise GroupError(
@@ -1225,7 +1244,8 @@ async def add_user_to_group(
             group_id
         ),
         request,
-        user_id,
+        cur_time,
+        user_id
     )
 
     return ga
@@ -1235,11 +1255,12 @@ async def remove_user_from_group(
     session: AsyncSession,
     group_id: int,
     user_id: int,
-    request: Optional[Any] = None
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None
 ) -> None:
     if not await is_user_in_group(session, group_id, user_id):
         raise GroupError(
-            ErrorCode.MissingUser,
+            ErrorCode.GroupMissingUser,
             "Group {} missing user {}".format(group_id, user_id)
         )
 
@@ -1251,6 +1272,7 @@ async def remove_user_from_group(
             group_id
         ),
         request,
+        cur_time,
         user_id,
     )
 
@@ -1261,5 +1283,27 @@ async def remove_user_from_group(
     )
     results = await session.exec(statement)
     for ga in results.all():
-        session.delete(ga)
+        await session.delete(ga)
     await session.commit()
+
+
+async def get_users_groups(
+    session: AsyncSession,
+    user_id: int,
+) -> List[Group]:
+    """
+    Return a list of groups that a user belongs to.
+    """
+    statement = select(GroupAssociation).where(
+        GroupAssociation.user_id == user_id
+    )
+    results = await session.exec(
+        statement.order_by(
+            GroupAssociation.group_id.asc()
+        )
+    )
+    group_list = []
+    for ga in results.all():
+        statement = select(Group).where(Group.id == ga.group_id)
+        group_list.append((await session.exec(statement)).one())
+    return group_list

@@ -53,6 +53,10 @@ from txwtf.core import (
     has_group,
     create_group,
     remove_group,
+    is_user_in_group,
+    add_user_to_group,
+    remove_user_from_group,
+    get_users_groups
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -80,6 +84,7 @@ from txwtf.core.errors import (
     LogoutError,
     AuthorizedSessionError,
     UserError,
+    GroupError,
 )
 from txwtf.core.db import get_engine, init_db, get_session, get_session
 from txwtf.core.model import (
@@ -2355,7 +2360,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             groups = await get_groups(session)
 
             # then
-            self.assertTrue(await has_group(session, group))
+            self.assertTrue(await has_group(session, group_name=group))
             self.assertEqual(1, len(groups))
             self.assertIn(
                 await get_group(session, group_name=group),
@@ -2377,7 +2382,6 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 )
             )
             
-
     async def test_create_multiple_groups(self):
         """
         Test for group creation and that we have the correct
@@ -2434,15 +2438,15 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             groups = await get_groups(session)
 
             # then
-            self.assertTrue(await has_group(session, group1))
-            self.assertTrue(await has_group(session, group2))
+            self.assertTrue(await has_group(session, group_name=group1))
+            self.assertTrue(await has_group(session, group_name=group2))
 
             # when
             await remove_group(session, group2)
 
             # then
-            self.assertTrue(await has_group(session, group1))
-            self.assertFalse(await has_group(session, group2))
+            self.assertTrue(await has_group(session, group_name=group1))
+            self.assertFalse(await has_group(session, group_name=group2))
 
             system_changes = await session.exec(
                 select(SystemLog).order_by(SystemLog.id.asc())
@@ -2471,6 +2475,188 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                     groups[1].id
                 )
             )
+
+    async def test_is_user_in_group(self):
+        """
+        Test that is_user_in_group throws if invalid group.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1 = "group1"
+            group_id = 31337
+            user_id = 420
+
+            # then
+            try:
+                await is_user_in_group(session, group_id, user_id)
+            except TXWTFError as e:
+                self.assertIsInstance(e, GroupError)
+                code, _ = e.args
+            self.assertEqual(code, ErrorCode.InvalidGroup)
+
+            # when
+            group = await create_group(session, group1)
+
+            # then
+            self.assertFalse(
+                await is_user_in_group(
+                    session, group.id, user_id)
+            )
+
+    async def test_add_user_to_group(self):
+        """
+        Test for group creation and that we have the correct
+        number of groups.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            group2_name = "group2"
+            user_id = 420
+
+            # when
+            group1 = await create_group(session, group1_name)
+            group2 = await create_group(session, group2_name)
+            groups = await get_groups(session)
+
+            # then
+            self.assertFalse(
+                await is_user_in_group(
+                    session, group1.id, user_id))
+            self.assertFalse(
+                await is_user_in_group(
+                    session, group2.id, user_id))
+
+            # when
+            await add_user_to_group(session, group1.id, user_id)
+
+            # then
+            self.assertTrue(
+                await is_user_in_group(
+                    session, group1.id, user_id))
+            self.assertFalse(
+                await is_user_in_group(
+                    session, group2.id, user_id))
+
+            system_changes = await session.exec(
+                select(SystemLog).order_by(SystemLog.id.asc())
+            )
+            last_changes = system_changes.all()
+            for i in  [0, 1]:
+                self.assertEqual(
+                    last_changes[i].event_code,
+                    SystemLogEventCode.GroupCreate
+                )
+                self.assertEqual(
+                    last_changes[i].event_desc,
+                    "creating new group {} [{}]".format(
+                        groups[i].name,
+                        groups[i].id
+                    )
+                )
+            self.assertEqual(
+                last_changes[2].event_code,
+                SystemLogEventCode.GroupAddUser
+            )
+            self.assertEqual(
+                last_changes[2].event_desc,
+                "added user {} to group {}".format(
+                    user_id,
+                    groups[0].id
+                )
+            )
+
+    async def test_remove_user_from_group_failure(self):
+        """
+        Test that is_user_in_group throws if invalid group.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1 = "group1"
+            user_id = 420
+
+            # when
+            group = await create_group(session, group1)
+
+            # then
+            try:
+                await remove_user_from_group(
+                    session, group.id, user_id
+                )
+            except TXWTFError as e:
+                self.assertIsInstance(e, GroupError)
+                code, _ = e.args
+            self.assertEqual(code, ErrorCode.GroupMissingUser)
+
+            # then
+            self.assertFalse(
+                await is_user_in_group(
+                    session, group.id, user_id)
+            )
+
+    async def test_remove_user_from_group(self):
+        """
+        Test that we can add then remove a user from a group.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1 = "group1"
+            user_id = 420
+
+            # when
+            group = await create_group(session, group1)
+            await add_user_to_group(session, group.id, user_id)
+
+            # then
+            self.assertTrue(
+                await is_user_in_group(
+                    session, group.id, user_id))
+            
+            # when
+            await remove_user_from_group(
+                session,
+                group.id,
+                user_id
+            )
+
+            # then
+            self.assertFalse(
+                await is_user_in_group(
+                    session, group.id, user_id))
+
+    async def test_remove_user_from_group_when_group_delete(self):
+        """
+        Test that a user is removed properly when a group is deleted.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            group2_name = "group2"
+            user_id = 420
+
+            # when
+            group1 = await create_group(session, group1_name)
+            group2 = await create_group(session, group2_name)
+            groups = await get_groups(session)
+
+            await add_user_to_group(session, group1.id, user_id)
+            await add_user_to_group(session, group2.id, user_id)
+
+            # then
+            self.assertEqual(
+                [group1, group2],
+                await get_users_groups(session, user_id)
+            )
+
+            # when
+            await remove_group(session, group2_name)
+
+            # then
+            self.assertEqual(
+                [group1],
+                await get_users_groups(session, user_id)
+            )
+
 
 
 if __name__ == "__main__":
