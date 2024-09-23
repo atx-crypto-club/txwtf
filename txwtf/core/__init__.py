@@ -1077,7 +1077,8 @@ async def get_user(
 ) -> Union[User, List[User]]:
     """
     Returns a user object from the database given a
-    user_id or username.
+    user_id or username. If neither are provided,
+    returns a list of all users.
     """
     await authorize_database_session(
         session,
@@ -1102,6 +1103,12 @@ async def get_user(
         )
 
 
+async def _get_groups(session: AsyncSession) -> List[Group]:
+    statement = select(Group)
+    results = await session.exec(statement.order_by(Group.id.asc()))
+    return results.all()
+
+
 async def get_groups(session: AsyncSession) -> List[Group]:
     """
     Returns a list of Group objects from the database.
@@ -1110,10 +1117,7 @@ async def get_groups(session: AsyncSession) -> List[Group]:
         session,
         PermissionCode.get_groups
     )
-
-    statement = select(Group)
-    results = await session.exec(statement.order_by(Group.id.asc()))
-    return results.all()
+    return await _get_groups(session)
 
 
 async def get_group(
@@ -1439,6 +1443,10 @@ async def authorize_database_session(
 
     # if user is root, pass it
     if user_id == 0:
+        return
+
+    # if no groups, assume all users are root
+    if len(await _get_groups(session)) == 0:
         return
 
     perms = await _get_users_permissions(

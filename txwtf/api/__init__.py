@@ -175,7 +175,13 @@ def get_user_router(
     async def logout(
         request: Request,
         token_payload: Annotated[
-            JWTBearer, Depends(JWTBearer(engine, jwt_secret, jwt_algorithm))
+            JWTBearer, Depends(
+                JWTBearer(
+                    engine,
+                    jwt_secret,
+                    jwt_algorithm
+                )
+            )
         ],
         user_agent: Annotated[Union[str, None], Header()] = None,
         all: bool = False,
@@ -218,11 +224,20 @@ def get_user_router(
     async def get_sessions(
         verified_only: bool = True,
         token_payload: Annotated[
-            JWTBearer, Depends(JWTBearer(engine, jwt_secret, jwt_algorithm))
+            JWTBearer, Depends(
+                JWTBearer(
+                    engine,
+                    jwt_secret,
+                    jwt_algorithm
+                )
+            )
         ] = None,
     ):
         with map_txwtf_errors(401):
-            async with get_session(engine) as session:
+            async with get_session(
+                engine,
+                user_id=token_payload["user_id"]
+            ) as session:
                 return await authorized_sessions(
                     session,
                     token_payload["user_id"],

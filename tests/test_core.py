@@ -2673,7 +2673,13 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
         """
         async with get_session(self._engine) as session:
             # with
+            group1_name = "group1"
             user_id = 0
+
+            # when there are no groups yet, all users are root
+            # as soon as there is a group, only root can pass
+            # without specific permissions set.
+            await create_group(session, group1_name)
 
             code = None
             try:
@@ -2699,6 +2705,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             group1_name = "group1"
             user_id = 420
 
+            # when
+            group1 = await create_group(session, group1_name)
+
             # then
             code = None
             ex = None
@@ -2717,7 +2726,6 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(code, ErrorCode.AccessDenied)
 
             # when
-            group1 = await create_group(session, group1_name)
             await add_group_permission(
                 session,
                 group1.id,
