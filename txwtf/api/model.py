@@ -6,6 +6,7 @@ from pydantic import EmailStr
 from sqlmodel import SQLModel, Field
 
 from txwtf.core.model import User
+from txwtf.core.codes import PermissionCode
 
 
 class ResponseSchema(SQLModel):
@@ -79,19 +80,3 @@ class UserKey(SQLModel):
                 "username": "root",
             }
         }
-
-
-class GroupName(SQLModel):
-    group_name: str
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "name": "FunGroup"
-            }
-        }
-
-
-class GroupAssociation(SQLModel):
-    group_id: int
-    user_id: int

@@ -1529,7 +1529,7 @@ async def remove_group_permission(
     permission_code: PermissionCode,
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None
-) -> GroupPermission:
+) -> None:
     """
     Removes a permission code associated with a group.
     """
