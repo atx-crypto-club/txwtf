@@ -1255,7 +1255,7 @@ async def is_user_in_group(
     session: AsyncSession,
     group_id: int,
     user_id: int
-) -> Group:
+) -> bool:
     await authorize_database_session(
         session,
         PermissionCode.is_user_in_group
