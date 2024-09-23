@@ -248,6 +248,14 @@ def get_user_router(
     return router
 
 
+description = """
+# txwtf api
+A library for backend services. Provides basic user authentication,
+authorization and other common functionality.
+
+"""
+
+
 def create_app(
     jwt_secret: str = None,
     jwt_algorithm: str = None,
@@ -278,7 +286,22 @@ def create_app(
 
     origins.extend(CORS_ORIGINS)
 
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI(
+        lifespan=lifespan,
+        title="txwtf",
+        summary="A library for backend services.",
+        version=version,
+        description=description,
+        contact={
+            "name": "Joe Rivera",
+            "url": "https://jriv.us",
+            "email": "j@jriv.us",
+        },
+        license_info={
+            "name": "MIT",
+            "url": "https://opensource.org/license/mit",
+        },
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
