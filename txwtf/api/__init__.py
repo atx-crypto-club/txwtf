@@ -745,6 +745,8 @@ def create_app(
     origins: list = [],
 ) -> FastAPI:
 
+    start_time = datetime.utcnow()
+
     # TODO: use pydantic settings and dotenv instead, remove decouple
     if jwt_algorithm is None:
         jwt_algorithm = config("TXWTF_API_JWT_ALGO", default=DEFAULT_JWT_ALGORITHM)
@@ -794,7 +796,8 @@ def create_app(
 
     @app.get("/", tags=["root"])
     async def read_root() -> ResponseSchema:
-        return ResponseSchema(message="txwtf v{}".format(version))
+        return ResponseSchema(message="txwtf v{} - {}".format(
+            version, start_time))
 
     # **** API entry points ****
 

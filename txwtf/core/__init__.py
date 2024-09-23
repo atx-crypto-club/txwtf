@@ -1510,6 +1510,7 @@ async def add_group_permission(
     )
     session.add(gp)
     await session.commit()
+    await session.refresh(gp)
 
     await log_system_change(
         session,
@@ -1521,6 +1522,8 @@ async def add_group_permission(
         request,
         cur_time,
     )
+
+    return gp
 
 
 async def remove_group_permission(
