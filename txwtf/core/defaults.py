@@ -15,7 +15,4 @@ EMAIL_VALIDATE_DELIVERABILITY_ENABLED = 1
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 
-CORS_ORIGINS = [
-    "http://localhost",
-    "http://localhost:8080"
-]
+CORS_ORIGINS = ["http://localhost", "http://localhost:8080"]

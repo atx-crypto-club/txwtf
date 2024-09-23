@@ -18,8 +18,6 @@ from flask_uploads import ALL, UploadSet, configure_uploads
 
 from markdownify import markdownify
 
-from txwtf.core import gen_secret
-
 
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()

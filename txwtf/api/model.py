@@ -10,7 +10,7 @@ from txwtf.core.model import User
 
 class ResponseSchema(SQLModel):
     message: Optional[str] = None
-    code: Optional[int] = 1 #ErrorCode.NoError
+    code: Optional[int] = 1  # ErrorCode.NoError
     data: Optional[dict] = None
 
 

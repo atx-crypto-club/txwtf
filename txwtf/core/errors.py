@@ -2,12 +2,8 @@ class TXWTFError(Exception):
     """
     Base class for all exceptions.
     """
-    def __init__(
-        self,
-        code: int,
-        msg: str,
-        *args
-    ):
+
+    def __init__(self, code: int, msg: str, *args):
         super(Exception, self).__init__(*([code, msg] + list(args)))
         self._code = code
         self._msg = msg
@@ -38,4 +34,12 @@ class AuthorizedSessionError(TXWTFError):
 
 
 class UserError(TXWTFError):
+    pass
+
+
+class GroupError(TXWTFError):
+    pass
+
+
+class PermissionError(TXWTFError):
     pass

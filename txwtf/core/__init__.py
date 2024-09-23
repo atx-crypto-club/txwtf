@@ -1,4 +1,5 @@
 import cProfile
+from collections import defaultdict
 import logging
 from hashlib import sha256
 import pstats
@@ -8,7 +9,7 @@ import sys
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 import time
-from typing import Tuple, Any, List, Optional, Dict
+from typing import Tuple, Any, List, Optional, Dict, Union
 import uuid
 
 import jwt
@@ -17,24 +18,26 @@ from jwt.exceptions import InvalidSignatureError
 from pydantic import EmailStr
 
 from sqlmodel import Session, select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from sqlalchemy.exc import NoResultFound
 
 from email_validator import validate_email, EmailNotValidError
+
+from asyncer import asyncify
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from txwtf.core.model import (
     AuthorizedSession,
     GlobalSettings,
+    Group,
+    GroupAssociation,
     User,
-    UserChange,
-    SystemLog
+    SystemLog,
+    GroupPermission
 )
-from txwtf.core.codes import (
-    SystemLogEventCode,
-    UserChangeEventCode,
-    ErrorCode
-)
+from txwtf.core.codes import SystemLogEventCode, ErrorCode, PermissionCode
 from txwtf.core.defaults import (
     SITE_LOGO,
     AVATAR,
@@ -59,7 +62,9 @@ from txwtf.core.errors import (
     LogoutError,
     SettingsError,
     UserError,
-    TXWTFError
+    GroupError,
+    PermissionError,
+    TXWTFError,
 )
 
 
@@ -94,7 +99,7 @@ def hash(val: str) -> str:
 
 def gen_secret() -> str:
     return hash(str(secrets.SystemRandom().getrandbits(128)))
-    
+
 
 def remote_addr(request):
     """
@@ -113,8 +118,9 @@ def request_compat(request, user_agent):
     request.remote_addr = request.client.host
     request.endpoint = str(request.url)
     request.user_agent = user_agent
-    request.referrer = request.headers.get('referer')
+    request.referrer = request.headers.get("referer")
     return request
+
 
 @contextmanager
 def cli_context(obj):
@@ -150,13 +156,18 @@ def valid_identifier(value):
     return re.match(c_ident_re, value) is not None
 
 
-def get_setting_record(
-        session: Session,
-        *args, 
-        parent_id: Optional[int] = None,
-        create: Optional[bool] = False,
-        default: Optional[Any] = None,
-        now: Optional[datetime] = None) -> GlobalSettings:
+async def get_setting_record(
+    session: AsyncSession,
+    *args,
+    parent_id: Optional[int] = None,
+    create: Optional[bool] = False,
+    default: Optional[Any] = None,
+    now: Optional[datetime] = None
+) -> GlobalSettings:
+    await authorize_database_session(
+        session,
+        PermissionCode.get_setting_record
+    )
 
     if now is None:
         now = datetime.utcnow()
@@ -171,11 +182,18 @@ def get_setting_record(
         val = None
         if idx == len(args) - 1:
             val = default
-        setting = (
-            session.query(GlobalSettings)
-            .filter(GlobalSettings.var == var, GlobalSettings.parent_id == parent_id)
-            .first()
+
+        statement = select(GlobalSettings).where(
+            GlobalSettings.var == var,
+            GlobalSettings.parent_id == parent_id
         )
+        results = await session.exec(statement)
+        setting = None
+        try:
+            setting = results.one()
+        except NoResultFound:
+            pass
+
         if setting is not None:
             setting.accessed_time = now
         if setting is None and create:
@@ -189,7 +207,7 @@ def get_setting_record(
             )
             session.add(setting)
         if create or setting is not None:
-            session.commit()
+            await session.commit()
         if setting is None and not create:
             parent_id_str = ""
             if parent_id is not None:
@@ -203,195 +221,287 @@ def get_setting_record(
     return setting
 
 
-def has_setting(
-        session: Session,
-        *args,
-        parent_id: Optional[int] = None) -> bool:
+async def has_setting(
+    session: AsyncSession, *args,
+    parent_id: Optional[int] = None
+) -> bool:
     """
     Returns a whether args with parent id points to an
     existing record.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.has_setting
+    )
+
     for var in args:
-        setting = (
-            session.query(GlobalSettings)
-            .filter(GlobalSettings.var == var, GlobalSettings.parent_id == parent_id)
-            .first()
+        statement = select(GlobalSettings).where(
+            GlobalSettings.var == var,
+            GlobalSettings.parent_id == parent_id
         )
+        results = await session.exec(statement)
+        setting = None
+        try:
+            setting = results.one()
+        except NoResultFound:
+            pass
+
         if setting is None:
             return False
         parent_id = setting.id
     return True
 
 
-def list_setting(
-        session: Session,
-        *args, 
-        parent_id: Optional[int] = None) -> List[str]:
+async def list_setting(
+    session: AsyncSession,
+    *args,
+    parent_id: Optional[int] = None
+) -> List[str]:
     """
     Returns a list of child vars for this setting.
     """
-    retval = []
-    setting = get_setting_record(
+    await authorize_database_session(
         session,
-        *args, parent_id=parent_id)
+        PermissionCode.list_setting
+    )
+
+    retval = []
+    setting = await get_setting_record(
+        session, *args, parent_id=parent_id
+    )
     if setting is None:
         return retval
-    children = (
-        session.query(GlobalSettings)
-        .filter(GlobalSettings.parent_id == setting.id)
-        .all()
+
+    statement = select(GlobalSettings).where(
+        GlobalSettings.parent_id == setting.id
     )
-    for child in children:
-        retval.append(child.var)
+    results = await session.exec(statement)
+    children = None
+    try:
+        children = results.all()
+    except NoResultFound:
+        pass
+
+    if children is not None:
+        for child in children:
+            retval.append(child.var)
     return retval
 
 
-def set_setting(
-        session: Session,
-        *args, 
-        parent_id: Optional[int] = None,
-        now: Optional[datetime] = None,
-        do_commit: Optional[bool] = True) -> GlobalSettings:
+async def set_setting(
+    session: AsyncSession,
+    *args,
+    parent_id: Optional[int] = None,
+    now: Optional[datetime] = None,
+    do_commit: Optional[bool] = True
+) -> GlobalSettings:
     """
     Sets a setting to the global settings table.
     """
+    await authorize_database_session(
+        session,
+        PermissionCode.set_setting
+    )
+
     var = args[:-1]
     value = str(args[-1])
-    setting = get_setting_record(
+    setting = await get_setting_record(
         session,
-        *var, parent_id=parent_id, create=True, default=value, now=now
+        *var,
+        parent_id=parent_id,
+        create=True,
+        default=value,
+        now=now
     )
     if setting is not None and setting.val != value:
         setting.val = value
         setting.modified_time = datetime.utcnow()
         if do_commit:
-            session.commit()
+            await session.commit()
         return setting
     return setting
 
 
-def get_setting(
-        session: Session,
-        *args,
-        default: Optional[Any] = None,
-        parent_id: Optional[int] = None) -> str:
+async def get_setting(
+    session: AsyncSession,
+    *args,
+    default: Optional[Any] = None,
+    parent_id: Optional[int] = None
+) -> str:
     create = False
     if default is not None:
         create = True
-    setting = get_setting_record(
+    setting = await get_setting_record(
         session,
-        *args, parent_id=parent_id, default=default, create=create
+        *args,
+        parent_id=parent_id,
+        default=default,
+        create=create
     )
     if setting is not None:
         return setting.val
     return None
 
 
-def get_site_logo(
-        session: Session,
-        default: Optional[Any] = SITE_LOGO):
-    return get_setting(
-        session, "site_logo", default=default)
+async def get_site_logo(
+    session: AsyncSession, 
+    default: Optional[Any] = SITE_LOGO
+):
+    return await get_setting(
+        session,
+        "site_logo",
+        default=default
+    )
 
 
-def get_default_avatar(
-        session: Session,
-        default: Optional[Any] = AVATAR):
-    return get_setting(
-        session, "default_avatar", default=default)
+async def get_default_avatar(
+    session: AsyncSession,
+    default: Optional[Any] = AVATAR
+):
+    return await get_setting(
+        session,
+        "default_avatar",
+        default=default
+    )
 
 
-def get_default_card_image(
-        session: Session,
-        default: Optional[Any] = CARD_IMAGE):
-    return get_setting(
-        session, "default_card", default=default)
+async def get_default_card_image(
+    session: AsyncSession,
+    default: Optional[Any] = CARD_IMAGE
+):
+    return await get_setting(
+        session,
+        "default_card",
+        default=default
+    )
 
 
-def get_default_header_image(
-        session: Session,
-        default: Optional[Any] = HEADER_IMAGE):
-    return get_setting(
-        session, "default_header", default=default)
+async def get_default_header_image(
+    session: AsyncSession,
+    default: Optional[Any] = HEADER_IMAGE
+):
+    return await get_setting(
+        session,
+        "default_header",
+        default=default
+    )
 
 
-def get_password_special_symbols(session: Session,
-        default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS):
-    return get_setting(
-        session, "passwd_special_symbols", default=default)
+async def get_password_special_symbols(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS
+):
+    return await get_setting(
+        session,
+        "passwd_special_symbols",
+        default=default)
 
 
-def get_password_min_length(
-        session: Session,
-        default: Optional[Any] = PASSWORD_MINIMUM_LENGTH):
-    return int(get_setting(
-        session, "passwd_minimum_length", default=default))
+async def get_password_min_length(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_MINIMUM_LENGTH
+):
+    return int(await get_setting(
+        session,
+        "passwd_minimum_length",
+        default=default
+    ))
 
 
-def get_password_max_length(
-        session: Session,
-        default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH):
-    return int(get_setting(
-        session, "passwd_maximum_length", default=default))
+async def get_password_max_length(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH
+):
+    return int(await get_setting(
+        session,
+        "passwd_maximum_length",
+        default=default
+    ))
 
 
-def get_password_special_symbols_enabled(
-        session: Session,
-        default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS_ENABLED):
-    return int(get_setting(
-        session, "passwd_special_sym_enabled", default=default))
+async def get_password_special_symbols_enabled(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_SPECIAL_SYMBOLS_ENABLED
+):
+    return int(await get_setting(
+        session,
+        "passwd_special_sym_enabled",
+        default=default
+    ))
 
 
-def get_password_min_length_enabled(
-        session: Session,
-        default: Optional[Any] = PASSWORD_MINIMUM_LENGTH_ENABLED):
-    return int(get_setting(
-        session, "passwd_minimum_len_enabled", default=default))
+async def get_password_min_length_enabled(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_MINIMUM_LENGTH_ENABLED
+):
+    return int(await get_setting(
+        session,
+        "passwd_minimum_len_enabled",
+        default=default
+    ))
 
 
-def get_password_max_length_enabled(
-        session: Session,
-        default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH_ENABLED):
-    return int(get_setting(
-        session, "passwd_maximum_len_enabled", default=default))
+async def get_password_max_length_enabled(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_MAXIMUM_LENGTH_ENABLED
+):
+    return int(await get_setting(
+        session,
+        "passwd_maximum_len_enabled",
+        default=default
+    ))
 
 
-def get_password_digit_enabled(
-        session: Session,
-        default: Optional[Any] = PASSWORD_DIGIT_ENABLED):
-    return int(get_setting(
-        session, "passwd_digit_enabled", default=default))
+async def get_password_digit_enabled(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_DIGIT_ENABLED
+):
+    return int(await get_setting(
+        session,
+        "passwd_digit_enabled",
+        default=default
+    ))
 
 
-def get_password_upper_enabled(
-        session: Session,
-        default: Optional[Any] = PASSWORD_UPPER_ENABLED):
-    return int(get_setting(
-        session, "passwd_upper_enabled", default=default))
+async def get_password_upper_enabled(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_UPPER_ENABLED
+):
+    return int(await get_setting(
+        session,
+        "passwd_upper_enabled",
+        default=default
+    ))
 
 
-def get_password_lower_enabled(
-        session: Session,
-        default: Optional[Any] = PASSWORD_LOWER_ENABLED):
-    return int(get_setting(
-        session, "passwd_lower_enabled", default=default))
+async def get_password_lower_enabled(
+    session: AsyncSession,
+    default: Optional[Any] = PASSWORD_LOWER_ENABLED
+):
+    return int(await get_setting(
+        session,
+        "passwd_lower_enabled",
+        default=default
+    ))
 
 
-def password_check(session: Session, passwd: str):
+async def password_check(session: AsyncSession, passwd: str):
     """
     Check password for validity and throw an error if invalid
     based on global flags and settings.
     """
-    password_min_length_enabled = get_password_min_length_enabled(session)
-    password_max_length_enabled = get_password_max_length_enabled(session)
-    password_digit_enabled = get_password_digit_enabled(session)
-    password_upper_enabled = get_password_upper_enabled(session)
-    password_lower_enabled = get_password_lower_enabled(session)
-    password_special_symbols_enabled = get_password_special_symbols_enabled(session)
+    password_min_length_enabled = await get_password_min_length_enabled(session)
+    password_max_length_enabled = await get_password_max_length_enabled(session)
+    password_digit_enabled = await get_password_digit_enabled(session)
+    password_upper_enabled = await get_password_upper_enabled(session)
+    password_lower_enabled = await get_password_lower_enabled(session)
+    password_special_symbols_enabled = await get_password_special_symbols_enabled(
+        session
+    )
 
-    special_sym = get_password_special_symbols(session)
-    min_length = get_password_min_length(session)
-    max_length = get_password_max_length(session)
+    special_sym = await get_password_special_symbols(session)
+    min_length = await get_password_min_length(session)
+    max_length = await get_password_max_length(session)
 
     if len(special_sym) == 0:
         password_special_symbols_enabled = False
@@ -407,7 +517,8 @@ def password_check(session: Session, passwd: str):
             "length should be not be greater than {}".format(max_length),
         )
 
-    # Check if password contains at least one digit, uppercase letter, lowercase letter, and special symbol
+    # Check if password contains at least one digit, uppercase letter,
+    # lowercase letter, and special symbol.
     has_digit = False
     has_upper = False
     has_lower = False
@@ -424,7 +535,8 @@ def password_check(session: Session, passwd: str):
 
     if password_digit_enabled and not has_digit:
         raise PasswordError(
-            ErrorCode.PasswordMissingDigit, "Password should have at least one numeral"
+            ErrorCode.PasswordMissingDigit,
+            "Password should have at least one numeral"
         )
     if password_upper_enabled and not has_upper:
         raise PasswordError(
@@ -439,7 +551,9 @@ def password_check(session: Session, passwd: str):
     if password_special_symbols_enabled and not has_sym:
         raise PasswordError(
             ErrorCode.PasswordMissingSymbol,
-            "Password should have at least one of the symbols {}".format(special_sym),
+            "Password should have at least one of the symbols {}".format(
+                special_sym
+            ),
         )
 
 
@@ -448,7 +562,7 @@ def sign_jwt(
     jwt_algorithm: str,
     user_id: int,
     expires: Optional[timedelta] = timedelta(hours=2),
-    cur_time: Optional[datetime] = None
+    cur_time: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     if cur_time is None:
         cur_time = datetime.utcnow()
@@ -456,7 +570,7 @@ def sign_jwt(
     payload = {
         "user_id": user_id,
         "expires": time.mktime(expire_time.timetuple()),
-        "uuid": str(uuid.uuid4())
+        "uuid": str(uuid.uuid4()),
     }
     token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
     payload.update({"token": token})
@@ -472,21 +586,20 @@ def decode_jwt(
         ret = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
     except InvalidSignatureError as e:
         raise AuthorizedSessionError(
-            ErrorCode.InvalidTokenSignature,
-            "Invalid token signature"
+            ErrorCode.InvalidTokenSignature, "Invalid token signature"
         )
 
     return ret
-    
 
-def authorized_session_launch(
-        session: Session,
-        user_id: int,
-        jwt_secret: str,
-        jwt_algorithm: str,
-        request: Any,
-        expire_delta: Optional[timedelta] = None,
-        cur_time: Optional[datetime] = None
+
+async def authorized_session_launch(
+    session: AsyncSession,
+    user_id: int,
+    jwt_secret: str,
+    jwt_algorithm: str,
+    request: Any,
+    expire_delta: Optional[timedelta] = None,
+    cur_time: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """
     Use this to generate an authorized session record
@@ -500,24 +613,23 @@ def authorized_session_launch(
     expires = cur_time + expire_delta
 
     statement = select(User).where(User.id == user_id)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
     except NoResultFound:
         raise AuthorizedSessionError(
-            ErrorCode.InvalidUser,
-            "Invalid user id {}".format(user_id)
+            ErrorCode.InvalidUser, "Invalid user id {}".format(user_id)
         )
-    
+
     if not user.enabled:
         raise AuthorizedSessionError(
-            ErrorCode.DisabledUser,
-            "Disabled user {}".format(user_id)
+            ErrorCode.DisabledUser, "Disabled user {}".format(user_id)
         )
 
     session_payload = sign_jwt(
-        jwt_secret, jwt_algorithm, user.id, expire_delta, cur_time)
+        jwt_secret, jwt_algorithm, user.id, expire_delta, cur_time
+    )
     session_uuid = session_payload["uuid"]
     new_as = AuthorizedSession(
         user_id=user.id,
@@ -531,73 +643,63 @@ def authorized_session_launch(
         endpoint=request.endpoint,
     )
     session.add(new_as)
-
-    new_change = UserChange(
-        user_id=user.id,
-        change_code=UserChangeEventCode.LaunchSession,
-        change_time=cur_time,
-        change_desc="launching session {}".format(session_uuid),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+    await session.commit()
+    
+    await log_system_change(
+        session,
+        SystemLogEventCode.LaunchSession,
+        "launching session {}".format(session_uuid),
+        request,
+        cur_time,
+        user.id
     )
-    session.add(new_change)
-    session.commit()
 
     return session_payload
 
 
-def authorized_sessions(
-        session: Session,
-        user_id: Optional[int] = None,
-        verified_only: Optional[bool] = False,
-        jwt_secret: Optional[str] = None
+async def authorized_sessions(
+    session: AsyncSession,
+    user_id: Optional[int] = None,
+    verified_only: Optional[bool] = False,
+    jwt_secret: Optional[str] = None,
 ) -> List[AuthorizedSession]:
     """
     Returns all authorized sessions that match the user_id.
     """
     statement = select(AuthorizedSession)
     if user_id is not None:
-        statement = statement.where(
-            AuthorizedSession.user_id == user_id)
-    statement = statement.order_by(
-        AuthorizedSession.created_time.desc())
-    result = session.exec(statement)
+        statement = statement.where(AuthorizedSession.user_id == user_id)
+    statement = statement.order_by(AuthorizedSession.created_time.desc())
+    result = await session.exec(statement)
     sessions = result.all()
     if not verified_only:
         return sessions
     if jwt_secret is None:
         raise AuthorizedSessionError(
             ErrorCode.InvalidSecret,
-            "Null secret when trying to return verified authorized sessions"
+            "Null secret when trying to return verified authorized sessions",
         )
     verified_sessions = []
     for auth_session in sessions:
         try:
-            authorized_session_verify(
-                session,
-                auth_session.uuid,
-                jwt_secret
-            )
+            await authorized_session_verify(session, auth_session.uuid, jwt_secret)
             verified_sessions.append(auth_session)
         except TXWTFError as e:
             pass
     return verified_sessions
 
 
-def authorized_session_verify(
-        session: Session,
-        session_uuid: str,
-        jwt_secret: str
+async def authorized_session_verify(
+    session: AsyncSession, session_uuid: str, jwt_secret: str
 ):
     """
     Raises an exception if there is a problem with the
     session or if it has been deactivated.
     """
     statement = select(AuthorizedSession).where(
-        AuthorizedSession.uuid == session_uuid)
-    results = session.exec(statement)
+        AuthorizedSession.uuid == session_uuid
+    )
+    results = await session.exec(statement)
 
     # get the session
     auth_sess = None
@@ -608,25 +710,26 @@ def authorized_session_verify(
             ErrorCode.UknownSession,
             "Cannot find session {}".format(session_uuid)
         )
-    
+
     # check if this session matches the secret
     if hash(jwt_secret) != auth_sess.hashed_secret:
         raise AuthorizedSessionError(
             ErrorCode.InvalidSession,
             "Secret mismatch"
         )
-    
+
     # check if it is expired
     if auth_sess.expires_time <= datetime.utcnow():
         raise AuthorizedSessionError(
             ErrorCode.ExpiredSession,
             "Session {} is expired since {}".format(
-                session_uuid, auth_sess.expires_time)
+                session_uuid, auth_sess.expires_time
+            ),
         )
-    
+
     # get the user and check if the account is still enabled
     statement = select(User).where(User.id == auth_sess.user_id)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -635,11 +738,11 @@ def authorized_session_verify(
             ErrorCode.InvalidUser,
             "Invalid user id {}".format(auth_sess.user_id)
         )
-    
+
     if not user.enabled:
         raise AuthorizedSessionError(
             ErrorCode.DisabledUser,
-            "Disabled user {}({})".format(user.username, user.id)
+            "Disabled user {}({})".format(user.username, user.id),
         )
 
     # check if the session was deactivated.
@@ -650,19 +753,20 @@ def authorized_session_verify(
         )
 
 
-def authorized_session_deactivate(
-        session: Session,
-        session_uuid: str,
-        request: Any,
-        cur_time: Optional[datetime] = None
+async def authorized_session_deactivate(
+    session: AsyncSession,
+    session_uuid: str,
+    request: Any,
+    cur_time: Optional[datetime] = None,
 ):
     """
     Set the session as deactivated. Future commands with the session token
     should have an authorization error.
     """
     statement = select(AuthorizedSession).where(
-        AuthorizedSession.uuid == session_uuid)
-    results = session.exec(statement)
+        AuthorizedSession.uuid == session_uuid
+    )
+    results = await session.exec(statement)
     auth_sess = None
     try:
         auth_sess = results.one()
@@ -673,54 +777,92 @@ def authorized_session_deactivate(
         )
     auth_sess.active = False
     session.add(auth_sess)
+    await session.commit()
 
     if cur_time is None:
         cur_time = datetime.utcnow()
 
-    new_change = UserChange(
-        user_id=auth_sess.user_id,
-        change_code=UserChangeEventCode.DeactivateSession,
-        change_time=cur_time,
-        change_desc="deactivating session {}".format(session_uuid),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+    await log_system_change(
+        session,
+        SystemLogEventCode.DeactivateSession,
+        "deactivating session {}".format(session_uuid),
+        request,
+        cur_time,
+        auth_sess.user_id
     )
-    session.add(new_change)
-    session.commit()
 
 
-def get_email_validate_deliverability_enabled(
-        session: Session,
-        default: Optional[Any] = EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
+async def get_email_validate_deliverability_enabled(
+    session: AsyncSession,
+    default: Optional[Any] = EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
 ):
-    return int(get_setting(
-        session, "email_validate_deliv_enabled", default=default))
+    return int(await get_setting(
+        session,
+        "email_validate_deliv_enabled",
+        default=default
+    ))
 
 
-def register_user(
-        session: Session,
-        username: str,
-        password: str, 
-        verify_password: str,
-        name: str,
-        email: EmailStr,
-        request: Any,
-        cur_time: Optional[datetime] = None
+async def log_system_change(
+    session: AsyncSession,
+    event_code: int,
+    event_desc: str,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
+    user_id: Optional[int] = None
+) -> None:
+    if cur_time is None:
+        now = datetime.utcnow()
+    else:
+        now = cur_time
+
+    log_data = defaultdict(None)
+    log_data.update({
+        "user_id": user_id,
+        "event_code": event_code,
+        "event_time": now,
+        "event_desc": event_desc,
+    })
+    if request is not None:
+        log_data.update({
+            "referrer": request.referrer,
+            "user_agent": str(request.user_agent),
+            "remote_addr": remote_addr(request),
+            "endpoint": str(request.endpoint),
+        })
+    if hasattr(session, "__user_id"):
+        log_data["auth_user_id"] = session.__user_id
+
+    new_log = SystemLog(**log_data)
+    session.add(new_log)
+    await session.commit()
+
+
+async def register_user(
+    session: AsyncSession,
+    username: str,
+    password: str,
+    verify_password: str,
+    name: str,
+    email: EmailStr,
+    request: Any,
+    cur_time: Optional[datetime] = None,
 ) -> User:
     """
     Perform user registration.
     """
     if password != verify_password:
-        raise RegistrationError(ErrorCode.PasswordMismatch, "Password mismatch!")
+        raise RegistrationError(
+            ErrorCode.PasswordMismatch,
+            "Password mismatch!"
+        )
 
     # make sure the password passes system checks
-    password_check(session, password)
+    await password_check(session, password)
 
     # if this returns a user, then the email already exists in database
     statement = select(User).where(User.email == email)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -729,7 +871,10 @@ def register_user(
 
     # if a user is found by email, throw an error
     if user is not None:
-        raise RegistrationError(ErrorCode.EmailExists, "Email address already exists")
+        raise RegistrationError(
+            ErrorCode.EmailExists,
+            "Email address already exists"
+        )
 
     # if the username is an invalid identifier, bail
     if not valid_identifier(username):
@@ -740,7 +885,7 @@ def register_user(
 
     # if this returns a user, then the username already exists in database
     statement = select(User).where(User.username == username)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -748,12 +893,19 @@ def register_user(
         pass
 
     if user is not None:
-        raise RegistrationError(ErrorCode.UsernameExists, "Username already exists")
+        raise RegistrationError(
+            ErrorCode.UsernameExists,
+            "Username already exists")
 
     # check email validity
-    check_deliverability = get_email_validate_deliverability_enabled(session)
+    check_deliverability = (
+        await get_email_validate_deliverability_enabled(session)
+    )
     try:
-        emailinfo = validate_email(email, check_deliverability=check_deliverability)
+        emailinfo = await asyncify(validate_email)(
+            email,
+            check_deliverability=check_deliverability
+        )
         email = emailinfo.normalized
     except EmailNotValidError as e:
         raise RegistrationError(ErrorCode.InvalidEmail, str(e))
@@ -771,9 +923,9 @@ def register_user(
         password=generate_password_hash(password),
         created_time=now,
         modified_time=now,
-        avatar_url=get_default_avatar(session),
-        card_image_url=get_default_card_image(session),
-        header_image_url=get_default_header_image(session),
+        avatar_url=await get_default_avatar(session),
+        card_image_url=await get_default_card_image(session),
+        header_image_url=await get_default_header_image(session),
         header_text=name,
         description="{} is on the scene".format(name),
         email_verified=False,
@@ -788,45 +940,34 @@ def register_user(
 
     # add the new user to the database
     session.add(new_user)
-    session.commit()  # commit now to create new user id
+    await session.commit()  # commit now to create new user id
 
-    new_change = UserChange(
-        user_id=new_user.id,
-        change_code=UserChangeEventCode.UserCreate,
-        change_time=now,
-        change_desc="creating new user {} [{}]".format(new_user.username, new_user.id),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=str(request.endpoint),
+    await log_system_change(
+        session,
+        SystemLogEventCode.UserCreate,
+        "creating new user {} [{}]".format(
+            new_user.username,
+            new_user.id
+        ),
+        request,
+        now,
+        new_user.id
     )
-    session.add(new_change)
-    new_log = SystemLog(
-        event_code=SystemLogEventCode.UserCreate,
-        event_time=now,
-        event_desc="creating new user {} [{}]".format(new_user.username, new_user.id),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=str(request.endpoint),
-    )
-    session.add(new_log)
-    session.commit()
 
-    session.refresh(new_user)
+    await session.refresh(new_user)
 
     return new_user
 
 
-def execute_login(
-        session: Session,
-        username: str,
-        password: str,
-        jwt_secret: str,
-        jwt_algorithm: str,
-        request: Any, 
-        expire_delta: timedelta = timedelta(hours=1),
-        cur_time: Optional[datetime] = None
+async def execute_login(
+    session: AsyncSession,
+    username: str,
+    password: str,
+    jwt_secret: str,
+    jwt_algorithm: str,
+    request: Any,
+    expire_delta: timedelta = timedelta(hours=1),
+    cur_time: Optional[datetime] = None,
 ) -> Tuple[User, Dict[str, Any]]:
     """
     Record a login and execute a provided login function if the supplied
@@ -834,7 +975,7 @@ def execute_login(
     a signed token.
     """
     statement = select(User).where(User.username == username)
-    results = session.exec(statement)
+    results = await session.exec(statement)
     user = None
     try:
         user = results.one()
@@ -843,18 +984,20 @@ def execute_login(
 
     # check if the user exists
     if user is None:
-        raise LoginError(ErrorCode.UserDoesNotExist, "Access denied!")
+        raise LoginError(
+            ErrorCode.UserDoesNotExist,
+            "Access denied!"
+        )
 
     # take the user-supplied password, hash it, and compare it
     # to the hashed password in the database
     if not check_password_hash(user.password, password):
-        raise LoginError(ErrorCode.UserPasswordIncorrect, "Access denied!")
+        raise LoginError(
+            ErrorCode.UserPasswordIncorrect,
+            "Access denied!"
+        )
 
-    #if login_function is not None:
-    #    login_function(user, remember=remember)
-    # TODO: generate jwt token and create session record then return the signed token
-    # at the end 
-    token_payload = authorized_session_launch(
+    token_payload = await authorized_session_launch(
         session,
         user.id,
         jwt_secret,
@@ -870,41 +1013,33 @@ def execute_login(
     now = cur_time
     user.last_login = now
     user.last_login_addr = remote_addr(request)
-    new_log = SystemLog(
-        event_code=SystemLogEventCode.UserLogin,
-        event_time=now,
-        event_desc="user {} [{}] logged in".format(user.username, user.id),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
-    )
-    session.add(new_log)
-    new_change = UserChange(
-        user_id=user.id,
-        change_code=UserChangeEventCode.UserLogin,
-        change_time=now,
-        change_desc="logging in from {}".format(remote_addr(request)),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
-    )
-    session.add(new_change)
-    session.commit()
 
-    session.refresh(user)
+    await log_system_change(
+        session,
+        SystemLogEventCode.UserLogin,
+        "user {} [{}] logged in from {}".format(
+            user.username,
+            user.id,
+            remote_addr(request)
+        ),
+        request,
+        now,
+        user.id
+    )
+
+    await session.refresh(user)
 
     return user, token_payload
 
 
-def execute_logout(
-        session: Session,
-        session_uuid: str,
-        jwt_secret: str,
-        request: Any,
-        current_user: User, 
-        cur_time: Optional[datetime] = None):
+async def execute_logout(
+    session: AsyncSession,
+    session_uuid: str,
+    jwt_secret: str,
+    request: Any,
+    current_user: User,
+    cur_time: Optional[datetime] = None,
+):
     """
     Record a logout and execute logout by invalidating the session
     by its uuid.
@@ -912,43 +1047,560 @@ def execute_logout(
     if cur_time is None:
         cur_time = datetime.utcnow()
 
-    authorized_session_verify(session, session_uuid, jwt_secret)
+    await authorized_session_verify(session, session_uuid, jwt_secret)
 
-    new_log = SystemLog(
-        event_code=SystemLogEventCode.UserLogout,
-        event_time=cur_time,
-        event_desc="user {} [{}] logging out".format(
-            current_user.username, current_user.id
+    await log_system_change(
+        session,
+        SystemLogEventCode.UserLogout,
+        "user {} [{}] logged out from {}".format(
+            current_user.username,
+            current_user.id,
+            remote_addr(request)
         ),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+        request,
+        cur_time,
+        current_user.id
     )
-    session.add(new_log)
-    new_change = UserChange(
-        user_id=current_user.id,
-        change_code=UserChangeEventCode.UserLogout,
-        change_time=cur_time,
-        change_desc="logging out from {}".format(remote_addr(request)),
-        referrer=request.referrer,
-        user_agent=str(request.user_agent),
-        remote_addr=remote_addr(request),
-        endpoint=request.endpoint,
+
+    await authorized_session_deactivate(
+        session,
+        session_uuid,
+        request,
+        cur_time
     )
-    session.add(new_change)
-    session.commit()
-
-    authorized_session_deactivate(session, session_uuid, request, cur_time)
 
 
-def get_user(session: Session, user_id: int) -> User:
-    statement = select(User).where(User.id == user_id)
-    results = session.exec(statement)
+async def get_user(
+    session: AsyncSession,
+    user_id: Optional[int] = None,
+    username: Optional[str] = None
+) -> Union[User, List[User]]:
+    """
+    Returns a user object from the database given a
+    user_id or username. If neither are provided,
+    returns a list of all users.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_user
+    )
+
+    statement = select(User)
+    if user_id is not None:
+        statement.where(User.id == user_id)
+    if username is not None:
+        statement.where(User.username == username)
+    results = await session.exec(statement)
     try:
+        if user_id is None and username is None:
+            # TODO: pagination for large amounts of users
+            return results.all()
         return results.one()
     except NoResultFound:
         raise UserError(
             ErrorCode.InvalidUser,
             "Invalid user id {}".format(user_id)
+        )
+
+
+async def _get_groups(session: AsyncSession) -> List[Group]:
+    statement = select(Group)
+    results = await session.exec(statement.order_by(Group.id.asc()))
+    return results.all()
+
+
+async def get_groups(session: AsyncSession) -> List[Group]:
+    """
+    Returns a list of Group objects from the database.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_groups
     )
+    return await _get_groups(session)
+
+
+async def get_group(
+    session: AsyncSession,
+    group_id: Optional[int] = None,
+    group_name: Optional[str] = None
+) -> Union[Group, List[Group]]:
+    """
+    Returns a Group object given group_name or id.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_group
+    )
+
+    statement = select(Group)
+    if group_name is not None:
+        statement = statement.where(Group.name == group_name)
+    if group_id is not None:
+        statement = statement.where(Group.id == group_id)
+    results = await session.exec(statement.order_by(Group.id.asc()))
+    try:
+        if group_name is None and group_id is None:
+            # TODO: pagination for large amounts of groups
+            return results.all()
+        return results.one()
+    except NoResultFound:
+        raise GroupError(
+            ErrorCode.InvalidGroup,
+            "Cannot find group {} [{}]".format(group_name, group_id)
+        )
+
+
+async def has_group(
+    session: AsyncSession, 
+    group_id: Optional[int] = None,
+    group_name: Optional[str] = None
+) -> bool:
+    await authorize_database_session(
+        session,
+        PermissionCode.has_group
+    )
+
+    statement = select(Group)
+    if group_name is not None:
+        statement = statement.where(Group.name == group_name)
+    if group_id is not None:
+        statement = statement.where(Group.id == group_id)
+    results = await session.exec(statement.order_by(Group.id.asc()))
+    group = None
+    try:
+        group = results.one()
+    except NoResultFound:
+        pass
+    return group is not None
+
+
+async def create_group(
+    session: AsyncSession,
+    name: str,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
+) -> Group:
+    await authorize_database_session(
+        session,
+        PermissionCode.create_group
+    )
+
+    if await has_group(session, name):
+        raise GroupError(
+            ErrorCode.GroupExists,
+            "Group {} already exists".format(group)
+        )
+
+    group = Group(name=name)
+    session.add(group)
+    await session.commit()
+    await session.refresh(group)
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupCreate,
+        "creating new group {} [{}]".format(
+            group.name,
+            group.id
+        ),
+        request,
+        cur_time
+    )
+
+    return group
+
+
+async def remove_group(
+    session: AsyncSession,
+    name: str,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
+) -> None:
+    await authorize_database_session(
+        session,
+        PermissionCode.remove_group
+    )
+
+    if not await has_group(session, group_name=name):
+        raise GroupError(
+            ErrorCode.InvalidGroup,
+            "Group {} doesn't exist".format(name)
+        )
+    
+    group = await get_group(session, group_name=name)
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupDelete,
+        "deleting group {} [{}]".format(
+            group.name,
+            group.id
+        ),
+        request,
+        cur_time
+    )
+    
+    statement = select(GroupAssociation).where(
+        GroupAssociation.group_id == group.id
+    )
+    results = await session.exec(statement)
+    for ga in results.all():
+        await session.delete(ga)
+    await session.delete(group)
+    await session.commit()
+
+
+async def is_user_in_group(
+    session: AsyncSession,
+    group_id: int,
+    user_id: int
+) -> Group:
+    await authorize_database_session(
+        session,
+        PermissionCode.is_user_in_group
+    )
+
+    if not await has_group(session, group_id=group_id):
+        raise GroupError(
+            ErrorCode.InvalidGroup,
+            "Group {} doesn't exist".format(group_id)
+        )
+
+    statement = select(GroupAssociation).where(
+        GroupAssociation.group_id == group_id
+    ).where(
+        GroupAssociation.user_id == user_id
+    )
+    results = await session.exec(statement)
+    ga = None
+    try:
+        ga = results.one()
+    except NoResultFound:
+        pass
+    return ga is not None
+
+
+async def add_user_to_group(
+    session: AsyncSession,
+    group_id: int,
+    user_id: int,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
+) -> GroupAssociation:
+    """
+    Adds a user to a group. The user inherets the group's permissions.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.add_user_to_group
+    )
+
+    if await is_user_in_group(session, group_id, user_id):
+        raise GroupError(
+            ErrorCode.GroupHasUser,
+            "Group {} already has user {}".format(group_id, user_id)
+        )
+
+    ga = GroupAssociation(group_id=group_id, user_id=user_id)
+    session.add(ga)
+    await session.commit()
+    await session.refresh(ga)
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupAddUser,
+        "added user {} to group {}".format(
+            user_id,
+            group_id
+        ),
+        request,
+        cur_time,
+        user_id
+    )
+
+    return ga
+
+
+async def remove_user_from_group(
+    session: AsyncSession,
+    group_id: int,
+    user_id: int,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None
+) -> None:
+    await authorize_database_session(
+        session,
+        PermissionCode.remove_user_from_group
+    )
+
+    if not await is_user_in_group(session, group_id, user_id):
+        raise GroupError(
+            ErrorCode.GroupMissingUser,
+            "Group {} missing user {}".format(group_id, user_id)
+        )
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupRemoveUser,
+        "removing user {} from group {}".format(
+            user_id,
+            group_id
+        ),
+        request,
+        cur_time,
+        user_id,
+    )
+
+    statement = select(GroupAssociation).where(
+        GroupAssociation.group_id == group_id
+    ).where(
+        GroupAssociation.user_id == user_id
+    )
+    results = await session.exec(statement)
+    for ga in results.all():
+        await session.delete(ga)
+    await session.commit()
+
+
+async def _get_users_groups(
+    session: AsyncSession,
+    user_id: int,
+) -> List[Group]:
+    statement = select(GroupAssociation).where(
+        GroupAssociation.user_id == user_id
+    )
+    results = await session.exec(
+        statement.order_by(
+            GroupAssociation.group_id.asc()
+        )
+    )
+    group_list = []
+    for ga in results.all():
+        statement = select(Group).where(Group.id == ga.group_id)
+        group_list.append((await session.exec(statement)).one())
+    return group_list
+
+
+async def get_users_groups(
+    session: AsyncSession,
+    user_id: int,
+) -> List[Group]:
+    """
+    Return a list of groups that a user belongs to.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_users_groups
+    )
+    return await _get_users_groups(session, user_id)
+    
+
+async def _get_users_permissions(
+    session: AsyncSession,
+    user_id: int,
+) -> List[PermissionCode]:
+    groups = await _get_users_groups(session, user_id)
+    permissions = set()
+    for group in groups:
+        statement = select(GroupPermission).where(
+            GroupPermission.group_id == group.id
+        )
+        results = await session.exec(statement)
+        for result in results.all():
+            permissions.add(result.permission_code)
+    return list(permissions)
+
+
+async def get_users_permissions(
+    session: AsyncSession,
+    user_id: int,
+) -> List[PermissionCode]:
+    """
+    Get a list of permission codes for a user given the groups
+    they are apart of.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_users_permissions
+    )
+    return await _get_users_permissions(session, user_id)
+
+
+async def authorize_database_session(
+    session: AsyncSession,
+    permission_code: int
+) -> None:
+    """
+    Raises an exception if the database session is not authorized
+    for this task.
+    """
+    # noop if no user id associated with this session
+    if not hasattr(session, "__user_id"):
+        return
+    
+    user_id = session.__user_id
+
+    # if user is root, pass it
+    if user_id == 0:
+        return
+
+    # if no groups, assume all users are root
+    if len(await _get_groups(session)) == 0:
+        return
+
+    perms = await _get_users_permissions(
+        session, user_id
+    )
+    if permission_code not in perms:
+        raise PermissionError(
+            ErrorCode.AccessDenied,
+            "Access Denied!!"
+        )
+
+
+async def add_group_permission(
+    session: AsyncSession,
+    group_id: int,
+    permission_code: PermissionCode,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None
+) -> GroupPermission:
+    """
+    Add a permission code to a group. This allows a simple
+    way to authorize functionality that changes the database
+    and restrict it to certain users based on what groups they're
+    in.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.add_group_permissions
+    )
+
+    if not await has_group(session, group_id=group_id):
+        raise PermissionError(
+            ErrorCode.InvalidGroup,
+            "Group {} doesn't exist".format(group_id)
+        )
+
+    # see if there is already one to avoid duplicates
+    statement = select(GroupPermission).where(
+        GroupPermission.group_id == group_id
+    ).where(
+        GroupPermission.permission_code == permission_code
+    )
+    results = await session.exec(statement)
+    gp = None
+    try:
+        gp = results.one()
+    except NoResultFound:
+        pass
+    if gp is not None:
+        raise PermissionError(
+            ErrorCode.PermissionAlreadySet,
+            "Permission {} for group {} already set".format(
+                permission_code, 
+                group_id
+            )
+        )
+
+    gp = GroupPermission(
+        group_id=group_id,
+        permission_code=permission_code
+    )
+    session.add(gp)
+    await session.commit()
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupAddPermission,
+        "adding permission {} to group {}".format(
+            permission_code,
+            group_id
+        ),
+        request,
+        cur_time,
+    )
+
+
+async def remove_group_permission(
+    session: AsyncSession,
+    group_id: int,
+    permission_code: PermissionCode,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None
+) -> GroupPermission:
+    """
+    Removes a permission code associated with a group.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.remove_group_permission
+    )
+
+    if not await has_group(session, group_id=group_id):
+        raise PermissionError(
+            ErrorCode.InvalidGroup,
+            "Group {} doesn't exist".format(group_id)
+        )
+
+    # find the record
+    statement = select(GroupPermission).where(
+        GroupPermission.group_id == group_id
+    ).where(
+        GroupPermission.permission_code == permission_code
+    )
+    results = await session.exec(statement)
+    gp = None
+    try:
+        gp = results.one()
+    except NoResultFound:
+        pass
+    if gp is None:
+        raise PermissionError(
+            ErrorCode.PermissionNotSet,
+            "Permission {} for group {} not set".format(
+                permission_code, 
+                group_id
+            )
+        )
+
+    await session.delete(gp)
+    await session.commit()
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupRemovePermission,
+        "removing permission {} from group {}".format(
+            permission_code,
+            group_id
+        ),
+        request,
+        cur_time,
+    )
+
+
+async def get_groups_users(
+    session: AsyncSession,
+    group_id: int,
+) -> List[int]:
+    """
+    Return a list of user_ids that belong to the specified group.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_groups_users
+    )
+    
+    statement = select(GroupAssociation).where(
+        GroupAssociation.group_id == group_id
+    )
+    results = await session.exec(
+        statement.order_by(
+            GroupAssociation.user_id.asc()
+        )
+    )
+    user_list = []
+    for ga in results.all():
+        user_list.append(ga.user_id)
+    return user_list
