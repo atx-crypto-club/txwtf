@@ -1,6 +1,6 @@
 # txwtf
 
-This project is the atx crypto club web application **txwtf**. It provides the web interface and backend biz logic for members interacting with the system.
+This project is the atx crypto club web application **txwtf**. It provides the web interface and backend biz logic for members interacting with the system. It currently designed against Python 3.8.x.
 
 If you want to skip the rest of this README and just launch the app from nothing, you can perform the entire init, install and execution of the webapp using the `-r "run-app webapp"` command:
 

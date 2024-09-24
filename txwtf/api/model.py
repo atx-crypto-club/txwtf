@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import EmailStr
 
 from sqlmodel import SQLModel, Field
 
 from txwtf.core.model import User
+from txwtf.core.codes import PermissionCode
 
 
 class ResponseSchema(SQLModel):

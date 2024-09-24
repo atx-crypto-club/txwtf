@@ -1126,7 +1126,7 @@ async def get_group(
     group_name: Optional[str] = None
 ) -> Union[Group, List[Group]]:
     """
-    Returns a Group object given group_name or id.
+    Returns a Group object that matches group_id or group_name.
     """
     await authorize_database_session(
         session,
@@ -1178,6 +1178,7 @@ async def has_group(
 async def create_group(
     session: AsyncSession,
     name: str,
+    desc: str = None,
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None,
 ) -> Group:
@@ -1192,7 +1193,7 @@ async def create_group(
             "Group {} already exists".format(group)
         )
 
-    group = Group(name=name)
+    group = Group(name=name, desc=desc)
     session.add(group)
     await session.commit()
     await session.refresh(group)
@@ -1251,11 +1252,60 @@ async def remove_group(
     await session.commit()
 
 
+async def get_group_description(
+    session: AsyncSession,
+    name: str
+) -> str:
+    """
+    Returns the description of the specified group.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.get_group_description
+    )
+
+    group = await get_group(session, group_name=name)
+    return group.desc
+
+
+async def set_group_description(
+    session: AsyncSession,
+    name: str,
+    desc: str,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
+) -> Group:
+    """
+    Sets the specified group's description.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.set_group_description
+    )
+
+    group = await get_group(session, group_name=name)
+    group.desc = desc
+    await session.commit()
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupUpdateDescription,
+        "updating description of group {} to '{}'".format(
+            group.name,
+            desc
+        ),
+        request,
+        cur_time,
+    )
+
+    return group
+
+
 async def is_user_in_group(
     session: AsyncSession,
     group_id: int,
     user_id: int
-) -> Group:
+) -> bool:
     await authorize_database_session(
         session,
         PermissionCode.is_user_in_group
@@ -1510,6 +1560,7 @@ async def add_group_permission(
     )
     session.add(gp)
     await session.commit()
+    await session.refresh(gp)
 
     await log_system_change(
         session,
@@ -1522,6 +1573,8 @@ async def add_group_permission(
         cur_time,
     )
 
+    return gp
+
 
 async def remove_group_permission(
     session: AsyncSession,
@@ -1529,7 +1582,7 @@ async def remove_group_permission(
     permission_code: PermissionCode,
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None
-) -> GroupPermission:
+) -> None:
     """
     Removes a permission code associated with a group.
     """
@@ -1604,3 +1657,13 @@ async def get_groups_users(
     for ga in results.all():
         user_list.append(ga.user_id)
     return user_list
+
+
+def get_permission_codes() -> Dict[str, int]:
+    """
+    Returns a dict of permission names and codes
+    """
+    ret = {}
+    for code in PermissionCode:
+        ret[code.name] = code.value
+    return ret
