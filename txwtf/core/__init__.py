@@ -1524,7 +1524,7 @@ async def add_group_permission(
     """
     await authorize_database_session(
         session,
-        PermissionCode.add_group_permissions
+        PermissionCode.add_group_permission
     )
 
     if not await has_group(session, group_id=group_id):

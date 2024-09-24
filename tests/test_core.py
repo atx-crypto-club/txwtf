@@ -2916,7 +2916,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             'is_user_in_group': 12, 
             'add_user_to_group': 13, 
             'remove_user_from_group': 14, 
-            'add_group_permissions': 15, 
+            'add_group_permission': 15, 
             'remove_group_permission': 16, 
             'get_users_permissions': 17, 
             'get_groups_users': 18,
