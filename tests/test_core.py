@@ -3103,6 +3103,65 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 changes.append(change.event_code)
             self.assertEqual(changes, target_changes)
 
+    async def test_create_group_with_permissions(self):
+        """
+        Test that we can create a group with permissions in
+        a single operation.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            user_id = 420
+            group1 = None
+
+            # when
+            code = None
+            code2 = None
+            has_grp = False
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    group1 = await create_group(
+                        session2,
+                        group1_name,
+                        permissions=[
+                            PermissionCode.has_group,
+                        ],
+                        add_creator_to_group=True
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertIsNone(code)
+
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    has_grp = await has_group(
+                        session2,
+                        group_id=group1.id
+                    )
+            except TXWTFError as e:
+                code2, _ = e.args
+
+            # then
+            self.assertIsNone(code2)
+            self.assertTrue(has_grp)
+
+            # when
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await get_groups(session2)
+            except TXWTFError as e:
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.AccessDenied)
+
 
 if __name__ == "__main__":
     unittest.main()

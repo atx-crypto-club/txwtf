@@ -49,6 +49,7 @@ from txwtf.api.model import (
     Registration,
     Login,
     LoginResponse,
+    CreateGroup,
 )
 from txwtf.version import version
 
@@ -444,8 +445,7 @@ def get_group_router(
     @copy_doc(txwtf.core.create_group)
     async def create_group(
         request: Request,
-        group_name: str,
-        description: Optional[str] = None,
+        cg_args: CreateGroup,
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -464,8 +464,10 @@ def get_group_router(
             ) as session:
                 return await txwtf.core.create_group(
                     session,
-                    group_name,
-                    description,
+                    cg_args.group_name,
+                    cg_args.description,
+                    cg_args.permissions,
+                    cg_args.add_creator_to_group,
                     request_compat(request, user_agent)
                 )
             

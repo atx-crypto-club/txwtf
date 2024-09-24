@@ -1350,7 +1350,7 @@ async def _is_user_in_group(
     group_id: int,
     user_id: int
 ) -> bool:
-    if not await has_group(session, group_id=group_id):
+    if not await _has_group(session, group_id=group_id):
         raise GroupError(
             ErrorCode.InvalidGroup,
             "Group {} doesn't exist".format(group_id)
@@ -1587,7 +1587,7 @@ async def _add_group_permission(
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None
 ) -> List[GroupPermission]:
-    if not await has_group(session, group_id=group_id):
+    if not await _has_group(session, group_id=group_id):
         raise PermissionError(
             ErrorCode.InvalidGroup,
             "Group {} doesn't exist".format(group_id)
