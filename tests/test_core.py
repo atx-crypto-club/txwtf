@@ -2919,7 +2919,9 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             'add_group_permissions': 15, 
             'remove_group_permission': 16, 
             'get_users_permissions': 17, 
-            'get_groups_users': 18
+            'get_groups_users': 18,
+            'get_group_description': 19,
+            'set_group_description': 20
         }
 
         # when

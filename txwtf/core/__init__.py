@@ -1483,7 +1483,7 @@ async def authorize_database_session(
 ) -> None:
     """
     Raises an exception if the database session is not authorized
-    for this task.
+    for the operation specified by the permission code.
     """
     # noop if no user id associated with this session
     if not hasattr(session, "__user_id"):
