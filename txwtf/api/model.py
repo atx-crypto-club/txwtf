@@ -54,29 +54,3 @@ class LoginResponse(SQLModel):
     expires: datetime
     token: str
     session_uuid: str
-
-
-class GroupKey(SQLModel):
-    group_id: Optional[int] = None
-    group_name: Optional[str] = None
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "group_id": 1,
-                "group_name": "FunGroup",
-            }
-        }
-
-
-class UserKey(SQLModel):
-    user_id: Optional[int] = None
-    username: Optional[str] = None
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "user_id": 1,
-                "username": "root",
-            }
-        }

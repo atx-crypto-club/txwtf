@@ -15,7 +15,8 @@ SystemLogEventCode = IntEnum(
         "GroupAddUser",
         "GroupRemoveUser",
         "GroupAddPermission",
-        "GroupRemovePermission"
+        "GroupRemovePermission",
+        "GroupUpdateDescription"
     ],
 )
 

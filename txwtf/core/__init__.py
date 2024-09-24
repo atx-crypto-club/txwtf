@@ -1252,6 +1252,55 @@ async def remove_group(
     await session.commit()
 
 
+async def get_group_description(
+    session: AsyncSession,
+    name: str
+) -> str:
+    """
+    Returns the description of the specified group.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.remove_group
+    )
+
+    group = await get_group(session, group_name=name)
+    return group.desc
+
+
+async def set_group_description(
+    session: AsyncSession,
+    name: str,
+    desc: str,
+    request: Optional[Any] = None,
+    cur_time: Optional[datetime] = None,
+) -> Group:
+    """
+    Sets the specified group's description.
+    """
+    await authorize_database_session(
+        session,
+        PermissionCode.remove_group
+    )
+
+    group = await get_group(session, group_name=name)
+    group.desc = desc
+    await session.commit()
+
+    await log_system_change(
+        session,
+        SystemLogEventCode.GroupUpdateDescription,
+        "updating description of group {} to '{}'".format(
+            group.name,
+            desc
+        ),
+        request,
+        cur_time,
+    )
+
+    return group
+
+
 async def is_user_in_group(
     session: AsyncSession,
     group_id: int,

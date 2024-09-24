@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 import logging
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 from typing_extensions import Annotated
 
 from decouple import config
@@ -49,8 +49,6 @@ from txwtf.api.model import (
     Registration,
     Login,
     LoginResponse,
-    GroupKey,
-    UserKey,
 )
 from txwtf.version import version
 
@@ -290,7 +288,8 @@ def get_user_router(
     )
     @copy_doc(txwtf.core.get_user)
     async def get_user(
-        user_key: UserKey,
+        user_id: Optional[int] = None,
+        username: Optional[str] = None,
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -308,8 +307,8 @@ def get_user_router(
             ) as session:
                 return await txwtf.core.get_user(
                     session,
-                    user_key.user_id,
-                    user_key.username,
+                    user_id,
+                    username,
                 )
             
     @router.get(
@@ -381,20 +380,13 @@ def get_group_router(
                 return await txwtf.core.get_groups(session)
             
     @router.get(
-        "/codes",
-        response_model=Dict[str, int],
-    )
-    @copy_doc(txwtf.core.get_permission_codes)
-    async def get_groups() -> Dict[str, int]:
-        return txwtf.core.get_permission_codes()
-            
-    @router.get(
         "/",
         response_model=Union[Group, List[Group]],
     )
     @copy_doc(txwtf.core.get_group)
     async def get_group(
-        group_key: GroupKey,
+        group_id: Optional[int] = None,
+        group_name: Optional[str] = None,
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -412,8 +404,8 @@ def get_group_router(
             ) as session:
                 return await txwtf.core.get_group(
                     session,
-                    group_key.group_id,
-                    group_key.group_name,
+                    group_id,
+                    group_name,
                 )
             
     @router.get(
@@ -422,7 +414,8 @@ def get_group_router(
     )
     @copy_doc(txwtf.core.has_group)
     async def has_group(
-        group_key: GroupKey,
+        group_id: Optional[int] = None,
+        group_name: Optional[str] = None,
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -440,8 +433,8 @@ def get_group_router(
             ) as session:
                 return await txwtf.core.has_group(
                     session,
-                    group_key.group_id,
-                    group_key.group_name,
+                    group_id,
+                    group_name,
                 )
 
     @router.post(
@@ -452,7 +445,7 @@ def get_group_router(
     async def create_group(
         request: Request,
         group_name: str,
-        description: str,
+        description: Optional[str] = None,
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -629,9 +622,64 @@ def get_group_router(
                     request_compat(request, user_agent)
                 )
 
-
-    # request: Request,
-    # user_agent: Annotated[Union[str, None], Header()] = None,
+    @router.get(
+        "/desc",
+        response_model=str,
+    )
+    @copy_doc(txwtf.core.get_group_description)
+    async def get_group_description(
+        group_name: str,
+        token_payload: Annotated[
+            JWTBearer, Depends(
+                JWTBearer(
+                    engine,
+                    jwt_secret,
+                    jwt_algorithm
+                )
+            )
+        ] = None,
+    ) -> List[int]:
+        async with map_txwtf_errors(401):
+            async with get_session(
+                engine,
+                user_id=token_payload["user_id"]
+            ) as session:
+                return await txwtf.core.get_group_description(
+                    session,
+                    group_name,
+                )
+            
+    @router.put(
+        "/desc",
+        response_model=str,
+    )
+    @copy_doc(txwtf.core.set_group_description)
+    async def set_group_description(
+        request: Request,
+        group_name: str,
+        desc: str,
+        token_payload: Annotated[
+            JWTBearer, Depends(
+                JWTBearer(
+                    engine,
+                    jwt_secret,
+                    jwt_algorithm
+                )
+            )
+        ] = None,
+        user_agent: Annotated[Union[str, None], Header()] = None,
+    ) -> List[int]:
+        async with map_txwtf_errors(401):
+            async with get_session(
+                engine,
+                user_id=token_payload["user_id"]
+            ) as session:
+                return await txwtf.core.set_group_description(
+                    session,
+                    group_name,
+                    desc,
+                    request_compat(request, user_agent)
+                )
 
     return router
 
@@ -744,6 +792,14 @@ def get_permissions_router(
                     permission_code,
                     request_compat(request, user_agent)
                 )
+
+    @router.get(
+        "/codes",
+        response_model=Dict[str, int],
+    )
+    @copy_doc(txwtf.core.get_permission_codes)
+    async def get_groups() -> Dict[str, int]:
+        return txwtf.core.get_permission_codes()
 
     return router
 

@@ -67,6 +67,8 @@ from txwtf.core import (
     remove_group_permission,
     get_groups_users,
     get_permission_codes,
+    get_group_description,
+    set_group_description
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -2925,6 +2927,80 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
 
         # then
         self.assertEqual(target_codes, codes)
+
+    async def test_get_group_description(self):
+        """
+        Test that we can get group descriptions set during
+        creation.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            group1_desc = "test description"
+            group2_name = "group2"
+            group2_desc = "foo bar"
+
+            # when
+            group1 = await create_group(
+                session, group1_name, group1_desc
+            )
+            group2 = await create_group(
+                session, group2_name, group2_desc)
+
+            # then
+            self.assertEqual(
+                group1_desc,
+                await get_group_description(session, group1_name)
+            )
+            self.assertEqual(
+                group2_desc,
+                await get_group_description(session, group2_name)
+            )
+
+    async def test_set_group_description(self):
+        """
+        Test that we can set group descriptions after creation.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            group1_desc = "test description"
+            group2_name = "group2"
+            group2_desc = "foo bar"
+            target_changes = [
+                SystemLogEventCode.GroupCreate,
+                SystemLogEventCode.GroupCreate,
+                SystemLogEventCode.GroupUpdateDescription,
+                SystemLogEventCode.GroupUpdateDescription
+            ]
+
+            # when
+            await create_group(session, group1_name)
+            await create_group(session, group2_name)
+            await set_group_description(
+                session, group1_name, group1_desc
+            )
+            await set_group_description(
+                session, group2_name, group2_desc
+            )
+
+            # then
+            self.assertEqual(
+                group1_desc,
+                await get_group_description(session, group1_name)
+            )
+            self.assertEqual(
+                group2_desc,
+                await get_group_description(session, group2_name)
+            )
+
+            system_changes = await session.exec(
+                select(SystemLog).order_by(SystemLog.id.asc())
+            )
+            changes = []
+            for change in system_changes.all():
+                changes.append(change.event_code)
+            self.assertEqual(changes, target_changes)
 
 
 if __name__ == "__main__":
