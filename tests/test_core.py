@@ -2732,7 +2732,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await add_group_permission(
                 session,
                 group1.id,
-                PermissionCode.get_groups
+                [PermissionCode.get_groups]
             )
             await add_user_to_group(
                 session,
@@ -2758,7 +2758,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await remove_group_permission(
                 session,
                 group1.id,
-                PermissionCode.get_groups
+                [PermissionCode.get_groups]
             )
 
             # then
@@ -2798,12 +2798,12 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await add_group_permission(
                 session,
                 group1.id,
-                PermissionCode.get_groups
+                [PermissionCode.get_groups]
             )
             await add_group_permission(
                 session,
                 group2.id,
-                PermissionCode.create_group
+                [PermissionCode.create_group]
             )
 
             # then

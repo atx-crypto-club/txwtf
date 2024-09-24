@@ -1512,10 +1512,10 @@ async def authorize_database_session(
 async def add_group_permission(
     session: AsyncSession,
     group_id: int,
-    permission_code: PermissionCode,
+    permission_codes: List[PermissionCode],
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None
-) -> GroupPermission:
+) -> List[GroupPermission]:
     """
     Add a permission code to a group. This allows a simple
     way to authorize functionality that changes the database
@@ -1533,6 +1533,9 @@ async def add_group_permission(
             "Group {} doesn't exist".format(group_id)
         )
 
+    gps = []
+
+    permission_code = permission_codes[0]
     # see if there is already one to avoid duplicates
     statement = select(GroupPermission).where(
         GroupPermission.group_id == group_id
@@ -1561,6 +1564,7 @@ async def add_group_permission(
     session.add(gp)
     await session.commit()
     await session.refresh(gp)
+    gps.append(gp)
 
     await log_system_change(
         session,
@@ -1573,13 +1577,13 @@ async def add_group_permission(
         cur_time,
     )
 
-    return gp
+    return gps
 
 
 async def remove_group_permission(
     session: AsyncSession,
     group_id: int,
-    permission_code: PermissionCode,
+    permission_codes: List[PermissionCode],
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None
 ) -> None:
@@ -1596,6 +1600,8 @@ async def remove_group_permission(
             ErrorCode.InvalidGroup,
             "Group {} doesn't exist".format(group_id)
         )
+
+    permission_code = permission_codes[0]
 
     # find the record
     statement = select(GroupPermission).where(
