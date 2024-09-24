@@ -1261,7 +1261,7 @@ async def get_group_description(
     """
     await authorize_database_session(
         session,
-        PermissionCode.remove_group
+        PermissionCode.get_group_description
     )
 
     group = await get_group(session, group_name=name)
@@ -1280,7 +1280,7 @@ async def set_group_description(
     """
     await authorize_database_session(
         session,
-        PermissionCode.remove_group
+        PermissionCode.set_group_description
     )
 
     group = await get_group(session, group_name=name)
