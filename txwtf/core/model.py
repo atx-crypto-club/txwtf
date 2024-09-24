@@ -52,6 +52,7 @@ class ObjectMetadata(SystemObject, table=True):
 class Group(SystemObject, table=True):
     name: str = Field(index=True, sa_type=String(256), max_length=256)
     desc: Optional[str] = Field(sa_type=String(1024), max_length=1024)
+    creator_user_id: int = Field(default=None, foreign_key="user.id")
 
 
 # TODO: add user groups, group permissions
