@@ -1126,7 +1126,7 @@ async def get_group(
     group_name: Optional[str] = None
 ) -> Union[Group, List[Group]]:
     """
-    Returns a Group object given group_name or id.
+    Returns a Group object that matches group_id or group_name.
     """
     await authorize_database_session(
         session,
@@ -1178,6 +1178,7 @@ async def has_group(
 async def create_group(
     session: AsyncSession,
     name: str,
+    desc: str = None,
     request: Optional[Any] = None,
     cur_time: Optional[datetime] = None,
 ) -> Group:
@@ -1192,7 +1193,7 @@ async def create_group(
             "Group {} already exists".format(group)
         )
 
-    group = Group(name=name)
+    group = Group(name=name, desc=desc)
     session.add(group)
     await session.commit()
     await session.refresh(group)
@@ -1607,3 +1608,13 @@ async def get_groups_users(
     for ga in results.all():
         user_list.append(ga.user_id)
     return user_list
+
+
+def get_permission_codes() -> Dict[str, int]:
+    """
+    Returns a dict of permission names and codes
+    """
+    ret = {}
+    for code in PermissionCode:
+        ret[code.name] = code.value
+    return ret

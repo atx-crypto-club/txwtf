@@ -66,6 +66,7 @@ from txwtf.core import (
     add_group_permission,
     remove_group_permission,
     get_groups_users,
+    get_permission_codes,
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -2892,6 +2893,38 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 user_ids[:-1],
                 await get_groups_users(session, group1.id)
             )
+
+    async def test_get_permission_codes(self):
+        """
+        Tracks the set of permission codes.
+        """
+        # with
+        target_codes = {
+            'get_setting_record': 1, 
+            'has_setting': 2, 
+            'list_setting': 3, 
+            'set_setting': 4, 
+            'get_user': 5, 
+            'get_groups': 6, 
+            'get_group': 7, 
+            'has_group': 8, 
+            'create_group': 9, 
+            'remove_group': 10, 
+            'get_users_groups': 11, 
+            'is_user_in_group': 12, 
+            'add_user_to_group': 13, 
+            'remove_user_from_group': 14, 
+            'add_group_permissions': 15, 
+            'remove_group_permission': 16, 
+            'get_users_permissions': 17, 
+            'get_groups_users': 18
+        }
+
+        # when
+        codes = get_permission_codes()
+
+        # then
+        self.assertEqual(target_codes, codes)
 
 
 if __name__ == "__main__":

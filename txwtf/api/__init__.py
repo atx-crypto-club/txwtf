@@ -1,12 +1,20 @@
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 import logging
-from typing import Union, List
+from typing import Union, List, Dict
 from typing_extensions import Annotated
 
 from decouple import config
 
-from fastapi import APIRouter, FastAPI, Body, Depends, HTTPException, Request, Header
+from fastapi import (
+    APIRouter,
+    FastAPI,
+    Body, 
+    Depends, 
+    HTTPException, 
+    Request, 
+    Header
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -373,6 +381,14 @@ def get_group_router(
                 return await txwtf.core.get_groups(session)
             
     @router.get(
+        "/codes",
+        response_model=Dict[str, int],
+    )
+    @copy_doc(txwtf.core.get_permission_codes)
+    async def get_groups() -> Dict[str, int]:
+        return txwtf.core.get_permission_codes()
+            
+    @router.get(
         "/",
         response_model=Union[Group, List[Group]],
     )
@@ -436,6 +452,7 @@ def get_group_router(
     async def create_group(
         request: Request,
         group_name: str,
+        description: str,
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -455,6 +472,7 @@ def get_group_router(
                 return await txwtf.core.create_group(
                     session,
                     group_name,
+                    description,
                     request_compat(request, user_agent)
                 )
             

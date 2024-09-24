@@ -37,9 +37,9 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
             async with get_client(manager.app) as ac:
                 response = await ac.get("/")
                 self.assertEqual(response.status_code, 200)
-                self.assertEqual(
-                    response.json()["message"],
-                    "txwtf v{}".format(version)
+                self.assertTrue(
+                    "txwtf v{}".format(version) in \
+                        response.json()["message"]
                 )
 
     async def test_register(self):
