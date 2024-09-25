@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from pydantic import EmailStr
 
@@ -54,3 +54,10 @@ class LoginResponse(SQLModel):
     expires: datetime
     token: str
     session_uuid: str
+
+
+class CreateGroup(SQLModel):
+    group_name: str
+    description: Optional[str] = None
+    permissions: List[PermissionCode] = []
+    add_creator_to_group: bool = False

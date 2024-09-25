@@ -2732,7 +2732,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await add_group_permission(
                 session,
                 group1.id,
-                PermissionCode.get_groups
+                [PermissionCode.get_groups]
             )
             await add_user_to_group(
                 session,
@@ -2758,7 +2758,7 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await remove_group_permission(
                 session,
                 group1.id,
-                PermissionCode.get_groups
+                [PermissionCode.get_groups]
             )
 
             # then
@@ -2777,6 +2777,105 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 code, _ = e.args
             self.assertIsInstance(ex, PermissionError)
             self.assertEqual(code, ErrorCode.AccessDenied)
+
+    async def test_add_remove_group_permission_multi(self):
+        """
+        Test that we can add then remove a list of permissions.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            user_id = 420
+
+            # when
+            group1 = await create_group(session, group1_name)
+
+            # then
+            code = None
+            ex = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
+            except TXWTFError as e:
+                ex = e
+                code, _ = e.args
+            self.assertIsInstance(ex, PermissionError)
+            self.assertEqual(code, ErrorCode.AccessDenied)
+
+            # when
+            await add_group_permission(
+                session,
+                group1.id,
+                [
+                    PermissionCode.get_groups,
+                    PermissionCode.create_group,
+                    PermissionCode.remove_group
+                ]
+            )
+            await add_user_to_group(
+                session,
+                group1.id,
+                user_id,
+            )
+
+            # then
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertIsNone(code)
+
+            # when
+            await remove_group_permission(
+                session,
+                group1.id,
+                [
+                    PermissionCode.get_groups,
+                    PermissionCode.create_group
+                ]
+            )
+
+            # then
+            code = None
+            ex = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.get_groups
+                    )
+            except TXWTFError as e:
+                ex = e
+                code, _ = e.args
+            self.assertIsInstance(ex, PermissionError)
+            self.assertEqual(code, ErrorCode.AccessDenied)
+
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await authorize_database_session(
+                        session2,
+                        PermissionCode.remove_group
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertIsNone(code)
 
     async def test_remove_permission_when_group_delete(self):
         """
@@ -2798,12 +2897,12 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             await add_group_permission(
                 session,
                 group1.id,
-                PermissionCode.get_groups
+                [PermissionCode.get_groups]
             )
             await add_group_permission(
                 session,
                 group2.id,
-                PermissionCode.create_group
+                [PermissionCode.create_group]
             )
 
             # then
@@ -2916,10 +3015,12 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             'is_user_in_group': 12, 
             'add_user_to_group': 13, 
             'remove_user_from_group': 14, 
-            'add_group_permissions': 15, 
+            'add_group_permission': 15, 
             'remove_group_permission': 16, 
             'get_users_permissions': 17, 
-            'get_groups_users': 18
+            'get_groups_users': 18,
+            'get_group_description': 19,
+            'set_group_description': 20
         }
 
         # when
@@ -3001,6 +3102,65 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
             for change in system_changes.all():
                 changes.append(change.event_code)
             self.assertEqual(changes, target_changes)
+
+    async def test_create_group_with_permissions(self):
+        """
+        Test that we can create a group with permissions in
+        a single operation.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            group1_name = "group1"
+            user_id = 420
+            group1 = None
+
+            # when
+            code = None
+            code2 = None
+            has_grp = False
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    group1 = await create_group(
+                        session2,
+                        group1_name,
+                        permissions=[
+                            PermissionCode.has_group,
+                        ],
+                        add_creator_to_group=True
+                    )
+            except TXWTFError as e:
+                code, _ = e.args
+            self.assertIsNone(code)
+
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    has_grp = await has_group(
+                        session2,
+                        group_id=group1.id
+                    )
+            except TXWTFError as e:
+                code2, _ = e.args
+
+            # then
+            self.assertIsNone(code2)
+            self.assertTrue(has_grp)
+
+            # when
+            code = None
+            try:
+                async with get_session(
+                    self._engine, user_id
+                ) as session2:
+                    await get_groups(session2)
+            except TXWTFError as e:
+                code, _ = e.args
+
+            # then
+            self.assertEqual(code, ErrorCode.AccessDenied)
 
 
 if __name__ == "__main__":

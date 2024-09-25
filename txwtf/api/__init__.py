@@ -49,6 +49,7 @@ from txwtf.api.model import (
     Registration,
     Login,
     LoginResponse,
+    CreateGroup,
 )
 from txwtf.version import version
 
@@ -444,8 +445,7 @@ def get_group_router(
     @copy_doc(txwtf.core.create_group)
     async def create_group(
         request: Request,
-        group_name: str,
-        description: Optional[str] = None,
+        cg_args: CreateGroup,
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -464,8 +464,10 @@ def get_group_router(
             ) as session:
                 return await txwtf.core.create_group(
                     session,
-                    group_name,
-                    description,
+                    cg_args.group_name,
+                    cg_args.description,
+                    cg_args.permissions,
+                    cg_args.add_creator_to_group,
                     request_compat(request, user_agent)
                 )
             
@@ -731,13 +733,13 @@ def get_permissions_router(
 
     @router.post(
         "/",
-        response_model=GroupPermission,
+        response_model=List[GroupPermission],
     )
     @copy_doc(txwtf.core.add_group_permission)
     async def add_group_permission(
         request: Request,
         group_id: int,
-        permission_code: PermissionCode,
+        permission_codes: List[PermissionCode],
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -748,7 +750,7 @@ def get_permissions_router(
             )
         ] = None,
         user_agent: Annotated[Union[str, None], Header()] = None,
-    ) -> GroupPermission:
+    ) -> List[GroupPermission]:
         async with map_txwtf_errors(401):
             async with get_session(
                 engine,
@@ -757,7 +759,7 @@ def get_permissions_router(
                 return await txwtf.core.add_group_permission(
                     session,
                     group_id,
-                    permission_code,
+                    permission_codes,
                     request_compat(request, user_agent)
                 )
 
@@ -769,7 +771,7 @@ def get_permissions_router(
     async def remove_group_permission(
         request: Request,
         group_id: int,
-        permission_code: PermissionCode,
+        permission_codes: List[PermissionCode],
         token_payload: Annotated[
             JWTBearer, Depends(
                 JWTBearer(
@@ -789,7 +791,7 @@ def get_permissions_router(
                 return await txwtf.core.remove_group_permission(
                     session,
                     group_id,
-                    permission_code,
+                    permission_codes,
                     request_compat(request, user_agent)
                 )
 
