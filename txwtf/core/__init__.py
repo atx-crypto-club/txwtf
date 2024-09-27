@@ -53,6 +53,8 @@ from txwtf.core.defaults import (
     PASSWORD_UPPER_ENABLED,
     PASSWORD_LOWER_ENABLED,
     EMAIL_VALIDATE_DELIVERABILITY_ENABLED,
+    DEFAULT_USER_GROUP,
+    DEFAULT_USER_GROUP_DESCRIPTION,
 )
 from txwtf.core.errors import (
     AuthorizedSessionError,
@@ -847,6 +849,7 @@ async def register_user(
     email: EmailStr,
     request: Any,
     cur_time: Optional[datetime] = None,
+    add_user_to_default_group = False
 ) -> User:
     """
     Perform user registration.
@@ -955,6 +958,24 @@ async def register_user(
     )
 
     await session.refresh(new_user)
+
+    if add_user_to_default_group:
+        default_group = await get_default_user_group(session)
+        default_group_desc = await get_default_user_group_description(session)
+        if not await has_group(
+            session, 
+            group_name=default_group
+        ):
+            group = await create_group(
+                session,
+                default_group,
+                desc=default_group_desc,
+                request=request,
+                cur_time=cur_time
+            )
+        else:
+            group = await get_group(session, group_name=default_group)
+        await add_user_to_group(session, group.id, new_user.id)
 
     return new_user
 
@@ -1747,10 +1768,8 @@ async def get_groups_users(
             GroupAssociation.user_id.asc()
         )
     )
-    user_list = []
-    for ga in results.all():
-        user_list.append(ga.user_id)
-    return user_list
+
+    return [ga.user_id for ga in results.all()]
 
 
 def get_permission_codes() -> Dict[str, int]:
@@ -1761,3 +1780,34 @@ def get_permission_codes() -> Dict[str, int]:
     for code in PermissionCode:
         ret[code.name] = code.value
     return ret
+
+
+async def get_default_user_group(
+    session: AsyncSession,
+    default: Optional[Any] = DEFAULT_USER_GROUP
+):
+    """
+    Returns the name of the default user group that users are
+    added to when first registered.
+    """
+    return await get_setting(
+        session,
+        "groups",
+        "default_group",
+        default=default
+    )
+
+async def get_default_user_group_description(
+    session: AsyncSession,
+    default: Optional[Any] = DEFAULT_USER_GROUP_DESCRIPTION
+):
+    """
+    Returns the name of the default user group that users are
+    added to when first registered.
+    """
+    return await get_setting(
+        session,
+        "groups",
+        "default_description",
+        default=default
+    )
