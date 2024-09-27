@@ -68,7 +68,8 @@ from txwtf.core import (
     get_groups_users,
     get_permission_codes,
     get_group_description,
-    set_group_description
+    set_group_description,
+    get_default_user_group
 )
 from txwtf.core.defaults import (
     SITE_LOGO,
@@ -1337,6 +1338,51 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 code, _ = e.args
 
             self.assertIsNotNone(code)
+
+    async def test_register_user_with_default_group(self):
+        """
+        Test registering a user after a default group is set.
+        """
+        async with get_session(self._engine) as session:
+            # with
+            username = "root"
+            password = "asDf1234#!1"
+            name = "admin"
+            email = "root@tx.wtf"
+            referrer = "localhost"
+            user_agent = "mozkilla 420.69"
+            endpoint = "/register"
+            remote_addr = "127.0.0.1"
+            headers = {"X-Forwarded-For": "192.168.0.1"}
+            cur_time = datetime.now()
+
+            request = FakeRequest(
+                referrer=referrer,
+                user_agent=user_agent,
+                endpoint=endpoint,
+                remote_addr=remote_addr,
+                headers=headers,
+            )
+
+            # when
+            user = await register_user(
+                session,
+                username,
+                password,
+                password,
+                name,
+                email,
+                request,
+                cur_time,
+                True
+            )
+
+            # then
+            group = await get_group(
+                session,
+                group_name=await get_default_user_group(session)
+            )
+            self.assertTrue(await is_user_in_group(session, group.id))
 
     async def test_execute_login(self):
         """

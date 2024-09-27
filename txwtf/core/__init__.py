@@ -1789,7 +1789,8 @@ async def get_default_user_group(
     """
     return int(await get_setting(
         session,
-        "default_user_group",
+        "groups",
+        "default_group",
         default=default
     ))
 
@@ -1803,6 +1804,7 @@ async def get_default_user_group_description(
     """
     return int(await get_setting(
         session,
-        "default_user_group_description",
+        "groups",
+        "default_description",
         default=default
     ))
