@@ -1382,7 +1382,13 @@ class TestCore(unittest.IsolatedAsyncioTestCase):
                 session,
                 group_name=await get_default_user_group(session)
             )
-            self.assertTrue(await is_user_in_group(session, group.id))
+            self.assertTrue(
+                await is_user_in_group(
+                    session,
+                    group.id,
+                    user.id
+                )
+            )
 
     async def test_execute_login(self):
         """

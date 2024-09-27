@@ -966,13 +966,16 @@ async def register_user(
             session, 
             group_name=default_group
         ):
-            await create_group(
+            group = await create_group(
                 session,
                 default_group,
                 desc=default_group_desc,
                 request=request,
                 cur_time=cur_time
             )
+        else:
+            group = await get_group(session, group_name=default_group)
+        await add_user_to_group(session, group.id, new_user.id)
 
     return new_user
 
@@ -1787,12 +1790,12 @@ async def get_default_user_group(
     Returns the name of the default user group that users are
     added to when first registered.
     """
-    return int(await get_setting(
+    return await get_setting(
         session,
         "groups",
         "default_group",
         default=default
-    ))
+    )
 
 async def get_default_user_group_description(
     session: AsyncSession,
@@ -1802,9 +1805,9 @@ async def get_default_user_group_description(
     Returns the name of the default user group that users are
     added to when first registered.
     """
-    return int(await get_setting(
+    return await get_setting(
         session,
         "groups",
         "default_description",
         default=default
-    ))
+    )
