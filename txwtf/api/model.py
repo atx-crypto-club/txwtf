@@ -21,6 +21,7 @@ class Registration(SQLModel):
     verify_password: str
     name: str
     email: EmailStr
+    add_user_to_default_group: Optional[bool] = False
 
     class Config:
         json_schema_extra = {
@@ -30,6 +31,7 @@ class Registration(SQLModel):
                 "password": "passWord1234@",
                 "verify_password": "passWord1234@",
                 "name": "Mr User",
+                "add_user_to_default_group": "true"
             }
         }
 
